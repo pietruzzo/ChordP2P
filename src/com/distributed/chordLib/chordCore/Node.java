@@ -1,6 +1,7 @@
 package com.distributed.chordLib.chordCore;
 
-import javafx.util.Pair;
+
+import com.sun.tools.javac.util.Pair;
 
 public class Node extends Pair<String, String> {
     /**

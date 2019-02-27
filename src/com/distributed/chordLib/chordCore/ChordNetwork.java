@@ -40,7 +40,7 @@ public abstract class ChordNetwork {
     abstract public InetAddress lookupKey(String key);
 
     /**
-     * ask node n to find the successor of id (Basic Lookup)
+     * ask node n to find the successor of id (B - Basic Lookup)
      * @param id identifier
      * @apiNote
      * if (id ∈ (n,successor])
