@@ -5,6 +5,8 @@ package com.distributed.chordLib.chordCore;
 
 import com.distributed.chordLib.chordCore.FingerTable;
 import com.distributed.chordLib.chordCore.Node;
+import jdk.internal.jline.internal.Nullable;
+import org.graalvm.compiler.api.replacements.Snippet;
 
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,19 +20,25 @@ public abstract class ChordNetwork {
     private Node[] successor;
     private Node predecessor;
     private FingerTable fingerTable;
+    private ChordNetworkCallback callback;
 
     ThreadPoolExecutor threadPool;
 
     //endregion
 
-    //region Constructors
-    ChordNetwork(int numFingers, int numSuccessors){
+    /**
+     * Contructor for chord Network
+     * @param numFingers Number of fingers in finger table
+     * @param numSuccessors Number of stored successors
+     * @param bootstrapAddr to Join an existing Chord Network
+     *                      NULL: create a new Network
+     * @param callback Optional Callback for application
+     */
+    ChordNetwork( int numFingers, int numSuccessors, @Nullable InetAddress bootstrapAddr, @Nullable ChordNetworkCallback callback){
 
     }
 
-    ChordNetwork(int numFingers, int numSuccessors, InetAddress bootstrapAddr){
 
-    }
     //endregion
 
     /**
@@ -38,6 +46,7 @@ public abstract class ChordNetwork {
      * @return IP address of node responsible for key
      */
     abstract public InetAddress lookupKey(String key);
+
 
     /**
      * ask node n to find the successor of id (B - Basic Lookup)
