@@ -3,15 +3,13 @@ package com.distributed.chordLib.chordCore;
 
 
 
-import com.distributed.chordLib.chordCore.FingerTable;
-import com.distributed.chordLib.chordCore.Node;
+import com.distributed.chordLib.ChordCallback;
 import jdk.internal.jline.internal.Nullable;
-import org.graalvm.compiler.api.replacements.Snippet;
 
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public abstract class ChordNetwork {
+public abstract class Chord implements com.distributed.chordLib.Chord {
 
     //region Attributes
 
@@ -20,7 +18,7 @@ public abstract class ChordNetwork {
     private Node[] successor;
     private Node predecessor;
     private FingerTable fingerTable;
-    private ChordNetworkCallback callback;
+    private ChordCallback callback;
 
     ThreadPoolExecutor threadPool;
 
@@ -34,18 +32,9 @@ public abstract class ChordNetwork {
      *                      NULL: create a new Network
      * @param callback Optional Callback for application
      */
-    ChordNetwork( int numFingers, int numSuccessors, @Nullable InetAddress bootstrapAddr, @Nullable ChordNetworkCallback callback){
+    Chord(int numFingers, int numSuccessors, @Nullable InetAddress bootstrapAddr, @Nullable ChordCallback callback){
 
     }
-
-
-    //endregion
-
-    /**
-     * Lookup for key in chord network
-     * @return IP address of node responsible for key
-     */
-    abstract public InetAddress lookupKey(String key);
 
 
     /**
