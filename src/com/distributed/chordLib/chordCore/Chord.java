@@ -101,11 +101,4 @@ public abstract class Chord implements com.distributed.chordLib.Chord {
      * Close network
      */
     abstract public void close();
-
-    /**
-     * calculate SHA-1 of a String
-     * @implNote with org.apache.commons.codec.digest.DigestUtils
-     * @return digested string
-     */
-    abstract String getSHA1(String inputString);
 }
