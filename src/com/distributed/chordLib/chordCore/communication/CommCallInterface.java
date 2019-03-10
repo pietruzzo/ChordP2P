@@ -34,4 +34,13 @@ public interface CommCallInterface {
      */
     Node findSuccessor (String key);
 
+    /**
+     * Notify successor that you may be his predecessor
+     */
+    void notifySuccessor();
+
+    /**
+     * Ping node and return true if alive
+     */
+    boolean isAlive(Node node);
 }

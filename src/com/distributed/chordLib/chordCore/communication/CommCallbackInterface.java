@@ -1,5 +1,7 @@
 package com.distributed.chordLib.chordCore.communication;
 
+import com.distributed.chordLib.chordCore.Node;
+
 public interface CommCallbackInterface {
 
     /**
@@ -20,4 +22,14 @@ public interface CommCallbackInterface {
      * @param key
      */
     void handleLookup(String key);
+
+    /**
+     * a node says to me that he is my predecessor
+     */
+    void notify(Node predecessor);
+
+    /**
+     * Return Ping
+     */
+    void ping();
 }
