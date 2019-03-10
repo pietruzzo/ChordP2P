@@ -91,11 +91,21 @@ public abstract class Chord implements com.distributed.chordLib.Chord {
     abstract void notify(Node predecessor);
 
     /**
-     * Called periodically, checks whether predecessor has faild
+     * called periodically. refreshes ﬁnger table entries.
+     * next stores the index of the next ﬁnger to ﬁx.
+     * next = next + 1;
+     * if (next > m)
+     * next = 1;
+     * ﬁnger[next] = ﬁnd successor( n + 2^(next-1) );
+     */
+    abstract void fixFingers();
+
+    /**
+     * Called periodically, checks whether predecessor has failed
      * if(predecessor has failed)
      *  predecessor = NULL
      */
-    abstract void fixFingers();
+    abstract void checkPredecessor();
 
     /**
      * Close network
