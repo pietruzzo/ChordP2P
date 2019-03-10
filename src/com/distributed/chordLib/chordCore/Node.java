@@ -12,10 +12,10 @@ public class Node implements Serializable {
         this.IP = IP;
     }
 
-    String getIP(){return IP;}
+    public String getIP(){return IP;}
 
     /**
      * @return the hash for the IP
      */
-    String getkey(){return null;}
+    public String getkey(){return null;}
 }

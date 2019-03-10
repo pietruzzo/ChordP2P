@@ -1,11 +1,18 @@
 package com.distributed.chordLib.chordCore;
 
+import jdk.internal.jline.internal.Nullable;
+
 public class FingerTable {
 
     private Node[] fingers;
+    private Node[] successors;
+    private Node predecessor;
 
-    FingerTable (int nFingers){
-            fingers = new Node[nFingers];
+    FingerTable (int nFingers, @Nullable Integer nSuccessors){
+        fingers = new Node[nFingers];
+        if (nSuccessors != null)
+            successors = new Node[nSuccessors];
+        else successors = null;
     }
 
     /**
@@ -21,5 +28,10 @@ public class FingerTable {
     public Node[] getNextNode(String key) {
         return null;
     }
+
+    public Node getPredecessor(){ return predecessor; }
+
+    public void setPredecessor(Node predecessor) {this.predecessor = predecessor; }
+
 
 }
