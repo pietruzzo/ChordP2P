@@ -18,4 +18,13 @@ public class Node implements Serializable {
      * @return the hash for the IP
      */
     public String getkey(){return null;}
+
+    /**
+     * Find if nodes are equals
+     * @param node
+     * @return comparison response over node's key
+     */
+    public boolean equals(Node node){
+        return this.getkey() == node.getkey();
+    }
 }
