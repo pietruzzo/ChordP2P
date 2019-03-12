@@ -36,11 +36,13 @@ public interface CommCallInterface {
 
     /**
      * Notify successor that you may be his predecessor
+     * @ApiNote Asynchronous
      */
     void notifySuccessor();
 
     /**
      * Ping node and return true if alive
+     * @implNote synchronous call
      */
     boolean isAlive(Node node);
 }
