@@ -10,5 +10,6 @@ public class NotifySuccessorMessage implements Serializable {
 
     public final Node node;
 
-    public NotifySuccessorMessage(Node node) { this.node = node; }
+    public NotifySuccessorMessage(Node node) {
+        this.node = node; }
 }
