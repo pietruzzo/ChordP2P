@@ -4,7 +4,6 @@ package com.distributed.chordLib;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.function.ToDoubleBiFunction;
 
@@ -24,7 +23,7 @@ public class ChordBuilder {
      * @return Chord object
      * @throws IOException for communication failure
      */
-    static Chord joinChord(@Nullable InetAddress bootstrap, @Nullable int port,  @Nullable ChordCallback callback) throws IOException {
+    static Chord joinChord(@Nullable String bootstrap, @Nullable int port,  @Nullable ChordCallback callback) throws IOException {
         /*TODO:
                 -   spawn new thread for chord network [a thread for bootstrap node to accept incoming requests]
                 -   contact remote serversocket

@@ -15,6 +15,6 @@ public interface Chord {
      * Lookup for key in chord network
      * @return IP address of node responsible for key
      */
-    InetAddress lookupKey(String key);
+    String lookupKey(String key);
 
 }
