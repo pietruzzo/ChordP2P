@@ -23,7 +23,7 @@ public class ChordBuilder {
      * @return Chord object
      * @throws IOException for communication failure
      */
-    static Chord joinChord(@Nullable String bootstrap, @Nullable int port,  @Nullable ChordCallback callback) throws IOException {
+    public static Chord joinChord(@Nullable String bootstrap, @Nullable int port,  @Nullable ChordCallback callback) throws IOException {
         /*TODO:
                 -   spawn new thread for chord network [a thread for bootstrap node to accept incoming requests]
                 -   contact remote serversocket
@@ -39,7 +39,7 @@ public class ChordBuilder {
      * @param callback Optional callback object
      * @return Chord object
      */
-    static Chord createChord(@Nullable int port, @Nullable ChordCallback callback){
+    public static Chord createChord(@Nullable int port, @Nullable ChordCallback callback){
         /*TODO:
                 -   spawn new thread for chord network [a thread for bootstrap node to accept incoming requests]
                 -   create serversocket
