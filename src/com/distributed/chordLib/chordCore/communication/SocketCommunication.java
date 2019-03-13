@@ -79,12 +79,18 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
      * @param receiver receiver for the message
      * @return Response message
      */
-    <T> T waitResponse(T requestMessage, SocketNode receiver){
+    private void waitResponse(ReqResp requestMessage, SocketNode receiver){
         //Send message on socket
+        //save this thread in waitingThreads
         //suspend current thread
-        //
-        return null;
     }
+
+    /**
+     * Register response and awake sleeping thread
+     * @param responseMessage
+     * @param reqID
+     */
+    private void awake (ReqResp responseMessage, int reqID){}
 }
 
 /**
