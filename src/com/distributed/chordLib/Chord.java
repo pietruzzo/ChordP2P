@@ -14,6 +14,7 @@ public interface Chord {
     /**
      * Lookup for key in chord network
      * @return IP address of node responsible for key
+     * @ApiNote Synchronous Call
      */
     String lookupKey(String key);
 

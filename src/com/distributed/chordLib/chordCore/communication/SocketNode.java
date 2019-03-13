@@ -20,6 +20,7 @@ public class SocketNode {
 
     public SocketNode(Node node, Socket endpoint){
         this.endpoint = endpoint;
+        this.node = node;
 
         try {
             in = new ObjectInputStream(endpoint.getInputStream());
