@@ -4,8 +4,14 @@ import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import com.distributed.chordLib.chordCore.communication.messages.ReqResp;
 
+import java.security.Timestamp;
+import java.sql.Time;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.concurrent.TimeoutException;
 
 public class SocketCommunication implements CommCallInterface, CommCallbackInterface {
 
@@ -13,8 +19,8 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
 
     //List of SocketNode
     Map<Node, SocketNode> socketNodes;
-    //List of threads waiting for a response
-    List<ComputationState> waitingThreads;
+    //List of threads waiting for a response <RequestID, ComputationState>
+    Map<Integer, ComputationState> waitingThreads;
 
     @Override
     public JoinResponseMessage join(String ip, String port) {
@@ -87,18 +93,38 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
 class ComputationState {
 
     Thread thread;
-    ReqResp request;
     ReqResp response;
 
-    ComputationState(Thread thread, ReqResp message) {
-        this.request = message;
+    private Date begin;
+
+    ComputationState(Thread thread) {
         this.thread = thread;
         response = null;
+        begin = null;
     }
 
-    //Suspend current thread
-    public void sleep(/*TODO: wait until response available or timeout elapse*/){
-        if (response == null) this.sleep();
+    /**
+     * Suspend current thread until a response is give or timeout expiring
+     * @return response, or null is timeout is expired
+     */
+    public ReqResp waitResponse(/*TODO: wait until response available or timeout elapse*/) throws InterruptedException {
+
+        begin = Date.from(Instant.now());
+        while (!(response instanceof ReqResp) || isTimeElapsed()) thread.wait();
+        return response;
+    }
+
+    /**
+     * Register a response and resume thread
+     * @param response from the network
+     */
+    public void registerResponse(ReqResp response){
+        this.response = response;
+        thread.notify();
+    }
+
+    private boolean isTimeElapsed(){
+        return (Date.from(Instant.now()).getTime() - begin.getTime()) > SocketCommunication.REQUEST_TIMEOUT;
     }
 
 }
