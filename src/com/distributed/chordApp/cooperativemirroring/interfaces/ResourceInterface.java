@@ -14,12 +14,6 @@ public interface ResourceInterface extends Serializable {
     public String getID();
 
     /**
-     * Method used for getting the version associated to a resource
-     * @return
-     */
-    public Integer getVersion();
-
-    /**
      * Method for getting the state associated to a resource
      * @return
      */

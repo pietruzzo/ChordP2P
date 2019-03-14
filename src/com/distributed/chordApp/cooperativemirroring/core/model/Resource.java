@@ -10,17 +10,13 @@ public class Resource implements ResourceInterface {
     private static final long VERSION = 10001L ;
     /*Unique ID associated to a specific resource*/
     private String ID ;
-    /*Version of the project to be released*/
-    private Integer version;
 
-    public Resource(String ID, Integer version){
+    public Resource(String ID){
         this.setID(ID);
-        this.setVersion(version);
     }
 
     /*Setters*/
     private void setID(String ID){ this.ID = ID; }
-    private void setVersion(Integer version){ this.version = version; }
 
     /*Getters*/
 
@@ -30,18 +26,12 @@ public class Resource implements ResourceInterface {
      */
     public String getID(){ return this.ID; }
 
-    /**
-     * Method that returns the version associated to a resource
-     * @return Integer
-     */
-    public Integer getVersion(){ return this.version; }
 
     @Override
     public String toString() {
        String stateString = "";
 
        stateString += "\nResource ID: " + this.getID();
-       stateString += "\nResource Version: " + this.getVersion();
 
        return stateString;
     }
