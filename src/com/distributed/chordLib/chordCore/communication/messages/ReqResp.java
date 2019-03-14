@@ -36,7 +36,7 @@ public class ReqResp implements Serializable {
     /**
      * id getter
      */
-    int getId(){
+    public int getId(){
         return id;
     }
 }
