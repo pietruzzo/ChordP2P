@@ -13,6 +13,7 @@ public class SocketNode {
     private Node node;
 
 
+    @Deprecated
     public SocketNode(String IP, Socket endpoint) {
         Node node = new Node(IP);
         new SocketNode(node, endpoint);

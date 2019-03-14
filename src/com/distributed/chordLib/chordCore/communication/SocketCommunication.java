@@ -4,23 +4,29 @@ import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import com.distributed.chordLib.chordCore.communication.messages.ReqResp;
 
-import java.security.Timestamp;
-import java.sql.Time;
+import java.io.IOException;
+import java.net.Socket;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.concurrent.TimeoutException;
 
 public class SocketCommunication implements CommCallInterface, CommCallbackInterface {
 
     public static final int REQUEST_TIMEOUT = 3000;
+    private final int socketPort;
 
     //List of SocketNode
     Map<Node, SocketNode> socketNodes;
     //List of threads waiting for a response <RequestID, ComputationState>
     Map<Integer, ComputationState> waitingThreads;
+
+    /**
+     * @param port for socket communication
+     */
+    SocketCommunication(int port){
+        this.socketPort = port;
+    }
 
     @Override
     public JoinResponseMessage join(String ip, String port) {
@@ -48,6 +54,12 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
     }
 
     @Override
+    public void closeChannel(Node node) throws ArrayStoreException {
+
+    }
+
+
+    @Override
     public void handleJoinRequest(String IP) {
 
     }
@@ -72,6 +84,27 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
 
     }
 
+    /**
+     * Get socketNode corresponding to node or
+     * create a new connection to it
+     * @param node
+     * @return corresponding SocketNode or null if connection is refused
+     */
+    private SocketNode getSocketNode(Node node){
+        if (socketNodes.containsKey(node)) return socketNodes.get(node);
+        else{
+            try {
+                SocketNode newSocketNode =  new SocketNode(node, new Socket(node.getIP(), socketPort));
+                socketNodes.put(node, newSocketNode);
+                return newSocketNode;
+            } catch (IOException e) {
+                System.err.println("Unable to open connection to " + node.getIP() +": " + socketPort);
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Send Request, suspend and queue thread, waiting for response
@@ -80,9 +113,18 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
      * @return Response message
      */
     private void waitResponse(ReqResp requestMessage, SocketNode receiver){
+        ComputationState current = new ComputationState(Thread.currentThread());
         //Send message on socket
+        receiver.writeSocket(requestMessage);
         //save this thread in waitingThreads
+        this.waitingThreads.put(requestMessage.getId(), current);
         //suspend current thread
+        try {
+            current.waitResponse();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**

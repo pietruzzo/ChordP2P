@@ -45,4 +45,11 @@ public interface CommCallInterface {
      * @implNote synchronous call
      */
     boolean isAlive(Node node);
+
+    /**
+     * Close communication with node
+     * @param node
+     * @throws ArrayStoreException Connection not found
+     */
+    void closeChannel(Node node) throws ArrayStoreException;
 }
