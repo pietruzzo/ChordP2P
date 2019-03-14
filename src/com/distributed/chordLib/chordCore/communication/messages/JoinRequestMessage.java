@@ -7,7 +7,7 @@ public class JoinRequestMessage extends ReqResp implements Serializable {
     private static final long serialVersionUID = 40000L;
 
 
-    JoinRequestMessage() {
+    public JoinRequestMessage() {
         super(null);
     }
 }

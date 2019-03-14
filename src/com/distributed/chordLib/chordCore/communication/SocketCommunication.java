@@ -1,8 +1,7 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.Node;
-import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
-import com.distributed.chordLib.chordCore.communication.messages.ReqResp;
+import com.distributed.chordLib.chordCore.communication.messages.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -11,7 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class SocketCommunication implements CommCallInterface, CommCallbackInterface {
+public class SocketCommunication implements CommCallInterface {
 
     public static final int REQUEST_TIMEOUT = 3000;
     private final int socketPort;
@@ -20,69 +19,66 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
     Map<Node, SocketNode> socketNodes;
     //List of threads waiting for a response <RequestID, ComputationState>
     Map<Integer, ComputationState> waitingThreads;
+    //Chord calls from network
+    CommCallbackInterface callback;
 
     /**
      * @param port for socket communication
+     * @param callback from communication to chord
      */
-    SocketCommunication(int port){
+    SocketCommunication(int port, CommCallbackInterface callback){
         this.socketPort = port;
+        this.callback = callback;
     }
 
     @Override
-    public JoinResponseMessage join(String ip, String port) {
-        return null;
+    public JoinResponseMessage join(Node node, String port) {
+        ReqResp message = new JoinRequestMessage();
+        waitResponse(message, getSocketNode(node));
+        return (JoinResponseMessage) waitingThreads.get(message.getId()).getResponse();
     }
 
     @Override
-    public Node findSuccessorB(String key) {
-        return null;
+    public Node findSuccessorB(Node node, String key) {
+        ReqResp message = new BasicLookupRequest(key);
+        waitResponse(message, getSocketNode(node));
+        return ((LookupResponseMessage) waitingThreads.get(message.getId()).getResponse()).node;
     }
 
     @Override
-    public Node findSuccessor(String key) {
-        return null;
+    public Node findSuccessor(Node node, String key) {
+        ReqResp message = new LookupRequestMessage(key);
+        waitResponse(message, getSocketNode(node));
+        return ((LookupResponseMessage) waitingThreads.get(message.getId()).getResponse()).node;
     }
 
     @Override
-    public void notifySuccessor() {
-
+    public void notifySuccessor(Node successor, Node me) {
+        SocketNode receiver = getSocketNode(successor);
+        NotifySuccessorMessage message = new NotifySuccessorMessage(me);
+        receiver.writeSocket(message);
     }
 
     @Override
     public boolean isAlive(Node node) {
+        ReqResp message = new PingMessage();
+        waitResponse(message, getSocketNode(node));
+        if (waitingThreads.get(message.getId()).getResponse() instanceof PingMessage)
+            return true;
         return false;
     }
 
     @Override
     public void closeChannel(Node node) throws ArrayStoreException {
-
+        SocketNode socketNode = socketNodes.get(node);
+        if (socketNode == null) System.err.println("SocketNode not found");
+        else {
+            socketNode.close();
+            socketNodes.remove(socketNode);
+        }
     }
 
 
-    @Override
-    public void handleJoinRequest(String IP) {
-
-    }
-
-    @Override
-    public void handleLookupB(String key) {
-
-    }
-
-    @Override
-    public void handleLookup(String key) {
-
-    }
-
-    @Override
-    public void notify(Node predecessor) {
-
-    }
-
-    @Override
-    public void ping() {
-
-    }
 
     /**
      * Get socketNode corresponding to node or
@@ -110,9 +106,9 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
      * Send Request, suspend and queue thread, waiting for response
      * @param requestMessage message that will be sent to receiver
      * @param receiver receiver for the message
-     * @return Response message
      */
     private void waitResponse(ReqResp requestMessage, SocketNode receiver){
+        if (receiver == null) throw new NullPointerException("Receiver Socket Node is NULL");
         ComputationState current = new ComputationState(Thread.currentThread());
         //Send message on socket
         receiver.writeSocket(requestMessage);
@@ -126,6 +122,7 @@ public class SocketCommunication implements CommCallInterface, CommCallbackInter
         }
 
     }
+
 
     /**
      * Register response and awake sleeping thread
@@ -171,8 +168,9 @@ class ComputationState {
         thread.notify();
     }
 
+    public ReqResp getResponse () { return response; }
+
     private boolean isTimeElapsed(){
         return (Date.from(Instant.now()).getTime() - begin.getTime()) > SocketCommunication.REQUEST_TIMEOUT;
     }
-
 }
