@@ -24,7 +24,7 @@ public class Host implements HostInterface {
     private String IP = "192.168.0.2";
     //Integer that represents the port for the requests
     private Integer port = 9876;
-    //Variable that represents the entrypoint for the Chord network
+    //Variable that represents the entrypoint for the ChordClient network
     private Chord chordEntryPoint;
     //Socket of the current host
     private ServerSocket socket = null;

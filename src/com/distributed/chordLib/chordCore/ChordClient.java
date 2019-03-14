@@ -7,17 +7,16 @@ import com.distributed.chordLib.ChordCallback;
 import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
 import jdk.internal.jline.internal.Nullable;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public abstract class Chord implements com.distributed.chordLib.Chord, CommCallbackInterface {
+public abstract class ChordClient implements com.distributed.chordLib.Chord, CommCallbackInterface {
 
     //region Attributes
 
     private Node myNode;
 
-    private Node[] successor;
-    private Node predecessor;
     private FingerTable fingerTable;
     private ChordCallback callback;
 
@@ -29,11 +28,11 @@ public abstract class Chord implements com.distributed.chordLib.Chord, CommCallb
      * Contructor for chord Network
      * @param numFingers Number of fingers in finger table
      * @param numSuccessors Number of stored successors
-     * @param bootstrapAddr to Join an existing Chord Network
+     * @param bootstrapAddr to Join an existing ChordClient Network
      *                      NULL: create a new Network
      * @param callback Optional Callback for application
      */
-    Chord(int numFingers, int numSuccessors, @Nullable InetAddress bootstrapAddr, @Nullable ChordCallback callback){
+    ChordClient(int numFingers, int numSuccessors, @Nullable InetAddress bootstrapAddr, @Nullable ChordCallback callback){
 
     }
 
@@ -112,4 +111,17 @@ public abstract class Chord implements com.distributed.chordLib.Chord, CommCallb
      * Close network
      */
     abstract public void close();
+
+
+    public static class InitParameters implements Serializable{
+        public final int numFingers;
+        public final int numSuccessors;
+        public final Node successor;
+
+        InitParameters(int numFingers, int numSuccessors, Node successor){
+            this.numFingers = numFingers;
+            this.numSuccessors = numSuccessors;
+            this.successor = successor;
+        }
+    }
 }

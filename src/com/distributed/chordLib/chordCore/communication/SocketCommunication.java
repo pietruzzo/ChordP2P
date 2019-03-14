@@ -1,13 +1,14 @@
 package com.distributed.chordLib.chordCore.communication;
 
+import com.distributed.chordLib.chordCore.ChordClient;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
+import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 public class SocketCommunication implements CommCallInterface {
@@ -19,7 +20,7 @@ public class SocketCommunication implements CommCallInterface {
     Map<Node, SocketNode> socketNodes;
     //List of threads waiting for a response <RequestID, ComputationState>
     Map<Integer, ComputationState> waitingThreads;
-    //Chord calls from network
+    //ChordClient calls from network
     CommCallbackInterface callback;
 
     /**
@@ -123,13 +124,54 @@ public class SocketCommunication implements CommCallInterface {
 
     }
 
+    //region: SocketMessageReceivingHandling
+
+
+    void handleJoinMessage (JoinRequestMessage reqMessage, String ip, SocketNode questioner){
+
+        ChordClient.InitParameters initPar = callback.handleJoinRequest(ip);
+        JoinResponseMessage resMess = new JoinResponseMessage(initPar, reqMessage.getId());
+        questioner.writeSocket(resMess);
+    }
+
+
+    void handleLookupBMessage(BasicLookupRequest reqMessage, SocketNode questioner){
+        Node node = callback.handleLookupB(reqMessage.key);
+        LookupResponseMessage resMess = new LookupResponseMessage(node, reqMessage.getId());
+        questioner.writeSocket(resMess);
+    }
+
+
+    void handleLookupMessage (LookupRequestMessage reqMessage, SocketNode questioner){
+        Node node = callback.handleLookup(reqMessage.key);
+        LookupResponseMessage resMess = new LookupResponseMessage(node, reqMessage.getId());
+        questioner.writeSocket(resMess);
+    }
+
+
+    void notifyIncomingMessage(NotifySuccessorMessage mess){
+        callback.notifyIncoming(mess.node);
+    }
+
+
+    void ping(PingMessage reqMessage, SocketNode node){
+        node.writeSocket(reqMessage);
+    }
+
+
+    //endregion
+
 
     /**
      * Register response and awake sleeping thread
      * @param responseMessage
-     * @param reqID
+     * @param reqID if null, use responseMessage' id
      */
-    private void awake (ReqResp responseMessage, int reqID){}
+    private void awake (ReqResp responseMessage, @Nullable Integer reqID){
+        if (reqID == null) reqID = responseMessage.getId();
+        waitingThreads.get(reqID).registerResponse(responseMessage);
+
+    }
 }
 
 /**

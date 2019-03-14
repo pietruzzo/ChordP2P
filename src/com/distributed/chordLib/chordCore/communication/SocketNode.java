@@ -12,7 +12,7 @@ public class SocketNode {
     private ObjectOutputStream out;
     private Node node;
 
-
+    //TODO: Sostituire Node con IP
     @Deprecated
     public SocketNode(String IP, Socket endpoint) {
         Node node = new Node(IP);

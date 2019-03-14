@@ -20,7 +20,7 @@ public class ResourceManager implements Runnable {
     private void setChordEntryPoint(Chord entryPoint){ this.chordEntryPoint = chordEntryPoint; }
 
     /**
-     * Method used for store a resource on a host identified by the Chord algorithm
+     * Method used for store a resource on a host identified by the ChordClient algorithm
      * @param resource
      * @return
      */
@@ -30,7 +30,7 @@ public class ResourceManager implements Runnable {
     }
 
     /**
-     * Method used for retrieve a resource from a host identified by the Chord algorithm
+     * Method used for retrieve a resource from a host identified by the ChordClient algorithm
      * @param resource
      * @return
      */
