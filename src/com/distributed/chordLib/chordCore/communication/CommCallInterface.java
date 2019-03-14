@@ -11,34 +11,38 @@ public interface CommCallInterface {
 
     /**
      * Open a connection to specified server
-     * @param ip server ip
+     * @param node server ip
      * @param port port of server;
      * @return parameters and successor
      * @implNote synchronous call
      */
-    JoinResponseMessage join(String ip, String port);
+    JoinResponseMessage join(Node node, String port);
 
     /**
      * Basic Lookup
      * @param key
+     * @param node
      * @return Node responsible for the key
      * @implNote synchronous call
      */
-    Node findSuccessorB (String key);
+    Node findSuccessorB (Node node, String key);
 
     /**
      * Standard Lookup
      * @param key
+     * @param node
      * @return Node responsible for the key
      * @implNote synchronous call
      */
-    Node findSuccessor (String key);
+    Node findSuccessor (Node node, String key);
 
     /**
      * Notify successor that you may be his predecessor
+     * @param successor receiver of message
+     * @param me Me as a Node
      * @ApiNote Asynchronous
      */
-    void notifySuccessor();
+    void notifySuccessor(Node successor, Node me);
 
     /**
      * Ping node and return true if alive

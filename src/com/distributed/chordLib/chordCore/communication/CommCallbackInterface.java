@@ -26,7 +26,7 @@ public interface CommCallbackInterface {
     /**
      * a node says to me that he is my predecessor
      */
-    void notify(Node predecessor);
+    void notifyIncoming(Node predecessor);
 
     /**
      * Return Ping

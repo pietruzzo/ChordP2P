@@ -10,7 +10,11 @@ public class PingMessage extends ReqResp {
      *
      * @param id
      */
-    PingMessage(Integer id) {
+    public PingMessage(Integer id) {
         super(id);
+    }
+
+    public PingMessage() {
+        super(null);
     }
 }

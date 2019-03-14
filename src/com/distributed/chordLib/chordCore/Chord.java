@@ -4,12 +4,13 @@ package com.distributed.chordLib.chordCore;
 
 
 import com.distributed.chordLib.ChordCallback;
+import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
 import jdk.internal.jline.internal.Nullable;
 
 import java.net.InetAddress;
 import java.util.concurrent.ThreadPoolExecutor;
 
-public abstract class Chord implements com.distributed.chordLib.Chord {
+public abstract class Chord implements com.distributed.chordLib.Chord, CommCallbackInterface {
 
     //region Attributes
 
