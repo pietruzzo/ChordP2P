@@ -7,7 +7,8 @@ package com.distributed.chordLib;
 public interface ChordCallback {
 
     /**
-     * Notify change in set of Keys the application is responsible
+     * Notify change in set of Keys the application is responsible for
+     * @Asynchronous_call
      */
     void notifyResponsabilityChange (String firstKey, String lastKey);
 }

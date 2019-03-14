@@ -12,8 +12,7 @@ import java.util.function.ToDoubleBiFunction;
  */
 public class ChordBuilder {
 
-    private final static String DEFAULT_SERVER_IP = "192.168.0.1";
-    private final static int DEFAULT_SERVER_PORT = 1678;
+
 
     /**
      * Join Existing Chord network

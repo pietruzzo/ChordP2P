@@ -7,7 +7,6 @@ public class Node implements Serializable {
 
     private String IP;
 
-
     public Node(String IP) {
         this.IP = IP;
     }
