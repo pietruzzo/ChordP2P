@@ -5,7 +5,7 @@ import com.distributed.chordLib.chordCore.Node;
 
 import java.io.Serializable;
 
-public class JoinResponseMessage extends ReqResp implements Serializable {
+public class JoinResponseMessage extends Message implements Serializable {
 
     private static final long serialVersionUID = 40001L;
 

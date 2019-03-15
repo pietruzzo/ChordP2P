@@ -34,21 +34,21 @@ public class SocketCommunication implements CommCallInterface {
 
     @Override
     public JoinResponseMessage join(Node node, String port) {
-        ReqResp message = new JoinRequestMessage();
+        Message message = new JoinRequestMessage();
         waitResponse(message, getSocketNode(node));
         return (JoinResponseMessage) waitingThreads.get(message.getId()).getResponse();
     }
 
     @Override
     public Node findSuccessorB(Node node, String key) {
-        ReqResp message = new BasicLookupRequest(key);
+        Message message = new BasicLookupRequestMessage(key);
         waitResponse(message, getSocketNode(node));
         return ((LookupResponseMessage) waitingThreads.get(message.getId()).getResponse()).node;
     }
 
     @Override
     public Node findSuccessor(Node node, String key) {
-        ReqResp message = new LookupRequestMessage(key);
+        Message message = new LookupRequestMessage(key);
         waitResponse(message, getSocketNode(node));
         return ((LookupResponseMessage) waitingThreads.get(message.getId()).getResponse()).node;
     }
@@ -62,7 +62,7 @@ public class SocketCommunication implements CommCallInterface {
 
     @Override
     public boolean isAlive(Node node) {
-        ReqResp message = new PingMessage();
+        Message message = new PingMessage();
         waitResponse(message, getSocketNode(node));
         if (waitingThreads.get(message.getId()).getResponse() instanceof PingMessage)
             return true;
@@ -108,7 +108,7 @@ public class SocketCommunication implements CommCallInterface {
      * @param requestMessage message that will be sent to receiver
      * @param receiver receiver for the message
      */
-    private void waitResponse(ReqResp requestMessage, SocketNode receiver){
+    private void waitResponse(Message requestMessage, SocketNode receiver){
         if (receiver == null) throw new NullPointerException("Receiver Socket Node is NULL");
         ComputationState current = new ComputationState(Thread.currentThread());
         //Send message on socket
@@ -127,20 +127,18 @@ public class SocketCommunication implements CommCallInterface {
     //region: SocketMessageReceivingHandling
 
 
-    void handleJoinMessage (JoinRequestMessage reqMessage, String ip, SocketNode questioner){
+    void handleJoinMessage (JoinRequestMessage reqMessage, SocketNode questioner){
 
-        ChordClient.InitParameters initPar = callback.handleJoinRequest(ip);
+        ChordClient.InitParameters initPar = callback.handleJoinRequest(questioner.getNode().getIP());
         JoinResponseMessage resMess = new JoinResponseMessage(initPar, reqMessage.getId());
         questioner.writeSocket(resMess);
     }
 
-
-    void handleLookupBMessage(BasicLookupRequest reqMessage, SocketNode questioner){
+    void handleLookupBMessage(BasicLookupRequestMessage reqMessage, SocketNode questioner){
         Node node = callback.handleLookupB(reqMessage.key);
         LookupResponseMessage resMess = new LookupResponseMessage(node, reqMessage.getId());
         questioner.writeSocket(resMess);
     }
-
 
     void handleLookupMessage (LookupRequestMessage reqMessage, SocketNode questioner){
         Node node = callback.handleLookup(reqMessage.key);
@@ -148,26 +146,38 @@ public class SocketCommunication implements CommCallInterface {
         questioner.writeSocket(resMess);
     }
 
+    void handleNotifyMessage(NotifySuccessorMessage mess, SocketNode questioner){
+        callback.notifyIncoming(questioner.getNode());
+    }
 
-    void notifyIncomingMessage(NotifySuccessorMessage mess){
-        callback.notifyIncoming(mess.node);
+    void handlePingMessage(PingMessage reqMessage, SocketNode node){
+        node.writeSocket(reqMessage);
+    }
+
+    void handleUnrecognizedMessage(Object unrecognized, SocketNode node){
+        System.err.println("Unrecognized message of type " + unrecognized.getClass().toString());
     }
 
 
-    void ping(PingMessage reqMessage, SocketNode node){
-        node.writeSocket(reqMessage);
+    public void incomingMessageDispatching(SocketNode questioner, Message message){
+        if (message instanceof JoinRequestMessage) handleJoinMessage((JoinRequestMessage) message, questioner);
+        else if (message instanceof BasicLookupRequestMessage) handleLookupBMessage((BasicLookupRequestMessage) message, questioner);
+        else if (message instanceof LookupRequestMessage) handleLookupMessage((LookupRequestMessage)message, questioner);
+        else if (message instanceof NotifySuccessorMessage) handleNotifyMessage((NotifySuccessorMessage) message, questioner);
+        else if (message instanceof PingMessage) handlePingMessage((PingMessage) message, questioner);
+        else handleUnrecognizedMessage(message, questioner);
+
     }
 
 
     //endregion
-
 
     /**
      * Register response and awake sleeping thread
      * @param responseMessage
      * @param reqID if null, use responseMessage' id
      */
-    private void awake (ReqResp responseMessage, @Nullable Integer reqID){
+    private void awake (Message responseMessage, @Nullable Integer reqID){
         if (reqID == null) reqID = responseMessage.getId();
         waitingThreads.get(reqID).registerResponse(responseMessage);
 
@@ -175,12 +185,12 @@ public class SocketCommunication implements CommCallInterface {
 }
 
 /**
- * Datastructure that store thread with request
+ * Class to store thread with request
  */
 class ComputationState {
 
     Thread thread;
-    ReqResp response;
+    Message response;
 
     private Date begin;
 
@@ -194,10 +204,10 @@ class ComputationState {
      * Suspend current thread until a response is give or timeout expiring
      * @return response, or null is timeout is expired
      */
-    public ReqResp waitResponse(/*TODO: wait until response available or timeout elapse*/) throws InterruptedException {
+    public Message waitResponse(/*TODO: wait until response available or timeout elapse*/) throws InterruptedException {
 
         begin = Date.from(Instant.now());
-        while (!(response instanceof ReqResp) || isTimeElapsed()) thread.wait();
+        while (!(response instanceof Message) || isTimeElapsed()) thread.wait();
         return response;
     }
 
@@ -205,12 +215,12 @@ class ComputationState {
      * Register a response and resume thread
      * @param response from the network
      */
-    public void registerResponse(ReqResp response){
+    public void registerResponse(Message response){
         this.response = response;
         thread.notify();
     }
 
-    public ReqResp getResponse () { return response; }
+    public Message getResponse () { return response; }
 
     private boolean isTimeElapsed(){
         return (Date.from(Instant.now()).getTime() - begin.getTime()) > SocketCommunication.REQUEST_TIMEOUT;

@@ -1,6 +1,8 @@
 package com.distributed.chordLib.chordCore.communication.messages;
 
-public class LookupRequestMessage extends ReqResp {
+import java.io.Serializable;
+
+public class LookupRequestMessage extends Message implements Serializable {
 
     private static final long serialVersionUID = 40003L;
 

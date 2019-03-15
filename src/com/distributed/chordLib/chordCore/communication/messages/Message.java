@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * Abstract class that handle requests id
  */
-public class ReqResp implements Serializable {
+public class Message implements Serializable {
 
     private static int idCounter = 0;
 
@@ -18,7 +18,7 @@ public class ReqResp implements Serializable {
      * if null, an id will be automatically assigned
      * @param @Nullable id
      */
-    ReqResp(@Nullable Integer id){
+    Message(@Nullable Integer id){
         if (id != null) this.id = id;
         else assignNewId();
     }
