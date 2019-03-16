@@ -1,7 +1,8 @@
-package com.distributed.chordLib.chordCore.communication;
+package com.distributed.chordLib.chordCore;
 
 import com.distributed.chordLib.ChordCallback;
 import com.distributed.chordLib.chordCore.ChordClient;
+import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
@@ -25,21 +26,36 @@ public class ChordEngine extends ChordClient {
 
     @Override
     protected Node findSuccessorB(int id) {
-        return null;
+        Node predecessor = fingerTable.getPredecessor();
+        Node myNode = fingerTable.getMyNode();
+        String objectKey = HashFunction.getSHA1(String.valueOf(id));
+        if (predecessor != null && HashFunction.compare(objectKey,predecessor.getkey())==1 && HashFunction.compare(myNode.getkey(),objectKey)==1){
+            return myNode; //Look if I'm responsible for the key
+        }
+        else return fingerTable.getSuccessor();
     }
 
     @Override
     protected Node findSuccessor(int id) {
-        return null;
+        return fingerTable.getNextNode(String.valueOf(id));
     }
 
-    @Override
+    @Override @Deprecated
     protected Node closestPrecedingNode(int id) {
         return null;
     }
 
     @Override
     protected void stabilize() {
+        Node n = fingerTable.getSuccessor();
+        Node x;//TODO successor.predecessor ...
+
+/*
+ * Called periodically, verify successor n
+ * x =successor.predecessor
+ * if(x in (n, successor))
+ *  successor.notify(n);
+ */
 
     }
 

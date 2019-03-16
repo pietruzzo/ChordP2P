@@ -9,6 +9,7 @@ import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
 import com.distributed.chordLib.chordCore.communication.SocketCommunication;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -18,11 +19,10 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
     //region Attributes
 
-    private Node myNode;
 
-    private FingerTable fingerTable;
-    private ChordCallback callback;
-    private CommCallInterface comLayer;
+    protected FingerTable fingerTable;
+    protected ChordCallback callback;
+    protected CommCallInterface comLayer;
 
     ThreadPoolExecutor threadPool;
 
@@ -101,10 +101,11 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n;
      * @return a preceding node for id
      */
+    @Deprecated
     protected abstract Node closestPrecedingNode(int id);
 
     /**
-     * Called periodically, verify n successor
+     * Called periodically, verify successors and notify them if you are their predecessor
      * x =successor.predecessor
      * if(x in (n, successor))
      *  successor.notify(n);

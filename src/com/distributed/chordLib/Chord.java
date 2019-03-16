@@ -15,6 +15,7 @@ public interface Chord {
     int DEFAULT_NUM_SUCCESSORS = 4;
     String DEFAULT_SERVER_IP = "192.168.0.1";
     int DEFAULT_SERVER_PORT = 1678;
+    boolean USE_PUBLIC_IP = true;
 
     /**
      * Lookup for key in chord network
