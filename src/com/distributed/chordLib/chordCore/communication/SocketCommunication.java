@@ -3,6 +3,8 @@ package com.distributed.chordLib.chordCore.communication;
 import com.distributed.chordLib.chordCore.ChordClient;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
+import com.distributed.chordLib.exceptions.CommunicationFailureException;
+import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
@@ -10,18 +12,23 @@ import java.net.Socket;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.*;
 
-public class SocketCommunication implements CommCallInterface {
+public class SocketCommunication implements CommCallInterface, SocketIncomingHandling {
 
     public static final int REQUEST_TIMEOUT = 3000;
+    private static final int CORE_POOL_SIZE = 2;
+    private static final int CORE_MAX_POOL_SIZE = 20;
     private final int socketPort;
 
     //List of SocketNode
-    Map<Node, SocketNode> socketNodes;
+    Map<String, SocketNode> socketNodes;
     //List of threads waiting for a response <RequestID, ComputationState>
     Map<Integer, ComputationState> waitingThreads;
     //ChordClient calls from network
     CommCallbackInterface callback;
+    //Pool of workers for messageHandling
+    ThreadPoolExecutor workers;
 
     /**
      * @param port for socket communication
@@ -30,6 +37,7 @@ public class SocketCommunication implements CommCallInterface {
     SocketCommunication(int port, CommCallbackInterface callback){
         this.socketPort = port;
         this.callback = callback;
+        this.workers = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_MAX_POOL_SIZE, REQUEST_TIMEOUT, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(30));
     }
 
     @Override
@@ -71,7 +79,7 @@ public class SocketCommunication implements CommCallInterface {
 
     @Override
     public void closeChannel(Node node) throws ArrayStoreException {
-        SocketNode socketNode = socketNodes.get(node);
+        SocketNode socketNode = socketNodes.get(node.getIP());
         if (socketNode == null) System.err.println("SocketNode not found");
         else {
             socketNode.close();
@@ -79,6 +87,10 @@ public class SocketCommunication implements CommCallInterface {
         }
     }
 
+    @Override
+    public void handleNewMessage(Message message, SocketNode node) {
+        incomingMessageDispatching(node, message);
+    }
 
 
     /**
@@ -91,8 +103,8 @@ public class SocketCommunication implements CommCallInterface {
         if (socketNodes.containsKey(node)) return socketNodes.get(node);
         else{
             try {
-                SocketNode newSocketNode =  new SocketNode(node, new Socket(node.getIP(), socketPort));
-                socketNodes.put(node, newSocketNode);
+                SocketNode newSocketNode =  new SocketNode(node.getIP(), new Socket(node.getIP(), socketPort), this);
+                socketNodes.put(node.getIP(), newSocketNode);
                 return newSocketNode;
             } catch (IOException e) {
                 System.err.println("Unable to open connection to " + node.getIP() +": " + socketPort);
@@ -109,19 +121,14 @@ public class SocketCommunication implements CommCallInterface {
      * @param receiver receiver for the message
      */
     private void waitResponse(Message requestMessage, SocketNode receiver){
-        if (receiver == null) throw new NullPointerException("Receiver Socket Node is NULL");
+        if (receiver == null) throw new NullPointerException("Receiver SocketNode is NULL");
         ComputationState current = new ComputationState(Thread.currentThread());
         //Send message on socket
         receiver.writeSocket(requestMessage);
         //save this thread in waitingThreads
         this.waitingThreads.put(requestMessage.getId(), current);
         //suspend current thread
-        try {
             current.waitResponse();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
     }
 
     //region: SocketMessageReceivingHandling
@@ -129,7 +136,7 @@ public class SocketCommunication implements CommCallInterface {
 
     void handleJoinMessage (JoinRequestMessage reqMessage, SocketNode questioner){
 
-        ChordClient.InitParameters initPar = callback.handleJoinRequest(questioner.getNode().getIP());
+        ChordClient.InitParameters initPar = callback.handleJoinRequest(questioner.getNodeIP());
         JoinResponseMessage resMess = new JoinResponseMessage(initPar, reqMessage.getId());
         questioner.writeSocket(resMess);
     }
@@ -147,7 +154,7 @@ public class SocketCommunication implements CommCallInterface {
     }
 
     void handleNotifyMessage(NotifySuccessorMessage mess, SocketNode questioner){
-        callback.notifyIncoming(questioner.getNode());
+        callback.notifyIncoming(new Node(questioner.getNodeIP()));
     }
 
     void handlePingMessage(PingMessage reqMessage, SocketNode node){
@@ -182,6 +189,7 @@ public class SocketCommunication implements CommCallInterface {
         waitingThreads.get(reqID).registerResponse(responseMessage);
 
     }
+
 }
 
 /**
@@ -204,10 +212,17 @@ class ComputationState {
      * Suspend current thread until a response is give or timeout expiring
      * @return response, or null is timeout is expired
      */
-    public Message waitResponse(/*TODO: wait until response available or timeout elapse*/) throws InterruptedException {
+    public Message waitResponse()  {
 
         begin = Date.from(Instant.now());
-        while (!(response instanceof Message) || isTimeElapsed()) thread.wait();
+        while (response == null ) {
+            if (isTimeElapsed()) throw new TimeoutReachedException();
+            try {
+                thread.wait();
+            } catch (InterruptedException e) {
+                throw new CommunicationFailureException(e);
+            }
+        }
         return response;
     }
 

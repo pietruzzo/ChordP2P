@@ -1,5 +1,8 @@
 package com.distributed.chordLib;
 
+import com.distributed.chordLib.exceptions.CommunicationFailureException;
+import com.distributed.chordLib.exceptions.TimeoutReachedException;
+
 import java.net.InetAddress;
 
 /**
@@ -17,14 +20,18 @@ public interface Chord {
      * Lookup for key in chord network
      * @return IP address of node responsible for key
      * @ApiNote Synchronous Call
+     * @throws CommunicationFailureException for socket failures
+     * @throws TimeoutReachedException timeout in request handling reached
      */
-    String lookupKey(String key);
+    String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException;
 
     /**
      * BasicLookup for key in chord network
      * @return IP address of node responsible for key
      * @ApiNote Synchronous Call
+     * @throws CommunicationFailureException for socket failures
+     * @throws TimeoutReachedException timeout in request handling reached
      */
-    String lookupKeyBasic(String key);
+    String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException;
 
 }

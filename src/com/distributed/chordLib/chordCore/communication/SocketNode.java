@@ -10,18 +10,14 @@ public class SocketNode {
     private Socket endpoint;
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    private Node node;
+    private String nodeIP;
+    private Thread socketThread;
+    private SocketIncomingHandling SocketCommCallback;
 
-    //TODO: Sostituire Node con IP
-    @Deprecated
-    public SocketNode(String IP, Socket endpoint) {
-        Node node = new Node(IP);
-        new SocketNode(node, endpoint);
-    }
-
-    public SocketNode(Node node, Socket endpoint){
+    public SocketNode(String IP, Socket endpoint, SocketIncomingHandling callback) {
         this.endpoint = endpoint;
-        this.node = node;
+        this.nodeIP = IP;
+        this.SocketCommCallback = callback;
 
         try {
             in = new ObjectInputStream(endpoint.getInputStream());
@@ -29,14 +25,41 @@ public class SocketNode {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        this.socketThread = new Thread(new ReadSocketRunnable());
+    }
+
+
+
+    public void writeSocket(Serializable message) {
+        try {
+            out.writeObject(message);
+            out.flush();
+        } catch (IOException e) {
+            System.err.println("Unable to write message on socket " + nodeIP);
+            e.printStackTrace();
+        }
+
+    }
+
+    public String getNodeIP(){
+        return nodeIP;
+    }
+
+    public void close() {
+        try {
+            endpoint.close();
+        } catch (IOException e) {
+            System.err.println("Unable to close socket " + nodeIP +"...");
+            e.printStackTrace();
+        }
+
     }
 
     public Object readSocket()  {
         try {
             return in.readObject();
         } catch (IOException e) {
-            System.err.println("Unable to read message from socket " + node.getIP());
-            e.printStackTrace();
+            System.err.println("Unable to read message from socket " + nodeIP);
             return null;
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -44,28 +67,12 @@ public class SocketNode {
         }
     }
 
-    public void writeSocket(Serializable message) {
-        try {
-            out.writeObject(message);
-            out.flush();
-        } catch (IOException e) {
-            System.err.println("Unable to write message on socket " + node.getIP());
-            e.printStackTrace();
+    private class ReadSocketRunnable implements Runnable {
+
+        @Override
+        public void run() {
+            Object message = readSocket();
+
         }
-
-    }
-
-    public Node getNode(){
-        return node;
-    }
-
-    public void close() {
-        try {
-            endpoint.close();
-        } catch (IOException e) {
-            System.err.println("Unable to close socket " + node.getIP() +"...");
-            e.printStackTrace();
-        }
-
     }
 }
