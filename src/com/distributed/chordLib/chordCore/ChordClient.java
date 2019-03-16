@@ -4,7 +4,10 @@ package com.distributed.chordLib.chordCore;
 
 
 import com.distributed.chordLib.ChordCallback;
+import com.distributed.chordLib.chordCore.communication.CommCallInterface;
 import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
+import com.distributed.chordLib.chordCore.communication.SocketCommunication;
+import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.Serializable;
@@ -19,6 +22,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
     private FingerTable fingerTable;
     private ChordCallback callback;
+    private CommCallInterface comLayer;
 
     ThreadPoolExecutor threadPool;
 
@@ -26,14 +30,39 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
     /**
      * Contructor for chord Network
-     * @param numFingers Number of fingers in finger table
-     * @param numSuccessors Number of stored successors
+     * Initialize Chord FingerTable, communication Layer and open connection to bootstrapIP (or create a new Chord Network if bootstrap is null)
+     * @param numFingers Number of fingers in finger table (if null, use default)
+     * @param numSuccessors Number of stored successors (if null use default)
      * @param bootstrapAddr to Join an existing ChordClient Network
      *                      NULL: create a new Network
+     * @param port port for the chord network (if null use default)
      * @param callback Optional Callback for application
      */
-    ChordClient(int numFingers, int numSuccessors, @Nullable InetAddress bootstrapAddr, @Nullable ChordCallback callback){
+    public ChordClient(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, @Nullable Integer port, @Nullable ChordCallback callback){
+        this.callback = callback;
+        if (port == null) port= DEFAULT_SERVER_PORT;
+        comLayer = new SocketCommunication(port, this);
 
+        //handle parameters
+        Node successor;
+        Integer nFingers;
+        Integer nSucc;
+        if (bootstrapAddr != null) { //Join case -> get parameters
+            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr), port);
+            successor = message.successor;
+            nFingers = message.numFingers;
+            nSucc = message.numSuccessors;
+        } else{ //create network
+            successor = null; //Current node is the only one
+            nFingers = numFingers;
+            nSucc = numSuccessors;
+        }
+        if (nFingers == null) nFingers = DEFAULT_NUM_FINGERS;
+        if (nSucc == null) nSucc = DEFAULT_NUM_SUCCESSORS;
+
+        //setup network
+        fingerTable = new FingerTable(numFingers, numSuccessors);
+        fingerTable.setSuccessor(successor, null);
     }
 
 
@@ -47,7 +76,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      * // forward the query around the circle
      * return successor.find successor(id);
      */
-    abstract Node findSuccessorB(int id);
+    protected abstract Node findSuccessorB(int id);
 
 
     /**
@@ -61,7 +90,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n'.find successor(id);
      * @return successor Node
      */
-    abstract Node findSuccessor(int id);
+    protected abstract Node findSuccessor(int id);
 
     /**
      * search the local table for the highest predecessor of id
@@ -72,7 +101,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n;
      * @return a preceding node for id
      */
-    abstract Node closestPrecedingNode(int id);
+    protected abstract Node closestPrecedingNode(int id);
 
     /**
      * Called periodically, verify n successor
@@ -80,7 +109,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      * if(x in (n, successor))
      *  successor.notify(n);
      */
-    abstract void stabilize();
+    protected abstract void stabilize();
 
     /**
      * predecessor thinks it might be our predecessor
@@ -88,7 +117,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  this.predecessor = predecessor
      * @param predecessor calling predecessor
      */
-    abstract void notify(Node predecessor);
+    protected abstract void notify(Node predecessor);
 
     /**
      * called periodically. refreshes ﬁnger table entries.
@@ -98,14 +127,14 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      * next = 1;
      * ﬁnger[next] = ﬁnd successor( n + 2^(next-1) );
      */
-    abstract void fixFingers();
+    protected abstract void fixFingers();
 
     /**
      * Called periodically, checks whether predecessor has failed
      * if(predecessor has failed)
      *  predecessor = NULL
      */
-    abstract void checkPredecessor();
+    protected abstract void checkPredecessor();
 
     /**
      * Close network
@@ -113,6 +142,9 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
     abstract public void close();
 
 
+    /**
+     * Datastructure use to give initialization parameters
+     */
     public static class InitParameters implements Serializable{
         public final int numFingers;
         public final int numSuccessors;

@@ -16,7 +16,7 @@ public interface CommCallInterface {
      * @return parameters and successor
      * @implNote synchronous call
      */
-    JoinResponseMessage join(Node node, String port);
+    JoinResponseMessage join(Node node, int port);
 
     /**
      * Basic Lookup

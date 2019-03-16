@@ -12,7 +12,7 @@ public class FingerTable {
         fingers = new Node[nFingers];
         if (nSuccessors != null)
             successors = new Node[nSuccessors];
-        else successors = null;
+        else successors = new Node[1];
     }
 
     /**
@@ -32,6 +32,11 @@ public class FingerTable {
     public Node getPredecessor(){ return predecessor; }
 
     public void setPredecessor(Node predecessor) {this.predecessor = predecessor; }
+
+    public void setSuccessor(Node successor, @Nullable Integer position) {
+        if (position == null) position = 0;
+        this.successors[position] = successor;
+    }
 
 
 }

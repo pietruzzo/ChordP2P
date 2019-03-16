@@ -34,14 +34,14 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
      * @param port for socket communication
      * @param callback from communication to chord
      */
-    SocketCommunication(int port, CommCallbackInterface callback){
+    public SocketCommunication(int port, CommCallbackInterface callback){
         this.socketPort = port;
         this.callback = callback;
         this.workers = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_MAX_POOL_SIZE, REQUEST_TIMEOUT, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(30));
     }
 
     @Override
-    public JoinResponseMessage join(Node node, String port) {
+    public JoinResponseMessage join(Node node, int port) {
         Message message = new JoinRequestMessage();
         waitResponse(message, getSocketNode(node));
         return (JoinResponseMessage) waitingThreads.get(message.getId()).getResponse();
