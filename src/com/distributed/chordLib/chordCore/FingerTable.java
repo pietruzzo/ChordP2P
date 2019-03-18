@@ -87,6 +87,8 @@ public class FingerTable {
 
     public void setFinger(Node node, int position){ fingers[position]= node; }
 
+    public int getNumSuccessors(){ return this.successors.length; }
+
 
     private String getmyPublicIPAddress() throws IOException {
         URL whatismyip = new URL("http://checkip.amazonaws.com");

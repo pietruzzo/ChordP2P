@@ -1,14 +1,12 @@
 package com.distributed.chordApp.cooperativemirroring.core.model.backend;
 
 import com.distributed.chordApp.cooperativemirroring.core.model.Resource;
-import com.distributed.chordApp.cooperativemirroring.core.model.backend.messages.ResourceMessageInterface;
 import com.distributed.chordApp.cooperativemirroring.core.model.backend.messages.ResourceRequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.model.backend.messages.ResourceResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.core.model.backend.messages.codes.ResourceMessageType;
 import com.distributed.chordApp.cooperativemirroring.core.utility.GeneralApplicationSettings;
 import com.distributed.chordLib.Chord;
 
-import java.awt.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;

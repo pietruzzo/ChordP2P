@@ -79,7 +79,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      * // forward the query around the circle
      * return successor.find successor(id);
      */
-    protected abstract Node findSuccessorB(int id);
+    protected abstract Node findSuccessorB(String id);
 
 
     /**
@@ -93,7 +93,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n'.find successor(id);
      * @return successor Node
      */
-    protected abstract Node findSuccessor(int id);
+    protected abstract Node findSuccessor(String id);
 
     /**
      * search the local table for the highest predecessor of id

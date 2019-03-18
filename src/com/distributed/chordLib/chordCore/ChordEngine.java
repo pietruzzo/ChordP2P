@@ -25,7 +25,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    protected Node findSuccessorB(int id) {
+    protected Node findSuccessorB(String id) {
         Node predecessor = fingerTable.getPredecessor();
         Node myNode = fingerTable.getMyNode();
         String objectKey = hash.getSHA1(String.valueOf(id));
@@ -36,7 +36,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    protected Node findSuccessor(int id) {
+    protected Node findSuccessor(String id) {
         return fingerTable.getNextNode(String.valueOf(id));
     }
 
@@ -78,7 +78,7 @@ public class ChordEngine extends ChordClient {
         for (int i = 0; i < fingerTable.getNumFingers(); i++) {
             next = next + 1;
             if (next > m) next = 1;
-            fingerTable.setFinger(findSuccessor(Integer.valueOf(fingerTable.getMyNode().getkey()+ (Math.pow(2, (next-1))))),i);
+            fingerTable.setFinger(findSuccessor(fingerTable.getMyNode().getkey()+ (Math.pow(2, (next-1)))),i);
         }
 
     }
@@ -99,40 +99,45 @@ public class ChordEngine extends ChordClient {
         while(allNodes.contains(null)) {
             allNodes.remove(null);
         }
+        comLayer.closeChannel((Node[]) allNodes.toArray());
     }
 
     @Override
     public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException {
-        return null;
+        return this.findSuccessor(key).getIP();
     }
 
     @Override
     public String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException {
-        return null;
+        return this.findSuccessorB(key).getIP();
     }
 
     @Override
     public InitParameters handleJoinRequest(String IP) {
-        return null;
+        return new InitParameters(fingerTable.getNumFingers(), fingerTable.getNumSuccessors(), findSuccessor(IP), hash.getM());
     }
 
     @Override
     public Node handleLookupB(String key) {
-        return null;
+        return this.findSuccessorB(key);
     }
 
     @Override
     public Node handleLookup(String key) {
-        return null;
+        return this.findSuccessor(key);
     }
 
     @Override
     public void notifyIncoming(Node predecessor) {
-
+        String myPredecessorKey = fingerTable.getPredecessor().getkey();
+        if (fingerTable.getPredecessor()==null ||
+                (hash.compare(predecessor.getkey(), myPredecessorKey) ==1&& hash.compare(predecessor.getkey(), fingerTable.getMyNode().getkey())==-1)){
+            fingerTable.setPredecessor(predecessor);
+        }
     }
 
     @Override
     public Node handlePredecessorRequest() {
-        return null;
+        return fingerTable.getPredecessor();
     }
 }
