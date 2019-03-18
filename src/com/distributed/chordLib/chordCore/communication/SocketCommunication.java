@@ -10,9 +10,11 @@ import jdk.internal.jline.internal.Nullable;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.stream.Stream;
 
 public class SocketCommunication implements CommCallInterface, SocketIncomingHandling {
 
@@ -44,21 +46,28 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     public JoinResponseMessage join(Node node, int port) {
         Message message = new JoinRequestMessage();
         waitResponse(message, getSocketNode(node));
-        return (JoinResponseMessage) waitingThreads.get(message.getId()).getResponse();
+        return (JoinResponseMessage) getResponseinWaiting(message.getId());
     }
 
     @Override
     public Node findSuccessorB(Node node, String key) {
         Message message = new BasicLookupRequestMessage(key);
         waitResponse(message, getSocketNode(node));
-        return ((LookupResponseMessage) waitingThreads.get(message.getId()).getResponse()).node;
+        return ((LookupResponseMessage) getResponseinWaiting(message.getId())).node;
     }
 
     @Override
     public Node findSuccessor(Node node, String key) {
         Message message = new LookupRequestMessage(key);
         waitResponse(message, getSocketNode(node));
-        return ((LookupResponseMessage) waitingThreads.get(message.getId()).getResponse()).node;
+        return ((LookupResponseMessage) getResponseinWaiting(message.getId())).node;
+    }
+
+    @Override
+    public Node findPredecessor(Node node) {
+        Message message = new PredecessorRequestMessage();
+        waitResponse(message, getSocketNode(node));
+        return ((PredecessorResponseMessage) getResponseinWaiting(message.getId())).node;
     }
 
     @Override
@@ -70,20 +79,25 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
 
     @Override
     public boolean isAlive(Node node) {
-        Message message = new PingMessage();
+        Message message = new PingRequestMessage();
         waitResponse(message, getSocketNode(node));
-        if (waitingThreads.get(message.getId()).getResponse() instanceof PingMessage)
+        if (getResponseinWaiting(message.getId())!= null && getResponseinWaiting(message.getId()) instanceof PingResponseMessage)
             return true;
         return false;
     }
 
     @Override
-    public void closeChannel(Node node) throws ArrayStoreException {
-        SocketNode socketNode = socketNodes.get(node.getIP());
-        if (socketNode == null) System.err.println("SocketNode not found");
-        else {
-            socketNode.close();
-            socketNodes.remove(socketNode);
+    public void closeChannel(Node[] nodes) {
+        String[] engineAlive =(String[]) Arrays.stream(nodes).map(node -> node.getIP()).toArray();
+        for (String node:socketNodes.keySet()) {
+            boolean kill = true;
+            for (int i = 0; i < engineAlive.length; i++) {
+                if (node == engineAlive[i]) {
+                    kill = false;
+                    break;
+                }
+            }
+            if (kill) socketNodes.remove(node);
         }
     }
 
@@ -157,8 +171,14 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         callback.notifyIncoming(new Node(questioner.getNodeIP()));
     }
 
-    void handlePingMessage(PingMessage reqMessage, SocketNode node){
+    void handlePingMessage(PingRequestMessage reqMessage, SocketNode node){
         node.writeSocket(reqMessage);
+    }
+
+    void handlePredecessorMessage(PredecessorRequestMessage reqMessage, SocketNode questioner){
+        Node predecessor = callback.handlePredecessorRequest();
+        PredecessorResponseMessage resMessage = new PredecessorResponseMessage(reqMessage.getId(), predecessor);
+        questioner.writeSocket(resMessage);
     }
 
     void handleUnrecognizedMessage(Object unrecognized, SocketNode node){
@@ -166,12 +186,16 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     }
 
 
+
+
     public void incomingMessageDispatching(SocketNode questioner, Message message){
         if (message instanceof JoinRequestMessage) handleJoinMessage((JoinRequestMessage) message, questioner);
         else if (message instanceof BasicLookupRequestMessage) handleLookupBMessage((BasicLookupRequestMessage) message, questioner);
         else if (message instanceof LookupRequestMessage) handleLookupMessage((LookupRequestMessage)message, questioner);
         else if (message instanceof NotifySuccessorMessage) handleNotifyMessage((NotifySuccessorMessage) message, questioner);
-        else if (message instanceof PingMessage) handlePingMessage((PingMessage) message, questioner);
+        else if (message instanceof PingRequestMessage) handlePingMessage((PingRequestMessage) message, questioner);
+        else if (message instanceof PredecessorRequestMessage) handlePredecessorMessage((PredecessorRequestMessage) message, questioner);
+        else if (message instanceof ResponseMessage) awake(message, null);
         else handleUnrecognizedMessage(message, questioner);
 
     }
@@ -188,6 +212,12 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         if (reqID == null) reqID = responseMessage.getId();
         waitingThreads.get(reqID).registerResponse(responseMessage);
 
+    }
+
+    private ResponseMessage getResponseinWaiting(int id){
+        Message message = waitingThreads.get(id).getResponse();
+        waitingThreads.remove(id);
+        return (ResponseMessage) message;
     }
 
 }
@@ -235,7 +265,9 @@ class ComputationState {
         thread.notify();
     }
 
-    public Message getResponse () { return response; }
+    public Message getResponse () {
+        return response;
+    }
 
     private boolean isTimeElapsed(){
         return (Date.from(Instant.now()).getTime() - begin.getTime()) > SocketCommunication.REQUEST_TIMEOUT;

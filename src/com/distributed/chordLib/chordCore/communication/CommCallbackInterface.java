@@ -32,8 +32,11 @@ public interface CommCallbackInterface {
      */
     void notifyIncoming(Node predecessor);
 
+
     /**
-     * Return Ping
+     * a node is asking what is my predecessor
+     * @return my Predecessor
      */
-    void ping();
+    Node handlePredecessorRequest();
+
 }

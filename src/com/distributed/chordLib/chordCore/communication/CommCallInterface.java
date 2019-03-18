@@ -37,6 +37,12 @@ public interface CommCallInterface {
     Node findSuccessor (Node node, String key);
 
     /**
+     * get predecessor for node
+     * @param node
+     */
+    Node findPredecessor (Node node);
+
+    /**
      * Notify successor that you may be his predecessor
      * @param successor receiver of message
      * @param me Me as a Node
@@ -51,9 +57,8 @@ public interface CommCallInterface {
     boolean isAlive(Node node);
 
     /**
-     * Close communication with node
-     * @param node
-     * @throws ArrayStoreException Connection not found
+     * Registered Nodes
+     * @param nodes node used by application
      */
-    void closeChannel(Node node) throws ArrayStoreException;
+    void closeChannel(Node[] nodes);
 }

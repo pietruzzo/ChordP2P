@@ -17,8 +17,10 @@ public class FingerTable {
     private Node[] successors;
     private Node predecessor;
     private Node myNode;
+    private HashFunction hash;
 
-    FingerTable (int nFingers, @Nullable Integer nSuccessors) {
+    FingerTable (int nFingers, @Nullable Integer nSuccessors, HashFunction hash) {
+        this.hash = hash;
         fingers = new Node[nFingers];
         if (nSuccessors != null)
             successors = new Node[nSuccessors];
@@ -43,25 +45,18 @@ public class FingerTable {
      * @return Node in FingerTable or Node itself
      */
     public Node getNextNode(String id) {
-        String objectKey = HashFunction.getSHA1(id);
-        if (predecessor != null && HashFunction.compare(objectKey,predecessor.getkey())==1 && HashFunction.compare(myNode.getkey(),objectKey)==1){
+        String objectKey = hash.getSHA1(id);
+        if (predecessor != null && hash.compare(objectKey,predecessor.getkey())==1 && hash.compare(myNode.getkey(),objectKey)==1){
             return myNode; //Look if I'm responsible for the key
         }
-        //Look into my successors
+
         Node previous = myNode;
-        Node next = getPredecessor();
-        for (int i = 0; i < successors.length; i++) {
-            next= successors[i];
-            if (next != null && HashFunction.compare(objectKey,previous.getkey())==1 && HashFunction.compare(next.getkey(),objectKey)==1){
-                return next; //Look if I'm responsible for the key
-            }
-            if (next != null) previous = next;
-        }
+        Node next = null;
         //Look into finger Table
         previous = myNode;
         for (int i = 0; i < fingers.length; i++) {
             next= fingers[i];
-            if (next != null && HashFunction.compare(objectKey,previous.getkey())==1 && HashFunction.compare(next.getkey(),objectKey)==1){
+            if (next != null && hash.compare(objectKey,previous.getkey())==1 && hash.compare(next.getkey(),objectKey)==1){
                 return next; //Look if I'm responsible for the key
             }
             if (next != null) previous = next;
@@ -82,6 +77,15 @@ public class FingerTable {
     public Node getMyNode() {
         return myNode;
     }
+
+    /**
+     * get number of fingers
+     */
+    public int getNumFingers(){ return fingers.length; }
+
+    public Node getFinger(int position){ return fingers[position]; }
+
+    public void setFinger(Node node, int position){ fingers[position]= node; }
 
 
     private String getmyPublicIPAddress() throws IOException {
