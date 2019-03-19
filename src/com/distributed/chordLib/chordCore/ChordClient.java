@@ -51,7 +51,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
         Integer nFingers;
         Integer nSucc;
         if (bootstrapAddr != null) { //Join case -> get parameters
-            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr), port);
+            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr, hash.getSHA1(bootstrapAddr)), port);
             successor = message.successor;
             nFingers = message.numFingers;
             nSucc = message.numSuccessors;
@@ -65,7 +65,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
         //setup network
         fingerTable = new FingerTable(numFingers, numSuccessors, hash);
-        fingerTable.setSuccessor(successor, null);
+        fingerTable.setSuccessor(successor);
     }
 
 

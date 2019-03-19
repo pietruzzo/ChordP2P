@@ -9,26 +9,33 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 
 public class FingerTable {
 
     private Node[] fingers;
-    private Node[] successors;
+    private List<Node> successors;
     private Node predecessor;
     private Node myNode;
     private HashFunction hash;
+    private int numSuccessors;
 
     FingerTable (int nFingers, @Nullable Integer nSuccessors, HashFunction hash) {
         this.hash = hash;
         fingers = new Node[nFingers];
         if (nSuccessors != null)
-            successors = new Node[nSuccessors];
-        else successors = new Node[1];
+            this.numSuccessors = nSuccessors;
+        else this.numSuccessors = 1;
 
+        successors = new ArrayList<>();
         try {
-            if (Chord.USE_PUBLIC_IP) myNode = new Node(getmyPublicIPAddress());
-            else myNode = new Node(getmyPrivateIPAddress());
+            String ip;
+            if (Chord.USE_PUBLIC_IP) ip = getmyPublicIPAddress();
+            else ip = getmyPrivateIPAddress();
+            myNode = new Node(ip, hash.getSHA1(ip));
         } catch (IOException e) {
             throw new UnableToGetMyIPException();
         }
@@ -68,9 +75,19 @@ public class FingerTable {
 
     public void setPredecessor(Node predecessor) {this.predecessor = predecessor; }
 
-    public void setSuccessor(Node successor, @Nullable Integer position) {
-        if (position == null) position = 0;
-        this.successors[position] = successor;
+    /**
+     * Add successor to successor list and make consistent the latter
+     * @param successor
+     */
+    public void setSuccessor(Node successor) {
+        this.successors.add(successor);
+        successors.sort((o1, o2) -> hash.compare(o1.getkey(), o2.getkey()));
+        for (int i = 1; i < successors.size(); i++) {
+            if (successors.get(i-1).equals(successors.get(i))){
+                successors.remove(i-1);
+            }
+        }
+        successors = successors.subList(0, numSuccessors);
     }
 
 
@@ -87,7 +104,11 @@ public class FingerTable {
 
     public void setFinger(Node node, int position){ fingers[position]= node; }
 
-    public int getNumSuccessors(){ return this.successors.length; }
+    public int getNumSuccessors(){ return this.numSuccessors; }
+
+    public void removeFailedNode(Node node){
+        successors.remove(node);
+    }
 
 
     private String getmyPublicIPAddress() throws IOException {

@@ -39,4 +39,10 @@ public interface CommCallbackInterface {
      */
     Node handlePredecessorRequest();
 
+    /**
+     * Get hash value of ip
+     * @param ip
+     * @return
+     */
+    String getkey(String ip);
 }

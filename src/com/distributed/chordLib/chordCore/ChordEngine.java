@@ -9,6 +9,7 @@ import java.util.List;
 
 public class ChordEngine extends ChordClient {
 
+    private Thread routine;
     /**
      * Contructor for chord Network
      * Initialize Chord FingerTable, communication Layer and open connection to bootstrapIP (or create a new Chord Network if bootstrap is null)
@@ -22,6 +23,10 @@ public class ChordEngine extends ChordClient {
      */
     public ChordEngine(int numFingers, int numSuccessors, String bootstrapAddr, int port, int module, ChordCallback callback) {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
+        stabilize();
+        fixFingers();
+        routine = new Thread(() -> routineActions());
+        routine.run();
     }
 
     @Override
@@ -54,13 +59,23 @@ public class ChordEngine extends ChordClient {
     protected void stabilize() {
         Node n = fingerTable.getMyNode();
         Node s = fingerTable.getSuccessor();
+
+        //Get first not failed successor
+        while (!comLayer.isAlive(s)) {
+            fingerTable.removeFailedNode(s);
+        }
+
         Node x = comLayer.findPredecessor(n);
         if (hash.compare(n.getkey(), s.getkey()) == 1 && hash.compare(s.getkey(), x.getkey()) == 1){
-            fingerTable.setSuccessor(x, null);
+            fingerTable.setSuccessor(x);
             notify(x);
         }
 
-        //TODO populate successor list
+        Node succ = fingerTable.getSuccessor();
+        for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
+            succ= findSuccessor(succ.getkey());
+            fingerTable.setSuccessor(succ);
+        }
 
     }
 
@@ -90,6 +105,7 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public void close() {
+        routine.interrupt();
         List<Node> allNodes = new ArrayList();
         allNodes.add(fingerTable.getPredecessor());
         allNodes.add(fingerTable.getSuccessor());
@@ -139,5 +155,24 @@ public class ChordEngine extends ChordClient {
     @Override
     public Node handlePredecessorRequest() {
         return fingerTable.getPredecessor();
+    }
+
+    @Override
+    public String getkey(String ip) {
+        return hash.getSHA1(ip);
+    }
+
+    private void routineActions(){
+        while (true) {
+
+            try {
+                this.wait(2000);
+            } catch (InterruptedException e) {
+                System.out.println("Routine actions Stopped");
+            }
+            fixFingers();
+            stabilize();
+            checkPredecessor();
+        }
     }
 }

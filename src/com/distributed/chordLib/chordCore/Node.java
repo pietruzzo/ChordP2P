@@ -5,10 +5,12 @@ import java.io.Serializable;
 
 public class Node implements Serializable {
 
-    private String IP;
+    private final String IP;
+    private final String key;
 
-    public Node(String IP) {
+    public Node(String IP, String key) {
         this.IP = IP;
+        this.key = key;
     }
 
     public String getIP(){return IP;}
@@ -16,14 +18,18 @@ public class Node implements Serializable {
     /**
      * @return the hash for the IP
      */
-    public String getkey(){return null;}
+    public String getkey(){return key;}
 
     /**
      * Find if nodes are equals
      * @param node
      * @return comparison response over node's key
      */
-    public boolean equals(Node node){
-        return this.getkey() == node.getkey();
+    @Override
+    public boolean equals(Object node){
+        if (node instanceof Node) {
+            if (this.IP == ((Node) node).getIP() && this.key == ((Node) node).getkey()) return true;
+        }
+        return false;
     }
 }

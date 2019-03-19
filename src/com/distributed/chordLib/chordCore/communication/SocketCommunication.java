@@ -1,6 +1,7 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.ChordClient;
+import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
@@ -97,7 +98,11 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
                     break;
                 }
             }
-            if (kill) socketNodes.remove(node);
+            if (kill) {
+                SocketNode element = socketNodes.get(node);
+                element.close();
+                socketNodes.remove(node);
+            }
         }
     }
 
@@ -168,7 +173,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     }
 
     void handleNotifyMessage(NotifySuccessorMessage mess, SocketNode questioner){
-        callback.notifyIncoming(new Node(questioner.getNodeIP()));
+        callback.notifyIncoming(new Node(questioner.getNodeIP(), callback.getkey(questioner.getNodeIP())));
     }
 
     void handlePingMessage(PingRequestMessage reqMessage, SocketNode node){

@@ -1,6 +1,7 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.Node;
+import com.distributed.chordLib.chordCore.communication.messages.Message;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,12 +15,12 @@ public class SocketNode {
     private ObjectOutputStream out;
     private String nodeIP;
     private Thread socketThread;
-    private SocketIncomingHandling SocketCommCallback;
+    private SocketIncomingHandling socketCommCallback;
 
     public SocketNode(String IP, @NotNull Socket endpoint, SocketIncomingHandling callback) {
         this.endpoint = endpoint;
         this.nodeIP = IP;
-        this.SocketCommCallback = callback;
+        this.socketCommCallback = callback;
 
         try {
             in = new ObjectInputStream(endpoint.getInputStream());
@@ -28,6 +29,7 @@ public class SocketNode {
             e.printStackTrace();
         }
         this.socketThread = new Thread(new ReadSocketRunnable());
+        this.socketThread.run();
     }
 
 
@@ -50,6 +52,7 @@ public class SocketNode {
     public void close() {
         try {
             endpoint.close();
+            socketThread.interrupt();
         } catch (IOException e) {
             System.err.println("Unable to close socket " + nodeIP +"...");
             e.printStackTrace();
@@ -70,12 +73,16 @@ public class SocketNode {
         }
     }
 
+    private SocketNode getThis() {return this;}
+
     private class ReadSocketRunnable implements Runnable {
 
         @Override
         public void run() {
-            Object message = readSocket();
-
+            while(true) {
+                Object message = readSocket();
+                socketCommCallback.handleNewMessage((Message)message, getThis() );
+            }
         }
     }
 }
