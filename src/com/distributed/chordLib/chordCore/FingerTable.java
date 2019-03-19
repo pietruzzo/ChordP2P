@@ -53,7 +53,7 @@ public class FingerTable {
      */
     public Node getNextNode(String id) {
         String objectKey = hash.getSHA1(id);
-        if (predecessor != null && hash.compare(objectKey,predecessor.getkey())==1 && hash.compare(myNode.getkey(),objectKey)==1){
+        if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())){
             return myNode; //Look if I'm responsible for the key
         }
 
@@ -63,7 +63,7 @@ public class FingerTable {
         previous = myNode;
         for (int i = 0; i < fingers.length; i++) {
             next= fingers[i];
-            if (next != null && hash.compare(objectKey,previous.getkey())==1 && hash.compare(next.getkey(),objectKey)==1){
+            if (next != null && hash.areOrdered(next.getkey(), objectKey, previous.getkey())){
                 return next; //Look if I'm responsible for the key
             }
             if (next != null) previous = next;
@@ -81,7 +81,7 @@ public class FingerTable {
      */
     public void setSuccessor(Node successor) {
         this.successors.add(successor);
-        successors.sort((o1, o2) -> hash.compare(o1.getkey(), o2.getkey()));
+        successors.sort((o1, o2) -> hash.compare(o1.getkey(), o2.getkey())); //TODO come effettuare il confronto?
         for (int i = 1; i < successors.size(); i++) {
             if (successors.get(i-1).equals(successors.get(i))){
                 successors.remove(i-1);

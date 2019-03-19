@@ -25,7 +25,19 @@ public class HashFunction {
      * @return
      */
     public int compare (String hash1, String hash2){
-        return 0;
+        return hash1.compareTo(hash2);
+    }
+
+    /**
+     * return true if hash2 is inside range [in module] (hash1, hash3) extreme excluded
+     */
+    public boolean areOrdered(String hash1, String hash2, String hash3){
+        if (compare(hash3, hash1) == 1 && compare(hash2, hash1) == 1 && compare(hash2, hash1)==1) return true;
+        if (compare(hash3, hash1) == -1){
+            if (compare(hash2, hash3) == 1) return true;
+            if (compare(hash1, hash2) == 1) return true;
+        }
+        return false;
     }
 
     public int getM() {

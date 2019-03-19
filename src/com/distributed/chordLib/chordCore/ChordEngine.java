@@ -34,7 +34,7 @@ public class ChordEngine extends ChordClient {
         Node predecessor = fingerTable.getPredecessor();
         Node myNode = fingerTable.getMyNode();
         String objectKey = hash.getSHA1(String.valueOf(id));
-        if (predecessor != null && hash.compare(objectKey,predecessor.getkey())==1 && hash.compare(myNode.getkey(),objectKey)==1){
+        if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())){
             return myNode; //Look if I'm responsible for the key
         }
         else return comLayer.findSuccessorB(fingerTable.getSuccessor(), String.valueOf(id));
@@ -57,7 +57,7 @@ public class ChordEngine extends ChordClient {
 
     @Override
     protected void stabilize() {
-        Node n = fingerTable.getMyNode();
+        Node myN = fingerTable.getMyNode();
         Node s = fingerTable.getSuccessor();
 
         //Get first not failed successor
@@ -65,8 +65,8 @@ public class ChordEngine extends ChordClient {
             fingerTable.removeFailedNode(s);
         }
 
-        Node x = comLayer.findPredecessor(n);
-        if (hash.compare(n.getkey(), s.getkey()) == 1 && hash.compare(s.getkey(), x.getkey()) == 1){
+        Node x = comLayer.findPredecessor(myN);
+        if (hash.areOrdered(x.getkey(), s.getkey(), myN.getkey())){
             fingerTable.setSuccessor(x);
             notify(x);
         }
@@ -147,7 +147,7 @@ public class ChordEngine extends ChordClient {
     public void notifyIncoming(Node predecessor) {
         String myPredecessorKey = fingerTable.getPredecessor().getkey();
         if (fingerTable.getPredecessor()==null ||
-                (hash.compare(predecessor.getkey(), myPredecessorKey) ==1&& hash.compare(predecessor.getkey(), fingerTable.getMyNode().getkey())==-1)){
+                hash.areOrdered(myPredecessorKey, predecessor.getkey(), fingerTable.getMyNode().getkey())){
             fingerTable.setPredecessor(predecessor);
         }
     }
