@@ -20,7 +20,6 @@ import java.util.function.ToDoubleBiFunction;
 public class ChordBuilder {
 
 
-
     /**
      * Join Existing ChordClient network
      * @param bootstrap Bootstrap IP (DEFAULT_SERVER_IP if null)
@@ -40,6 +39,9 @@ public class ChordBuilder {
     /**
      * Create new ChordClient network
      * @param port port of ServerSocket (DEFAULT_SERVER_PORT if null)
+     * @param numFingers optionally specify number of fingers for network
+     * @param numSuccessors optionally specify numberOfSuccessors;
+     * @param module optionally specify module for key
      * @param callback Optional callback object
      * @return ChordClient object
      */

@@ -9,11 +9,8 @@ import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
 import com.distributed.chordLib.chordCore.communication.SocketCommunication;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import jdk.internal.jline.internal.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public abstract class ChordClient implements com.distributed.chordLib.Chord, CommCallbackInterface {
@@ -22,7 +19,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
 
     FingerTable fingerTable;
-    private ChordCallback callback;
+    ChordCallback chordCallback;
     CommCallInterface comLayer;
     HashFunction hash;
 
@@ -39,10 +36,10 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *                      NULL: create a new Network
      * @param port port for the chord network (if null use default)
      * @param module module of Chord Ring
-     * @param callback Optional Callback for application
+     * @param chordCallback Optional Callback for application
      */
-    public ChordClient(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, @Nullable Integer port, int module, @Nullable ChordCallback callback){
-        this.callback = callback;
+    public ChordClient(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, @Nullable Integer port, int module, @Nullable ChordCallback chordCallback){
+        this.chordCallback = chordCallback;
         this.hash = new HashFunction(module);
         if (port == null) port= DEFAULT_SERVER_PORT;
         comLayer = new SocketCommunication(port, this);

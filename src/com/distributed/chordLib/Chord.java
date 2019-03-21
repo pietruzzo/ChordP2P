@@ -18,7 +18,7 @@ public interface Chord {
     int DEFAULT_SERVER_PORT = 1678;
     boolean USE_PUBLIC_IP = true;
     int DEFAULT_RETRY = 5;
-    int DEFAULT_CHORD_MODULE = 30;
+    int DEFAULT_CHORD_MODULE = 20;
 
     /**
      * Lookup for key in chord network

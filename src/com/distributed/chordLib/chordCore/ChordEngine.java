@@ -69,7 +69,7 @@ public class ChordEngine extends ChordClient {
 
     @Override
     protected Node findPredecessor(Node node) {
-        return null;
+        return comLayer.findPredecessor(node);
     }
 
     @Override
@@ -178,6 +178,8 @@ public class ChordEngine extends ChordClient {
         if (fingerTable.getPredecessor()==null ||
                 hash.areOrdered(myPredecessorKey, predecessor.getkey(), fingerTable.getMyNode().getkey())){
             fingerTable.setPredecessor(predecessor);
+            if (chordCallback!= null)
+                chordCallback.notifyResponsabilityChange(predecessor.getkey(), fingerTable.getMyNode().getkey());
         }
     }
 
