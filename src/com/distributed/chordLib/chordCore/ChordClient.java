@@ -33,7 +33,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
     /**
      * Contructor for chord Network
      * Initialize Chord FingerTable, communication Layer and open connection to bootstrapIP (or create a new Chord Network if bootstrap is null)
-     * @param numFingers Number of fingers in finger table (if null, use default)
+     * @param numFingers Number of fingers in finger table (if null, get from )
      * @param numSuccessors Number of stored successors (if null use default)
      * @param bootstrapAddr to Join an existing ChordClient Network
      *                      NULL: create a new Network
@@ -57,7 +57,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
             nFingers = message.numFingers;
             nSucc = message.numSuccessors;
         } else{ //create network
-            successor = null; //Current node is the only one
+            successor = null; //Current node is the only one //TODO ATTENZIONE alla successor list == null
             nFingers = numFingers;
             nSucc = numSuccessors;
         }

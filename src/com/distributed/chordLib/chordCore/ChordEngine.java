@@ -5,6 +5,7 @@ import com.distributed.chordLib.ChordCallback;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
+import jdk.internal.jline.internal.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +20,11 @@ public class ChordEngine extends ChordClient {
      * @param numSuccessors Number of stored successors (if null use default)
      * @param bootstrapAddr to Join an existing ChordClient Network
      *                      NULL: create a new Network
-     * @param port port for the chord network (if null use default)
+     * @param port port for the chord network
      * @param module module of Chord Ring
      * @param callback Optional Callback for application
      */
-    public ChordEngine(int numFingers, int numSuccessors, String bootstrapAddr, int port, int module, ChordCallback callback) {
+    public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, Integer module, ChordCallback callback) {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
         stabilize();
         fixFingers();
@@ -121,7 +122,7 @@ public class ChordEngine extends ChordClient {
 
 
     @Override
-    public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException { //TODO retry n times
+    public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException {
         String response = null;
         for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
             try {

@@ -1,10 +1,17 @@
 package com.distributed.chordLib;
 
 
+import com.distributed.chordLib.chordCore.ChordClient;
+import com.distributed.chordLib.chordCore.ChordEngine;
+import com.distributed.chordLib.chordCore.communication.messages.JoinRequestMessage;
+import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.function.ToDoubleBiFunction;
 
 /**
@@ -22,14 +29,12 @@ public class ChordBuilder {
      * @return ChordClient object
      * @throws IOException for communication failure
      */
-    public static Chord joinChord(@Nullable String bootstrap, @Nullable int port,  @Nullable ChordCallback callback) throws IOException {
-        /*TODO:
-                -   spawn new thread for chord network [a thread for bootstrap node to accept incoming requests]
-                -   contact remote serversocket
-                -   build an instance of ChordClient
-                -   Return ChordClient instance
-         */
-        return null;
+    public static Chord joinChord(@Nullable String bootstrap, @Nullable Integer port,  @Nullable ChordCallback callback) throws IOException {
+
+        Socket endpoint = null;
+        if (bootstrap == null) bootstrap = Chord.DEFAULT_SERVER_IP;
+        if (port == null) port = Chord.DEFAULT_SERVER_PORT;
+        return new ChordEngine(null, null, bootstrap, port, null, callback );
     }
 
     /**
@@ -38,15 +43,14 @@ public class ChordBuilder {
      * @param callback Optional callback object
      * @return ChordClient object
      */
-    public static Chord createChord(@Nullable int port, @Nullable ChordCallback callback){
-        /*TODO:
-                -   spawn new thread for chord network [a thread for bootstrap node to accept incoming requests]
-                -   create serversocket
-                -   build an instance of ChordClient
-                -   Return ChordClient instance
-                -   Manage node disconnection
-         */
-        return null;
+    public static Chord createChord(@Nullable Integer port, @Nullable Integer numFingers, @Nullable Integer numSuccessors,@Nullable Integer module, @Nullable ChordCallback callback){
+
+        if (port == null) port = Chord.DEFAULT_SERVER_PORT;
+        if (numFingers == null) numFingers = Chord.DEFAULT_NUM_FINGERS;
+        if (numSuccessors == null) numSuccessors = Chord.DEFAULT_NUM_SUCCESSORS;
+        if (module == null) module = Chord.DEFAULT_CHORD_MODULE;
+
+        return new ChordEngine(numFingers, numSuccessors, null, port, module, callback );
     }
 
 

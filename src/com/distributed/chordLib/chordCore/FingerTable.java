@@ -15,7 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 
 
-public class FingerTable { //TODO retry lookup ntimes, close net if no more successors
+public class FingerTable {
 
     private Node[] fingers;
     private List<Node> successors;

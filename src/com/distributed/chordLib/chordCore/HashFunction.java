@@ -1,21 +1,35 @@
 package com.distributed.chordLib.chordCore;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+
 public class HashFunction {
 
     /**
      * Module
      */
     private int m;
+    MessageDigest md;
 
     public HashFunction(int m){
         this.m = m;
+        try {
+            this.md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
     /**
      * calculate SHA-1 of a String
      * @implNote with org.apache.commons.codec.digest.DigestUtils
      * @return digested string
      */
-    public String getSHA1(String inputString){return null;}
+    public String getSHA1(String inputString){
+        byte[] digest = md.digest(inputString.getBytes());
+        digest =Arrays.copyOfRange(digest, digest.length-m, digest.length);
+        return new String(digest);
+    }
 
     /**
      * Return 1 if hash1 > hash2, -1 if hash1 < hash2, 0 otherwise
