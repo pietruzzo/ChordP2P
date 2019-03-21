@@ -1,6 +1,7 @@
 package com.distributed.chordLib.chordCore;
 
 import com.distributed.chordLib.Chord;
+import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.UnableToGetMyIPException;
 import jdk.internal.jline.internal.Nullable;
 
@@ -44,7 +45,10 @@ public class FingerTable { //TODO retry lookup ntimes, close net if no more succ
     /**
      * @return successor of this node
      */
-    public Node getSuccessor(){ return fingers[0]; }
+    public Node getSuccessor(){
+        if (successors.isEmpty()) throw new NoSuccessorsExceptions();
+        return successors.get(0);
+    }
 
     /**
      * Find the Node among Node, its successors and fingers most appropriate for key

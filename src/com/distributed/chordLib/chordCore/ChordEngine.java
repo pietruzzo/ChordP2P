@@ -1,7 +1,9 @@
 package com.distributed.chordLib.chordCore;
 
+import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordCallback;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
+import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
 
 import java.util.ArrayList;
@@ -9,7 +11,7 @@ import java.util.List;
 
 public class ChordEngine extends ChordClient {
 
-    private Thread routine;
+    private volatile boolean stopRoutine = false;
     /**
      * Contructor for chord Network
      * Initialize Chord FingerTable, communication Layer and open connection to bootstrapIP (or create a new Chord Network if bootstrap is null)
@@ -25,7 +27,7 @@ public class ChordEngine extends ChordClient {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
         stabilize();
         fixFingers();
-        routine = new Thread(() -> routineActions());
+        Thread routine = new Thread(this::routineActions);
         routine.run();
     }
 
@@ -37,12 +39,26 @@ public class ChordEngine extends ChordClient {
         if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())){
             return myNode; //Look if I'm responsible for the key
         }
-        else return comLayer.findSuccessorB(fingerTable.getSuccessor(), String.valueOf(id));
+        else {
+            try {
+                return comLayer.findSuccessorB(fingerTable.getSuccessor(), String.valueOf(id));
+            } catch (NoSuccessorsExceptions e){
+                this.closeNetwork();
+                throw e;
+            }
+
+        }
     }
 
     @Override
     protected Node findSuccessor(String id) {
-        return fingerTable.getNextNode(String.valueOf(id));
+        try{
+            return fingerTable.getNextNode(String.valueOf(id));
+        } catch (NoSuccessorsExceptions e){
+            this.closeNetwork();
+            throw e;
+        }
+
     }
 
     @Override @Deprecated
@@ -103,29 +119,41 @@ public class ChordEngine extends ChordClient {
         if (!comLayer.isAlive(fingerTable.getPredecessor())) fingerTable.setPredecessor(null);
     }
 
-    @Override
-    public void close() {
-        routine.interrupt();
-        List<Node> allNodes = new ArrayList();
-        allNodes.add(fingerTable.getPredecessor());
-        allNodes.add(fingerTable.getSuccessor());
-        for (int i = 0; i < fingerTable.getNumFingers(); i++) {
-            allNodes.add(fingerTable.getFinger(i));
-        }
-        while(allNodes.contains(null)) {
-            allNodes.remove(null);
-        }
-        comLayer.closeChannel((Node[]) allNodes.toArray());
-    }
 
     @Override
-    public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException {
+    public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException { //TODO retry n times
+        String response = null;
+        for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
+            try {
+                response = this.findSuccessor(key).getIP();
+            } catch (TimeoutReachedException | CommunicationFailureException e){
+                response = null;
+            }
+            if(response != null) break;
+        }
+        if (response != null) return response;
         return this.findSuccessor(key).getIP();
     }
 
     @Override
     public String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException {
+        String response = null;
+        for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
+            try {
+                response = this.findSuccessorB(key).getIP();
+            } catch (TimeoutReachedException | CommunicationFailureException e){
+                response = null;
+            }
+            if(response != null) break;
+        }
+        if (response != null) return response;
         return this.findSuccessorB(key).getIP();
+    }
+
+    @Override
+    public void closeNetwork() {
+        stopRoutine = true;
+        comLayer.closeChannel(null);
     }
 
     @Override
@@ -163,16 +191,22 @@ public class ChordEngine extends ChordClient {
     }
 
     private void routineActions(){
-        while (true) {
+        while (!stopRoutine) {
 
             try {
                 this.wait(2000);
             } catch (InterruptedException e) {
                 System.out.println("Routine actions Stopped");
             }
-            fixFingers();
-            stabilize();
-            checkPredecessor();
+            try {
+                fixFingers();
+                stabilize();
+                checkPredecessor();
+            } catch(CommunicationFailureException e){
+                System.out.println("Routine action failed, retry in 2 seconds");
+            } catch (NoSuccessorsExceptions e){
+                this.closeNetwork();
+            }
         }
     }
 }

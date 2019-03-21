@@ -148,11 +148,6 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      */
     protected abstract void checkPredecessor();
 
-    /**
-     * Close network
-     */
-    abstract public void close();
-
 
     /**
      * Datastructure use to give initialization parameters
