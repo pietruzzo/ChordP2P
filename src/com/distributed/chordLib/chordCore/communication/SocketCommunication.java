@@ -8,11 +8,14 @@ import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import jdk.internal.jline.internal.Nullable;
 
+import javax.management.relation.RoleInfoNotFoundException;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.stream.Stream;
@@ -24,7 +27,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     private static final int CORE_MAX_POOL_SIZE = 20;
     private final int socketPort;
 
-    //List of SocketNode
+    //List of client established connections
     Map<String, SocketNode> socketNodes;
     //List of threads waiting for a response <RequestID, ComputationState>
     Map<Integer, ComputationState> waitingThreads;
@@ -32,6 +35,10 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     CommCallbackInterface callback;
     //Pool of workers for messageHandling
     ThreadPoolExecutor workers;
+    //ServerSocket for incoming connections
+    ServerSocket serverSocket;
+
+    volatile boolean closeServerSocket = false;
 
     /**
      * @param port for socket communication
@@ -41,39 +48,41 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         this.socketPort = port;
         this.callback = callback;
         this.workers = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_MAX_POOL_SIZE, REQUEST_TIMEOUT, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(30));
+        handleNewIncomingConnections();
+
     }
 
     @Override
     public JoinResponseMessage join(Node node, int port) {
         Message message = new JoinRequestMessage();
-        waitResponse(message, getSocketNode(node));
+        waitResponse(message, getSocketNode(node.getIP()));
         return (JoinResponseMessage) getResponseinWaiting(message.getId());
     }
 
     @Override
     public Node findSuccessorB(Node node, String key) {
         Message message = new BasicLookupRequestMessage(key);
-        waitResponse(message, getSocketNode(node));
+        waitResponse(message, getSocketNode(node.getIP()));
         return ((LookupResponseMessage) getResponseinWaiting(message.getId())).node;
     }
 
     @Override
     public Node findSuccessor(Node node, String key) {
         Message message = new LookupRequestMessage(key);
-        waitResponse(message, getSocketNode(node));
+        waitResponse(message, getSocketNode(node.getIP()));
         return ((LookupResponseMessage) getResponseinWaiting(message.getId())).node;
     }
 
     @Override
     public Node findPredecessor(Node node) {
         Message message = new PredecessorRequestMessage();
-        waitResponse(message, getSocketNode(node));
+        waitResponse(message, getSocketNode(node.getIP()));
         return ((PredecessorResponseMessage) getResponseinWaiting(message.getId())).node;
     }
 
     @Override
     public void notifySuccessor(Node successor, Node me) {
-        SocketNode receiver = getSocketNode(successor);
+        SocketNode receiver = getSocketNode(successor.getIP());
         NotifySuccessorMessage message = new NotifySuccessorMessage(me);
         receiver.writeSocket(message);
     }
@@ -81,27 +90,58 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     @Override
     public boolean isAlive(Node node) {
         Message message = new PingRequestMessage();
-        waitResponse(message, getSocketNode(node));
-        if (getResponseinWaiting(message.getId())!= null && getResponseinWaiting(message.getId()) instanceof PingResponseMessage)
-            return true;
+        waitResponse(message, getSocketNode(node.getIP()));
+        try {
+            if (getResponseinWaiting(message.getId()) != null && getResponseinWaiting(message.getId()) instanceof PingResponseMessage)
+                return true;
+        } catch (Exception e){
+            System.out.println("No response to a ping message for " + node.getIP());
+        }
         return false;
     }
 
     @Override
     public void closeChannel(Node[] nodes) {
-        String[] engineAlive =(String[]) Arrays.stream(nodes).map(node -> node.getIP()).toArray();
-        for (String node:socketNodes.keySet()) {
-            boolean kill = true;
-            for (int i = 0; i < engineAlive.length; i++) {
-                if (node == engineAlive[i]) {
-                    kill = false;
-                    break;
+
+        //If nodes is empty, close all
+        if (nodes == null || nodes.length == 0) {
+            try {
+                serverSocket.close(); //it will throw SocketException on accept that will stop the thread
+            } catch (IOException e) {
+                System.out.println("Closing socketserver");
+            }
+            for (SocketNode sn: socketNodes.values()) {
+                sn.close();
+            }
+            socketNodes = new HashMap<>();
+        }
+        else {
+            //Filter out all useless outgoing connections
+            String[] engineAlive = (String[]) Arrays.stream(nodes).map(node -> node.getIP()).toArray();
+            for (String node : socketNodes.keySet()) {
+                boolean kill = false;
+                if (!socketNodes.get(node).isIncoming()) {
+                    kill = true;
+                    for (int i = 0; i < engineAlive.length; i++) {
+                        if (node == engineAlive[i]) {
+                            kill = false;
+                            break;
+                        }
+                    }
+                }
+                if (kill) {
+                    SocketNode element = socketNodes.get(node);
+                    element.close();
+                    socketNodes.remove(node);
                 }
             }
-            if (kill) {
-                SocketNode element = socketNodes.get(node);
-                element.close();
-                socketNodes.remove(node);
+
+            //Close all unused incoming channels
+            for (SocketNode sn : socketNodes.values()) {
+                if (sn.isIncoming() && !isAlive(new Node(sn.getNodeIP(), null))) {
+                    socketNodes.remove(sn.getNodeIP());
+                    sn.close();
+                }
             }
         }
     }
@@ -111,28 +151,61 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         incomingMessageDispatching(node, message);
     }
 
+    @Override
+    public void handleUnexpectedClosure(String node) {
+        //Close SocketNode and remove any references
+        socketNodes.get(node).close();
+        socketNodes.remove(node);
+    }
+
 
     /**
      * Get socketNode corresponding to node or
      * create a new connection to it
-     * @param node
+     * @param nodeIP
      * @return corresponding SocketNode or null if connection is refused
      */
-    private SocketNode getSocketNode(Node node){
-        if (socketNodes.containsKey(node)) return socketNodes.get(node);
+    private SocketNode getSocketNode(String nodeIP){
+        if (socketNodes.containsKey(nodeIP)) return socketNodes.get(nodeIP);
         else{
             try {
-                SocketNode newSocketNode =  new SocketNode(node.getIP(), new Socket(node.getIP(), socketPort), this);
-                socketNodes.put(node.getIP(), newSocketNode);
+                SocketNode newSocketNode =  new SocketNode(nodeIP, new Socket(nodeIP, socketPort), this, false);
+                socketNodes.put(nodeIP, newSocketNode);
                 return newSocketNode;
             } catch (IOException e) {
-                System.err.println("Unable to open connection to " + node.getIP() +": " + socketPort);
-                e.printStackTrace();
+                System.err.println("Unable to open connection to " + nodeIP +": " + socketPort);
+                throw new CommunicationFailureException();
             }
         }
-        return null;
     }
 
+    /**
+     * Handle incoming Connections
+     */
+    private void handleNewIncomingConnections(){
+        SocketIncomingHandling callback = this;
+        new Thread(() -> {
+            try {
+                serverSocket = new ServerSocket(socketPort);
+            } catch (IOException e) {
+                e.printStackTrace();
+                closeServerSocket = true;
+            }
+
+            while (!closeServerSocket) {
+                try {
+                    Socket newConnection = serverSocket.accept();
+                    String ip = newConnection.getInetAddress().getHostAddress();
+                    SocketNode newSocketNode =  new SocketNode(ip, new Socket(ip, socketPort), callback, false);
+                    socketNodes.put(ip, newSocketNode);
+                } catch (IOException e) {
+                    System.err.println("Unable to accept new incoming connection");
+                    e.printStackTrace();
+                    closeServerSocket = true;
+                }
+            }
+        }).run();
+    }
 
     /**
      * Send Request, suspend and queue thread, waiting for response
@@ -153,47 +226,47 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     //region: SocketMessageReceivingHandling
 
 
-    void handleJoinMessage (JoinRequestMessage reqMessage, SocketNode questioner){
+    private void handleJoinMessage(JoinRequestMessage reqMessage, SocketNode questioner){
 
         ChordClient.InitParameters initPar = callback.handleJoinRequest(questioner.getNodeIP());
         JoinResponseMessage resMess = new JoinResponseMessage(initPar, reqMessage.getId());
         questioner.writeSocket(resMess);
     }
 
-    void handleLookupBMessage(BasicLookupRequestMessage reqMessage, SocketNode questioner){
+    private void handleLookupBMessage(BasicLookupRequestMessage reqMessage, SocketNode questioner){
         Node node = callback.handleLookupB(reqMessage.key);
         LookupResponseMessage resMess = new LookupResponseMessage(node, reqMessage.getId());
         questioner.writeSocket(resMess);
     }
 
-    void handleLookupMessage (LookupRequestMessage reqMessage, SocketNode questioner){
+    private void handleLookupMessage(LookupRequestMessage reqMessage, SocketNode questioner){
         Node node = callback.handleLookup(reqMessage.key);
         LookupResponseMessage resMess = new LookupResponseMessage(node, reqMessage.getId());
         questioner.writeSocket(resMess);
     }
 
-    void handleNotifyMessage(NotifySuccessorMessage mess, SocketNode questioner){
+    private void handleNotifyMessage(NotifySuccessorMessage mess, SocketNode questioner){
         callback.notifyIncoming(new Node(questioner.getNodeIP(), callback.getkey(questioner.getNodeIP())));
     }
 
-    void handlePingMessage(PingRequestMessage reqMessage, SocketNode node){
+    private void handlePingMessage(PingRequestMessage reqMessage, SocketNode node){
         node.writeSocket(reqMessage);
     }
 
-    void handlePredecessorMessage(PredecessorRequestMessage reqMessage, SocketNode questioner){
+    private void handlePredecessorMessage(PredecessorRequestMessage reqMessage, SocketNode questioner){
         Node predecessor = callback.handlePredecessorRequest();
         PredecessorResponseMessage resMessage = new PredecessorResponseMessage(reqMessage.getId(), predecessor);
         questioner.writeSocket(resMessage);
     }
 
-    void handleUnrecognizedMessage(Object unrecognized, SocketNode node){
+    private void handleUnrecognizedMessage(Object unrecognized, SocketNode node){
         System.err.println("Unrecognized message of type " + unrecognized.getClass().toString());
     }
 
 
 
 
-    public void incomingMessageDispatching(SocketNode questioner, Message message){
+    private void incomingMessageDispatching(SocketNode questioner, Message message){
         if (message instanceof JoinRequestMessage) handleJoinMessage((JoinRequestMessage) message, questioner);
         else if (message instanceof BasicLookupRequestMessage) handleLookupBMessage((BasicLookupRequestMessage) message, questioner);
         else if (message instanceof LookupRequestMessage) handleLookupMessage((LookupRequestMessage)message, questioner);
@@ -247,7 +320,7 @@ class ComputationState {
      * Suspend current thread until a response is give or timeout expiring
      * @return response, or null is timeout is expired
      */
-    public Message waitResponse()  {
+    public Message waitResponse() {
 
         begin = Date.from(Instant.now());
         while (response == null ) {
@@ -255,7 +328,7 @@ class ComputationState {
             try {
                 thread.wait();
             } catch (InterruptedException e) {
-                throw new CommunicationFailureException(e);
+                throw new CommunicationFailureException();
             }
         }
         return response;

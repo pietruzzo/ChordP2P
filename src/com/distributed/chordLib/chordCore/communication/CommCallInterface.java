@@ -2,6 +2,7 @@ package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
+import jdk.internal.jline.internal.Nullable;
 
 /**
  * Interface to be implemented by communication Layer
@@ -57,8 +58,9 @@ public interface CommCallInterface {
     boolean isAlive(Node node);
 
     /**
-     * Registered Nodes
+     * Notify all nodes kept alive by lib
+     * if nodes is empty or null, the kill all Communication
      * @param nodes node used by application
      */
-    void closeChannel(Node[] nodes);
+    void closeChannel(@Nullable Node[] nodes);
 }

@@ -10,4 +10,11 @@ public interface SocketIncomingHandling {
      * @param message
      */
     void handleNewMessage(Message message, SocketNode node);
+
+    /**
+     * Notify an error in SocketReading
+     * end close SocketNode
+     * @param node
+     */
+    void handleUnexpectedClosure ( String node );
 }

@@ -13,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public abstract class ChordClient implements com.distributed.chordLib.Chord, CommCallbackInterface {
@@ -20,10 +21,10 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
     //region Attributes
 
 
-    protected FingerTable fingerTable;
-    protected ChordCallback callback;
-    protected CommCallInterface comLayer;
-    protected HashFunction hash;
+    FingerTable fingerTable;
+    private ChordCallback callback;
+    CommCallInterface comLayer;
+    HashFunction hash;
 
     ThreadPoolExecutor threadPool;
 

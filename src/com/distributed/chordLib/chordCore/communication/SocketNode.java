@@ -15,12 +15,15 @@ public class SocketNode {
     private ObjectOutputStream out;
     private String nodeIP;
     private Thread socketThread;
+    private volatile boolean killthread = false;
     private SocketIncomingHandling socketCommCallback;
+    private boolean incoming;
 
-    public SocketNode(String IP, @NotNull Socket endpoint, SocketIncomingHandling callback) {
+    public SocketNode(String IP, @NotNull Socket endpoint, SocketIncomingHandling callback, boolean incoming) {
         this.endpoint = endpoint;
         this.nodeIP = IP;
         this.socketCommCallback = callback;
+        this.incoming = incoming;
 
         try {
             in = new ObjectInputStream(endpoint.getInputStream());
@@ -51,6 +54,7 @@ public class SocketNode {
 
     public void close() {
         try {
+            this.killthread = true;
             endpoint.close();
             socketThread.interrupt();
         } catch (IOException e) {
@@ -61,12 +65,9 @@ public class SocketNode {
     }
 
     @Nullable
-    private Object readSocket()  {
+    private Object readSocket() throws IOException {
         try {
             return in.readObject();
-        } catch (IOException e) {
-            System.err.println("Unable to read message from socket " + nodeIP);
-            return null;
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
             return null;
@@ -75,13 +76,29 @@ public class SocketNode {
 
     private SocketNode getThis() {return this;}
 
+    public boolean isIncoming() {
+        return incoming;
+    }
+
+    public void setIncoming(boolean incoming) {
+        this.incoming = incoming;
+    }
+
     private class ReadSocketRunnable implements Runnable {
 
         @Override
         public void run() {
-            while(true) {
-                Object message = readSocket();
-                socketCommCallback.handleNewMessage((Message)message, getThis() );
+            while(!killthread) {
+                Object message = null;
+                try {
+                    message = readSocket();
+                    socketCommCallback.handleNewMessage((Message)message, getThis() );
+                } catch (IOException e) {
+                    socketCommCallback.handleUnexpectedClosure(nodeIP);
+                    System.out.println("Error in reading from socket, probably closed");
+                    System.out.println("Closing socket " + nodeIP);
+                }
+
             }
         }
     }

@@ -43,4 +43,5 @@ public class HashFunction {
     public int getM() {
         return m;
     }
+
 }

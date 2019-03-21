@@ -14,7 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 
 
-public class FingerTable {
+public class FingerTable { //TODO retry lookup ntimes, close net if no more successors
 
     private Node[] fingers;
     private List<Node> successors;
@@ -81,7 +81,11 @@ public class FingerTable {
      */
     public void setSuccessor(Node successor) {
         this.successors.add(successor);
-        successors.sort((o1, o2) -> hash.compare(o1.getkey(), o2.getkey())); //TODO come effettuare il confronto?
+        successors.sort((o1, o2) -> {
+            if(hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return 1;
+            else if (o1.equals(o2)) return 0;
+            else return -1;
+        });
         for (int i = 1; i < successors.size(); i++) {
             if (successors.get(i-1).equals(successors.get(i))){
                 successors.remove(i-1);
