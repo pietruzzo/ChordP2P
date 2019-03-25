@@ -40,6 +40,7 @@ public class FingerTable {
         } catch (IOException e) {
             throw new UnableToGetMyIPException();
         }
+        successors.add(myNode);
     }
 
     /**
@@ -84,6 +85,9 @@ public class FingerTable {
      * @param successor
      */
     public void setSuccessor(Node successor) {
+
+        if (this.successors.contains(myNode)) this.successors.remove(myNode);
+
         this.successors.add(successor);
         successors.sort((o1, o2) -> {
             if(hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return 1;

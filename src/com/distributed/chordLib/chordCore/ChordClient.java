@@ -54,7 +54,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
             nFingers = message.numFingers;
             nSucc = message.numSuccessors;
         } else{ //create network
-            successor = null; //Current node is the only one //TODO ATTENZIONE alla successor list == null
+            successor = null; //Current node is the only one
             nFingers = numFingers;
             nSucc = numSuccessors;
         }
@@ -63,7 +63,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
         //setup network
         fingerTable = new FingerTable(numFingers, numSuccessors, hash);
-        fingerTable.setSuccessor(successor);
+        if (successor!= null) fingerTable.setSuccessor(successor);
     }
 
 

@@ -77,21 +77,25 @@ public class ChordEngine extends ChordClient {
         Node myN = fingerTable.getMyNode();
         Node s = fingerTable.getSuccessor();
 
-        //Get first not failed successor
-        while (!comLayer.isAlive(s)) {
-            fingerTable.removeFailedNode(s);
-        }
+        if (s != myN) { //If I'm not the only node in the network
+            //Get first not failed successor
+            while (!comLayer.isAlive(s)) {
+                fingerTable.removeFailedNode(s);
+                s = fingerTable.getSuccessor();
+            }
 
-        Node x = comLayer.findPredecessor(myN);
-        if (hash.areOrdered(x.getkey(), s.getkey(), myN.getkey())){
-            fingerTable.setSuccessor(x);
+            Node x = comLayer.findPredecessor(s);
+            if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
+                fingerTable.setSuccessor(x);
+            }
             notify(x);
-        }
 
-        Node succ = fingerTable.getSuccessor();
-        for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
-            succ= findSuccessor(succ.getkey());
-            fingerTable.setSuccessor(succ);
+            Node succ = fingerTable.getSuccessor();
+            for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
+                succ = findSuccessor(succ.getkey());
+                if (succ.equals(myN)) break; //Stop If number of nodes in network are less than Num of Successors
+                fingerTable.setSuccessor(succ);
+            }
         }
 
     }
