@@ -2,8 +2,6 @@ package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.Message;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.Socket;
@@ -19,7 +17,7 @@ public class SocketNode {
     private SocketIncomingHandling socketCommCallback;
     private boolean incoming;
 
-    public SocketNode(String IP, @NotNull Socket endpoint, SocketIncomingHandling callback, boolean incoming) {
+    public SocketNode(String IP,Socket endpoint, SocketIncomingHandling callback, boolean incoming) {
         this.endpoint = endpoint;
         this.nodeIP = IP;
         this.socketCommCallback = callback;
@@ -64,7 +62,6 @@ public class SocketNode {
 
     }
 
-    @Nullable
     private Object readSocket() throws IOException {
         try {
             return in.readObject();

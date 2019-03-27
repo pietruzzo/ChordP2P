@@ -2,10 +2,11 @@ package com.distributed.chordApp.cooperativemirroring.core;
 
 import com.distributed.chordApp.cooperativemirroring.core.backend.ChordNetworkSettings;
 import com.distributed.chordApp.cooperativemirroring.core.backend.ClientHandlerThread;
+import com.distributed.chordApp.cooperativemirroring.core.backend.HostHandlerThread;
 import com.distributed.chordApp.cooperativemirroring.core.backend.ResourcesManager;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordBuilder;
-import com.distributed.chordLib.ChordCallback;
+
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * Class used for representing a Host of the cooperative mirroring system
  */
-public class Host implements Runnable, ChordCallback {
+public class Host implements Runnable {
     //IP address of the host
     private String hostIP = null;
     //Port of the host used for the cooperative mirroring application
@@ -29,6 +30,8 @@ public class Host implements Runnable, ChordCallback {
     private ResourcesManager resourcesManager = null;
     //Settings of this host for the chord network
     private ChordNetworkSettings chordNetworkSettings = null;
+    //Handler for changes in the keyset
+    private HostHandlerThread hostHandlerThread = null;
 
 
     public Host(String hostIP, Integer hostPort,ChordNetworkSettings chordNetworkSettings, @Nullable HashSet<Resource> resources) throws IOException {
@@ -36,7 +39,15 @@ public class Host implements Runnable, ChordCallback {
         this.setHostPort(hostPort);
         this.setChordNetworkSettings(chordNetworkSettings);
         this.setResourceManager(resources);
-        this.initChordEntryPoint(chordNetworkSettings);
+       // this.initChordEntryPoint(chordNetworkSettings);
+        this.initHostHandlerThread(new HostHandlerThread(
+                this.getHostIP(),
+                this.getHostPort(),
+                this.chordNetworkSettings,
+                this.chordEntryPoint,
+                this.resourcesManager,
+                true
+        ));
     }
 
     /*Setter methods*/
@@ -53,13 +64,19 @@ public class Host implements Runnable, ChordCallback {
         Chord cnep = null;
 
         if(cns.getJoinExistingChordNetwork()) {
-            cnep = (Chord) ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), this);
+            cnep = (Chord) ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), this.hostHandlerThread);
         }
         else {
-            cnep = (Chord) ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this);
+            cnep = (Chord) ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this.hostHandlerThread);
         }
 
         this.chordEntryPoint = cnep;
+    }
+
+    private void initHostHandlerThread(HostHandlerThread hostHandlerThread){
+        this.hostHandlerThread = hostHandlerThread;
+
+        this.hostHandlerThread.start();
     }
 
     @Override
@@ -129,8 +146,9 @@ public class Host implements Runnable, ChordCallback {
         return state;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void notifyResponsabilityChange(String firstKey, String lastKey) {
-
+    protected void finalize() {
+        this.hostHandlerThread.stop();
     }
 }
