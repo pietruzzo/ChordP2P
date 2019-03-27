@@ -3,6 +3,7 @@ package com.distributed.chordApp.cooperativemirroring.core.backend;
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
+import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
 
 import java.io.IOException;
@@ -11,14 +12,16 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- * Class used to handle requests coming from clients
+ * Class used to handle requests coming from clients (which could be effettive clients or other hosts of the network)
+ *
+ * @date 2019-03-27
+ * @version 2.0
  */
 
-public class ClientHandlerThread implements Runnable{
-    //Address of the associated host
-    private String associatedHostIP =  null;
-    //Port of the associated port
-    private Integer associatedHostPort = null;
+public class ClientHandlerThread implements Runnable
+{
+    //Settings of the associated host
+    private HostSettings hostSettings = null;
     //Chord network entry point reference
     private Chord chordEntryPoint = null;
     //Manager of resources associated to the current host
@@ -26,28 +29,23 @@ public class ClientHandlerThread implements Runnable{
     //Socket associated to the client
     private Socket client = null;
     //Used for state if the cliend handler request ack in case of request message forewarding
-    private Boolean requestACK = null;
-    //Boolean flag used to decree if the handler has to perform the basic lookup
-    private Boolean basicLookup = null;
+    private Boolean requireACK = null;
 
-    public ClientHandlerThread(String associatedHostIP,Integer associatedHostPort, Socket client, ResourcesManager resourcesManager, Chord chordEntryPoint,Boolean basicLookup, Boolean requestACK){
-       this.setAssociatedHostIP(associatedHostIP);
-       this.setAssociatedHostPort(associatedHostPort);
-       this.setClient(client);
-       this.setResourcesManager(resourcesManager);
-       this.setChordEntryPoint(chordEntryPoint);
-       this.setBasicLookup(basicLookup);
-       this.setRequestACK(requestACK);
+    public ClientHandlerThread(HostSettings hostSettings, Socket client, ResourcesManager resourcesManager, Chord chordEntryPoint, Boolean requireACK)
+    {
+        this.setHostSettings(hostSettings);
+        this.setClient(client);
+        this.setResourcesManager(resourcesManager);
+        this.setChordEntryPoint(chordEntryPoint);
+        this.setRequireACK(requireACK);
     }
 
     /*Setter methods*/
-    private void setAssociatedHostIP(String associatedHostIP){this.associatedHostIP = associatedHostIP;}
-    private void setAssociatedHostPort(Integer associatedHostPort){this.associatedHostPort = associatedHostPort;}
+    private void setHostSettings(HostSettings hostSettings){this.hostSettings = hostSettings; }
     private void setClient(Socket client){ this.client = client; }
     private void setChordEntryPoint(Chord chordEntryPoint){this.chordEntryPoint = chordEntryPoint; }
     private void setResourcesManager(ResourcesManager resourcesManager){ this.resourcesManager = resourcesManager; }
-    private void setRequestACK(Boolean requestACK){this.requestACK = requestACK; }
-    private void setBasicLookup(Boolean basicLookup){this.basicLookup = basicLookup; }
+    private void setRequireACK(Boolean requireACK){this.requireACK = requireACK; }
 
     /*Application methods*/
 
@@ -59,7 +57,18 @@ public class ClientHandlerThread implements Runnable{
     {
         Resource resource = null;
 
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("trying to retrive the resource : " + resourceID + " ...", true));
+
         resource = this.resourcesManager.retrieveResource(resourceID);
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+        {
+            if(resource == null)
+                System.out.println(this.getHostSettings().verboseInfoString("resource: " + resourceID + " not found", true));
+            else
+                System.out.println(this.getHostSettings().verboseInfoString("resource: " + resourceID + " found", true));
+        }
 
         return resource;
     }
@@ -73,7 +82,18 @@ public class ClientHandlerThread implements Runnable{
     {
         Boolean result = null;
 
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("trying to deposit the resource : " + resource.getResourceID() + " ...", true));
+
         result = this.resourcesManager.depositResource(resource);
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+        {
+            if(result)
+                System.out.println(this.getHostSettings().verboseInfoString("resource: " + resource.getResourceID() + " deposited", true));
+            else
+                System.out.println(this.getHostSettings().verboseInfoString("resource: " + resource.getResourceID() + " not deposited", true));
+        }
 
         return result;
     }
@@ -86,8 +106,15 @@ public class ClientHandlerThread implements Runnable{
     private String resourceLookup(String resourceID){
         String resourceManagerAddress = null;
 
-        if(this.getBasicLookup()) resourceManagerAddress = this.chordEntryPoint.lookupKeyBasic(resourceID);
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("performing a lookup for the resource : " + resourceID + " ..." , true));
+
+        if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups())
+            resourceManagerAddress = this.chordEntryPoint.lookupKeyBasic(resourceID);
         else resourceManagerAddress = this.chordEntryPoint.lookupKey(resourceID);
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("IP of the resource keeper : " + resourceManagerAddress , true));
 
         return resourceManagerAddress;
     }
@@ -101,6 +128,9 @@ public class ClientHandlerThread implements Runnable{
     private RequestMessage buildForewardRequestMessage(RequestMessage originalRequest,Boolean ackRequested)
     {
         RequestMessage newRequest = null;
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("building a foreward request message ..." , true));
 
         if(originalRequest.getDepositResource())
         {
@@ -122,6 +152,8 @@ public class ClientHandlerThread implements Runnable{
 
         }
 
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("foreward request message: " + newRequest.toString() , true));
 
         return newRequest;
      }
@@ -137,6 +169,9 @@ public class ClientHandlerThread implements Runnable{
          Resource requestedResource = null;
          Boolean result = null;
 
+         if(this.getHostSettings().getVerboseOperatingMode())
+             System.out.println(this.getHostSettings().verboseInfoString("building a response message ..." , true));
+
          if(requestMessage.getDepositResource()) result = this.resourcesManager.depositResource(requestMessage.getResource());
          else
          {
@@ -145,12 +180,15 @@ public class ClientHandlerThread implements Runnable{
              else result = true;
          }
 
-         responseMessage = new ResponseMessage( this.getAssociatedHostIP(),
-                                                this.getAssociatedHostPort(),
+         responseMessage = new ResponseMessage( this.getHostSettings().getHostIP(),
+                                                this.getHostSettings().getHostPort(),
                                                 requestMessage,
                                                 result,
                                       false,
                                                 requestedResource);
+
+         if(this.getHostSettings().getVerboseOperatingMode())
+             System.out.println(this.getHostSettings().verboseInfoString("response message: " + responseMessage.toString() , true));
 
 
          return responseMessage;
@@ -166,12 +204,18 @@ public class ClientHandlerThread implements Runnable{
      {
          ResponseMessage ackMessage = null;
 
+         if(this.getHostSettings().getVerboseOperatingMode())
+             System.out.println(this.getHostSettings().verboseInfoString("building an ACK message ..." , true));
+
          ackMessage = new ResponseMessage(responseMessage.getSolverHostIP(),
                                           responseMessage.getSolverHostPort(),
                                           responseMessage.getOriginalRequest(),
                                           responseMessage.getRequestPerformedSuccessfully(),
                                             true,
                                            null);
+
+         if(this.getHostSettings().getVerboseOperatingMode())
+             System.out.println(this.getHostSettings().verboseInfoString("ACK message: " + ackMessage.toString() , true));
 
          return ackMessage;
 
@@ -197,20 +241,20 @@ public class ClientHandlerThread implements Runnable{
             inputChannel = new ObjectInputStream(this.client.getInputStream());
             requestMessage = (RequestMessage) inputChannel.readObject();
 
-            thisHost = this.resourceLookup(requestMessage.getResourceID()).equals(this.getAssociatedHostIP());
+            thisHost = this.resourceLookup(requestMessage.getResourceID()).equals(this.getHostSettings().getHostIP());
 
             if(thisHost)responseMessage = this.buildResponseMessage(requestMessage);
-            else forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage, this.getRequestACK());
+            else forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage, this.getRequireACK());
 
             if(!thisHost)
             {
-                Socket nextHost = new Socket(this.resourceLookup(requestMessage.getResourceID()), this.getAssociatedHostPort());
+                Socket nextHost = new Socket(this.resourceLookup(requestMessage.getResourceID()), this.getHostSettings().getHostPort());
                 ObjectInputStream nextInputChannel = null;
                 ObjectOutputStream nextOutputStream = new ObjectOutputStream(nextHost.getOutputStream());
 
                 nextOutputStream.writeObject(forewardedRequestMessage);
 
-                if(this.getRequestACK())
+                if(this.getRequireACK())
                 {
                     nextInputChannel = new ObjectInputStream(nextHost.getInputStream());
 
@@ -273,21 +317,16 @@ public class ClientHandlerThread implements Runnable{
     }
 
     /*Getter methods*/
-    public String getAssociatedHostIP(){return this.associatedHostIP; }
-    public Integer getAssociatedHostPort(){ return this.associatedHostPort; }
-    public Boolean getRequestACK(){return this.requestACK; }
-    public Boolean getBasicLookup(){return this.basicLookup; }
+    public HostSettings getHostSettings(){return this.hostSettings; }
+    public Boolean getRequireACK(){return this.requireACK; }
 
     @Override
     public String toString(){
         String state = "\n======{ CLIENT HANDLER THREAD }======\n";
 
-        state += "\nAssociated host ip: " + this.getAssociatedHostIP();
-        state += "\nAssociated host port: " + this.getAssociatedHostPort();
-        if(this.getRequestACK()) state += "\nACK requested";
+        state += "\nAssociated host settings: " + this.getHostSettings().toString();
+        if(this.getRequireACK()) state += "\nACK required";
         else state += "\nACK not required";
-        if(this.getBasicLookup()) state += "\nPerform basic lookup";
-        else state += "\nPerform advanced lookup";
 
         return state;
     }

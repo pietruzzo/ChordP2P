@@ -5,18 +5,25 @@ import com.distributed.chordApp.cooperativemirroring.core.Resource;
 import java.util.HashSet;
 
 /**
- * Singleton class used to manage the reosurces of a specific Host
+ * Singleton class used to manage the resources of a specific Host
+ *
+ * @date 2019-03-27
+ * @version 1.0
  *
  */
-public class ResourcesManager {
+public class ResourcesManager
+{
     private static ResourcesManager instance ;
-    //Set of resources of a specific host
+    //Set of resources managed by a specific host
     private HashSet<Resource> resources = null;
 
-    private ResourcesManager(){ this.setResources(new HashSet<>()); }
+    private ResourcesManager()
+    {
+        this.setResources(new HashSet<>());
+    }
 
     /*Setter methods*/
-    private void setResources(HashSet<Resource> resources){ this.resources = resources; }
+    private void setResources(HashSet<Resource> resources) { this.resources = resources; }
 
     /*Application Methods*/
 
@@ -39,8 +46,14 @@ public class ResourcesManager {
     public synchronized Boolean depositResources(HashSet<Resource> resources){
         Boolean result = true ;
 
-        for(Resource r : resources){
-            result = result && this.resources.add(r);
+        for(Resource resource : resources){
+            /*
+             * For every resource passed as parameter I add it to the current resource container
+             * and perform an AND in order to know if all the resources has been successfully deposited on this host
+             * or not (true -> all the resources has been successfully hadded, false -> some resource could not have
+             * stored)
+             */
+            result = result && this.resources.add(resource);
 
             if(!result) return false ;
         }
@@ -56,9 +69,9 @@ public class ResourcesManager {
     public synchronized Resource retrieveResource(String resourceID){
         Resource result = null;
 
-        for(Resource r : this.resources){
-            if(r.getResourceID() == resourceID){
-                result = r;
+        for(Resource resource : this.resources){
+            if(resource.getResourceID() == resourceID){
+                result = resource;
                 break;
             }
         }

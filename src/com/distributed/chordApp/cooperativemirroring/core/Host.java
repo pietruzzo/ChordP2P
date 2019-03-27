@@ -1,12 +1,14 @@
 package com.distributed.chordApp.cooperativemirroring.core;
 
-import com.distributed.chordApp.cooperativemirroring.core.backend.ChordNetworkSettings;
+import com.distributed.chordApp.cooperativemirroring.core.settings.ChordNetworkSettings;
 import com.distributed.chordApp.cooperativemirroring.core.backend.ClientHandlerThread;
 import com.distributed.chordApp.cooperativemirroring.core.backend.HostHandlerThread;
 import com.distributed.chordApp.cooperativemirroring.core.backend.ResourcesManager;
+import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordBuilder;
 
+import com.distributed.chordLib.ChordCallback;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
@@ -17,66 +19,99 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Class used for representing a Host of the cooperative mirroring system
+ * Class used for representing a Host of the cooperative mirroring system.
+ * Each host is used as Server in case of external requests or Peer in case of internal communication among
+ * the hosts of the cooperative mirroring server network.
+ *
+ * @date 2019-03-27
+ * @version 2.0
  */
-public class Host implements Runnable {
-    //IP address of the host
-    private String hostIP = null;
-    //Port of the host used for the cooperative mirroring application
-    private Integer hostPort = null;
+public class Host implements Runnable, ChordCallback {
+    //Settings for the current host
+    private HostSettings hostSettings = null;
+
     //Entry point of the chord network for the cooperative mirroring application
     private Chord chordEntryPoint = null;
     //Manger of the resources of the current host
     private ResourcesManager resourcesManager = null;
-    //Settings of this host for the chord network
-    private ChordNetworkSettings chordNetworkSettings = null;
     //Handler for changes in the keyset
     private HostHandlerThread hostHandlerThread = null;
 
+    //Boolean flag used for stopping the server (it can be restarted later )
+    private Boolean stopHost = null;
+    //Boolean flag used for state if we want to definitly shutdown a server (will definitly close the host)
+    private Boolean shutdownHost = null;
 
-    public Host(String hostIP, Integer hostPort,ChordNetworkSettings chordNetworkSettings, @Nullable HashSet<Resource> resources) throws IOException {
-        this.setHostIP(hostIP);
-        this.setHostPort(hostPort);
-        this.setChordNetworkSettings(chordNetworkSettings);
+    public Host(HostSettings hostSettings, @Nullable HashSet<Resource> resources)
+    {
+        this.setHostSettings(hostSettings);
         this.setResourceManager(resources);
-       // this.initChordEntryPoint(chordNetworkSettings);
+        this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
+
         this.initHostHandlerThread(new HostHandlerThread(
-                this.getHostIP(),
-                this.getHostPort(),
-                this.chordNetworkSettings,
+                this.getHostSettings(),
                 this.chordEntryPoint,
                 this.resourcesManager,
                 true
         ));
+
+        this.stopHost = false;
+        this.shutdownHost = false ;
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+        {
+            System.out.println(this.getHostSettings().verboseInfoString("Host ready to operate", false));
+            System.out.println(this.toString());
+        }
     }
 
     /*Setter methods*/
-    private void setHostIP(String hostIP){this.hostIP = hostIP;}
-    private void setHostPort(Integer hostPort){ this.hostPort = hostPort;}
-    private void setChordNetworkSettings(ChordNetworkSettings chordNetworkSettings){this.chordNetworkSettings = chordNetworkSettings; }
+    private void setHostSettings(HostSettings hostSettings){this.hostSettings = hostSettings; }
     private void setResourceManager(@Nullable HashSet<Resource> resources){
         this.resourcesManager = ResourcesManager.getInstance();
         if(resources != null) this.resourcesManager.depositResources(resources);
     }
 
     /*Application settings*/
-    private void initChordEntryPoint(ChordNetworkSettings cns) throws IOException {
+
+    /**
+     * Method used for instantianting the Handler for the chord callbacks
+     * @param hostHandlerThread
+     */
+    private void initHostHandlerThread(HostHandlerThread hostHandlerThread) {
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("instantiating a new host handler thread ....", false));
+        this.hostHandlerThread = hostHandlerThread;
+
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("starting new host handler thread ....", false));
+        this.hostHandlerThread.start();
+
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("host handler thread started", false));
+    }
+
+    /*
+     * Method used for joining or creating a Chord network (depending on the settings of the ChordNetworkSettings passed as parameters)
+     */
+    private void initChordEntryPoint(ChordNetworkSettings cns)
+    {
         Chord cnep = null;
 
-        if(cns.getJoinExistingChordNetwork()) {
-            cnep = (Chord) ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), this.hostHandlerThread);
-        }
-        else {
-            cnep = (Chord) ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this.hostHandlerThread);
+        try
+        {
+            if(cns.getJoinExistingChordNetwork())
+                cnep = (Chord) ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), this.hostHandlerThread);
+            else
+                cnep = (Chord) ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this.hostHandlerThread);
+
+        } catch (IOException e)
+        {
+            System.err.println(this.getHostSettings().verboseInfoString("impossible to join a chord network", false));
+            e.printStackTrace();
+            System.err.print(this.getHostSettings().verboseInfoString("shutting down the host", false ));
+            this.finalize();
+            System.exit(1);
         }
 
         this.chordEntryPoint = cnep;
-    }
-
-    private void initHostHandlerThread(HostHandlerThread hostHandlerThread){
-        this.hostHandlerThread = hostHandlerThread;
-
-        this.hostHandlerThread.start();
     }
 
     @Override
@@ -85,63 +120,158 @@ public class Host implements Runnable {
         ServerSocket server = null;
         ThreadPoolExecutor executor = null;
 
+        try {
+
+            if(this.getHostSettings().getVerboseOperatingMode())
+                System.out.println(this.getHostSettings().verboseInfoString("starting the server socket ...", false));
+
+            server = new ServerSocket(this.getHostSettings().getHostPort().intValue());
+
+            if(this.getHostSettings().getVerboseOperatingMode())
+                System.out.println(this.getHostSettings().verboseInfoString("server socket started", false));
+
+        } catch (IOException e)
+        {
+            System.err.println(this.getHostSettings().verboseInfoString("cannot instantiate a server socket", false));
+            e.printStackTrace();
+            System.err.println(this.getHostSettings().verboseInfoString("shutting down the host", false));
+            return ;
+        }
+
         try
         {
-            server = new ServerSocket(this.getHostPort().intValue());
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("instantiating the thread pool executor ...", false));
 
             /*We used the CachedThreadPool in order to have only as much thread as we
              *need , also according to the processing power of the machine of the host
              */
             executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
-            do {
-                Socket client = server.accept();
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("thread pool executor instantiated", false));
 
-                ClientHandlerThread cht = new ClientHandlerThread(  this.getHostIP(),
-                                                                    this.getHostPort(),
-                                                                    client,
-                                                                    this.resourcesManager,
-                                                                    this.chordEntryPoint,
-                                                                    this.getChordNetworkSettings().getPerformBasicLookups(),
-                                                                    true);
+            while(!this.shutdownHost)
+            {
+                while(!this.stopHost)
+                {
+                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for a client request ...", false));
 
-                executor.execute(cht);
+                    Socket client = server.accept();
 
-            }while(true);
+                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client request detected, instantiating a client handler thread ...", false));
 
-        }
-        catch(Exception ex)
-        {
+                    ClientHandlerThread cht = new ClientHandlerThread(  this.getHostSettings(),
+                                                                        client,
+                                                                        this.resourcesManager,
+                                                                        this.chordEntryPoint,
+                                                                        true);
 
+                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client handler thread instantiated , trying to execute it ...", false));
+
+                    executor.execute(cht);
+
+                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("executing client handler thread", false));
+
+                }
+
+            }
+
+
+        } catch (IOException e) {
+            System.err.println(this.getHostSettings().verboseInfoString("unable to accet a client request", false));
+            e.printStackTrace();
         }
         finally
         {
+            executor.shutdown();
+
             try
             {
-                executor.shutdown();
                 server.close();
             }
-            //Possible execution rised by the server termination
             catch (IOException e)
             {
+                System.err.println(this.getHostSettings().verboseInfoString("unable to close the server socket", false));
                 e.printStackTrace();
-
             }
+
+            this.finalize();
         }
     }
 
+    /**
+     * Method used for stopping momentaneously the host
+     * (it could be restarted later)
+     * @return Boolean value that represent if the host is in the stop state
+     */
+    public synchronized Boolean stopHost(Boolean verbose)
+    {
+        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("stopping the host ....",false));
+
+        this.stopHost = true;
+
+        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("host stopped", false));
+
+        return this.getHostStopped();
+    }
+
+    /**
+     * Method used for restarting a host after it has been stopped
+     *
+     * @return Boolean value that represents if the host is stopped or not
+     */
+    public synchronized Boolean startHost(Boolean verbose)
+    {
+        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("starting the host ....", false));
+
+        this.stopHost = false;
+
+        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("host started", false));
+
+        return this.getHostStopped();
+    }
+
+    /**
+     * Method used for permamently shutting down a host
+     * (it cannot be restarted anyhow)
+     * @return
+     */
+    public synchronized Boolean shutdownHost(Boolean verbose)
+    {
+        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("shutting down the host ....", false));
+
+        this.shutdownHost = true;
+
+        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("host shutted down", false));
+
+        return this.getHostPoweredOff();
+    }
+
+    /**
+     * Method used for changing a resource placement
+     * @param firstKey
+     * @param lastKey
+     */
+    @Override
+    public void notifyResponsabilityChange(String firstKey, String lastKey) {
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("changing a resource ....", false));
+
+        this.hostHandlerThread.notifyResponsabilityChange(firstKey, lastKey);
+    }
+
     /*Getter methods*/
-    public String getHostIP(){return this.hostIP;}
-    public Integer getHostPort(){return this.hostPort;}
-    public ChordNetworkSettings getChordNetworkSettings(){return this.chordNetworkSettings;}
+    public HostSettings getHostSettings(){return this.hostSettings; }
+    public Boolean getHostStopped(){return this.stopHost; }
+    public Boolean getHostPoweredOff(){ return this.shutdownHost; }
 
     @Override
     public String toString(){
         String state = "\n======{ HOST }======\n";
 
-        state += "\nIP address: " + this.getHostIP();
-        state += "\nPort : " + this.getHostPort();
-        state += "\nChord network settings: " + this.getChordNetworkSettings().toString();
+        state += "\nHost settings: " + this.getHostSettings().toString();
+        //state += "\nChord network settings: " + this.getChordNetworkSettings().toString();
+        if(this.getHostStopped()) state += "\nHost stopped";
+        else state += "\nHost running";
+        if(this.getHostPoweredOff()) state += "\nHost shutted down";
 
         return state;
     }
@@ -149,6 +279,14 @@ public class Host implements Runnable {
     @SuppressWarnings("deprecation")
     @Override
     protected void finalize() {
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("host handler thread ready to be stopped ... ", false));
+
         this.hostHandlerThread.stop();
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("host handler thread stopped ", false));
+
     }
 }

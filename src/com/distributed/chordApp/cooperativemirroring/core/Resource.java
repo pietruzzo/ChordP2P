@@ -4,6 +4,9 @@ import java.io.Serializable;
 
 /**
  * Class that represents a resource used in the cooperative mirroring application
+ *
+ * @date 2019-03-27
+ * @version 1.0
  */
 public class Resource implements Serializable {
     //Unique ID associated to a specific resource

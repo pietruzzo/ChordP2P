@@ -1,4 +1,4 @@
-package com.distributed.chordApp.cooperativemirroring.core.backend;
+package com.distributed.chordApp.cooperativemirroring.core.settings;
 
 import java.io.Serializable;
 
@@ -7,8 +7,6 @@ import java.io.Serializable;
  * it to join or create (and use) a chord network
  */
 public class ChordNetworkSettings implements Serializable {
-    //IP of the host that has the following settings
-    private String associatedHostIP = null;
     //Port of the host that has the following settings
     private Integer associatedHostPort = null;
     //Parameter used for not allowing any more changes in parameters
@@ -28,13 +26,11 @@ public class ChordNetworkSettings implements Serializable {
     //Size of the module od the chord
     private Integer chordModule = null;
 
-    public ChordNetworkSettings(String associatedHostIP,Integer associatedHostPort){
-       this.setAssociatedHostIP(associatedHostIP);
+    public ChordNetworkSettings(Integer associatedHostPort){
        this.setAssociatedHostPort(associatedHostPort);
     }
 
     /*Setter methods*/
-    private void setAssociatedHostIP(String associatedHostIP){this.associatedHostIP = associatedHostIP; }
     private void setAssociatedHostPort(Integer associatedHostPort){ this.associatedHostPort = associatedHostPort; }
 
     /**
@@ -125,7 +121,6 @@ public class ChordNetworkSettings implements Serializable {
     }
 
     /*Getter methods*/
-    public String getAssociatedHostIP(){ return this.associatedHostIP; }
     public Integer getAssociatedHostPort(){ return this.associatedHostPort; }
     public Boolean getChangesLocked(){ return this.changesLocked; }
     public Boolean getJoinExistingChordNetwork(){ return this.joinExistingChordNetwork; }
@@ -142,7 +137,6 @@ public class ChordNetworkSettings implements Serializable {
         state += "\nChanges locked: ";
         if(this.getChangesLocked()) state += "<true>\n";
         else state += "<false>\n";
-        state += "\nAssociated Host IP: " + this.getAssociatedHostIP();
         state += "\nAssociated Host Port: " + this.getAssociatedHostPort();
         state += "\nJoin an existing chord network: ";
         if(this.getJoinExistingChordNetwork()) state += "<true>\n";

@@ -3,6 +3,8 @@ package com.distributed.chordApp.cooperativemirroring.core.backend;
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
+import com.distributed.chordApp.cooperativemirroring.core.settings.ChordNetworkSettings;
+import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordCallback;
 
@@ -12,30 +14,27 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 /**
- * Class used for instantiate object used for notify responsability changes in the key set
+ * Class used for instantiating HostHandler threads used for notify changes on the resources of a Host
+ *
+ * @date 2019-03-27
+ * @version 1.0
  */
 public class HostHandlerThread extends Thread implements ChordCallback
 {
-    private String associatedHostIP = null;
-    private Integer associatedHostPort = null;
-
-    private ChordNetworkSettings chordNetworkSettings = null;
+    //Settings of the associated host
+    private HostSettings hostSettings = null;
+    //entry point of the associated chord network
     private Chord chordEntryPoint = null;
-
+    //Reference to the resources manager of the current host
     private ResourcesManager resourcesManager = null;
-
+    //Boolean flag that states if the HostHandlerThread has to wait for ack in case of changes in the keyset
     private Boolean requireAck = null;
 
-    public HostHandlerThread(String associatedHostIP,
-                             Integer associatedHostPort,
-                             ChordNetworkSettings chordNetworkSettings,
+    public HostHandlerThread(HostSettings hostSettings,
                              Chord chordEntryPoint,
                              ResourcesManager resourcesManager,
                              Boolean requireAck)
     {
-        this.setAssociatedHostIP(associatedHostIP);
-        this.setAssociatedHostPort(associatedHostPort);
-        this.setChordNetworkSettings(chordNetworkSettings);
         this.setChordEntryPoint(chordEntryPoint);
         this.setResourcesManager(resourcesManager);
         this.setRequireAck(requireAck);
@@ -43,9 +42,7 @@ public class HostHandlerThread extends Thread implements ChordCallback
     }
 
     /*Setter methods*/
-    private void setAssociatedHostIP(String associatedHostIP){this.associatedHostIP = associatedHostIP; }
-    private void setAssociatedHostPort(Integer associatedHostPort){this.associatedHostPort = associatedHostPort; }
-    private void setChordNetworkSettings(ChordNetworkSettings chordNetworkSettings){this.chordNetworkSettings = chordNetworkSettings; }
+    private void setHostSettings(HostSettings hostSettings){this.hostSettings = hostSettings; }
     private void setChordEntryPoint(Chord chordEntryPoint){this.chordEntryPoint = chordEntryPoint;}
     private void setResourcesManager(ResourcesManager resourcesManager){this.resourcesManager = resourcesManager; }
     private void setRequireAck(Boolean requireAck){this.requireAck = requireAck; }
@@ -60,20 +57,20 @@ public class HostHandlerThread extends Thread implements ChordCallback
 
         resourcesManager.removeResource(firstKey);
 
-        if(this.getChordNetworkSettings().getPerformBasicLookups()) destinationAddress = this.chordEntryPoint.lookupKeyBasic(lastKey);
+        if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) destinationAddress = this.chordEntryPoint.lookupKeyBasic(lastKey);
         else destinationAddress = this.chordEntryPoint.lookupKey(lastKey);
 
-        if(destinationAddress.equals(this.getAssociatedHostIP())) resourcesManager.depositResource(resource);
+        if(destinationAddress.equals(this.getHostSettings().getHostIP())) resourcesManager.depositResource(resource);
         else
         {
             RequestMessage request = new RequestMessage(
-                                                        this.associatedHostIP,
-                                                        this.associatedHostPort,
+                                                        this.getHostSettings().getHostIP(),
+                                                        this.getHostSettings().getHostPort(),
                                                         resource,
                                                         this.getRequireAck(),
                                                         false);
             try {
-                Socket destinationSocket = new Socket(destinationAddress, this.getAssociatedHostPort());
+                Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
                 ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
 
                 outChannel.writeObject(request);
@@ -104,9 +101,7 @@ public class HostHandlerThread extends Thread implements ChordCallback
     public void run() { }
 
     /*Getter methods*/
-    public String getAssociatedHostIP(){return this.associatedHostIP; }
-    public Integer getAssociatedHostPort(){return this.getAssociatedHostPort(); }
-    public ChordNetworkSettings getChordNetworkSettings(){return this.chordNetworkSettings; }
+    public HostSettings getHostSettings(){return this.hostSettings; }
     public Chord getChordEntryPoint(){ return this.chordEntryPoint; }
     public ResourcesManager getResourcesManager(){return this.resourcesManager; }
     public Boolean getRequireAck(){return this.requireAck; }
@@ -115,9 +110,7 @@ public class HostHandlerThread extends Thread implements ChordCallback
     public String toString(){
         String state = "\n======{HOST HANDLER THREAD}======\n";
 
-        state += "\nAssociated Host IP: " + this.getAssociatedHostIP();
-        state += "\nAssociated Host Port: " + this.getAssociatedHostPort();
-        state += "\nChord network settings: \n" + this.getChordNetworkSettings().toString();
+        state += "\nAssociated host settings: " + this.getHostSettings().toString();
         if(this.getRequireAck()) state += "\nACK required";
         else state += "\nACK not required";
 
