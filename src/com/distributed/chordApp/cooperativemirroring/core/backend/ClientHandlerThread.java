@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 /**
  * Class used to handle requests coming from clients (which could be effettive clients or other hosts of the network)
@@ -225,40 +226,75 @@ public class ClientHandlerThread implements Runnable
     @Override
     public void run()
     {
-        //Canale di input dell'host che ci ha fatto/inoltrato la richiesta
+
+        //Input channel of the host that send the request to us
         ObjectInputStream inputChannel = null;
-        //Messaggio di richiesta inviatoci
+        //Request message that the client send to us.
         RequestMessage requestMessage = null;
 
         RequestMessage forewardedRequestMessage = null;
         ResponseMessage responseMessage = null;
         ResponseMessage ackMessage = null;
 
-        Boolean thisHost = false ;
+        Boolean thisHost = false;
 
-        try
-        {
+        try {
+
+            if(this.getHostSettings().getVerboseOperatingMode())
+                System.out.println(this.getHostSettings().verboseInfoString("opening an input channel with the client ... " , true));
+
             inputChannel = new ObjectInputStream(this.client.getInputStream());
+
+            if(this.getHostSettings().getVerboseOperatingMode())
+                System.out.println(this.getHostSettings().verboseInfoString("input channel opened , waiting for a request ..." , true));
+
             requestMessage = (RequestMessage) inputChannel.readObject();
 
             thisHost = this.resourceLookup(requestMessage.getResourceID()).equals(this.getHostSettings().getHostIP());
 
-            if(thisHost)responseMessage = this.buildResponseMessage(requestMessage);
-            else forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage, this.getRequireACK());
+            if (thisHost){
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("the request was directed to this host; building a response ... " , true));
+                responseMessage = this.buildResponseMessage(requestMessage);
+            }
+            else {
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("the request was directed to another host; building a forewarding request ..." , true));
+                forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage, this.getRequireACK());
+            }
 
-            if(!thisHost)
-            {
-                Socket nextHost = new Socket(this.resourceLookup(requestMessage.getResourceID()), this.getHostSettings().getHostPort());
+            if (!thisHost) {
+
+                String nextHostAddress = this.resourceLookup(requestMessage.getResourceID());
+
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("opening a channel with another host: " + nextHostAddress + " ..." , true));
+
+                Socket nextHost = new Socket(nextHostAddress, this.getHostSettings().getHostPort());
+
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("opened a channel with host: " + nextHostAddress  , true));
+
                 ObjectInputStream nextInputChannel = null;
                 ObjectOutputStream nextOutputStream = new ObjectOutputStream(nextHost.getOutputStream());
 
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("forewarding the request to: " + nextHostAddress  + " ..." , true));
+
                 nextOutputStream.writeObject(forewardedRequestMessage);
 
-                if(this.getRequireACK())
-                {
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("request forewarded " + nextHostAddress  , true));
+
+                if (this.getRequireACK()) {
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("waiting for an ACK from: " + nextHostAddress + " ..." , true));
                     nextInputChannel = new ObjectInputStream(nextHost.getInputStream());
 
                     ackMessage = (ResponseMessage) nextInputChannel.readObject();
+
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("ACK arrived" , true));
 
                     nextInputChannel.close();
                 }
@@ -267,11 +303,14 @@ public class ClientHandlerThread implements Runnable
                 nextHost.close();
             }
 
-            if(thisHost)
+            if (thisHost)
             {
-                //Nel caso in cui la richiesta venisse dal richiedente originale , rispondo a lui direttamente usando
-                //il socket client
-                if(!requestMessage.getForewarded()) {
+
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("sending the response to the original host " , true));
+
+                if (!requestMessage.getForewarded()) {
+
                     ObjectOutputStream outputChannel = new ObjectOutputStream(this.client.getOutputStream());
 
                     outputChannel.writeObject(responseMessage);
@@ -289,8 +328,11 @@ public class ClientHandlerThread implements Runnable
                     destinationHost.close();
                 }
 
-                if(requestMessage.getForewarded() && requestMessage.getAckRequested())
-                {
+                if (requestMessage.getForewarded() && requestMessage.getAckRequested()) {
+
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("writing the ACK message for the previous host" , true));
+
                     ackMessage = this.buildAckMessage(responseMessage);
                     ObjectOutputStream outputChannel = new ObjectOutputStream(this.client.getOutputStream());
                     outputChannel.writeObject(ackMessage);
@@ -301,22 +343,25 @@ public class ClientHandlerThread implements Runnable
 
             inputChannel.close();
 
-
-        }catch(IOException ioe){
-
-        } catch (ClassNotFoundException e) {
+            try {
+                this.client.close();
+            } catch (IOException e) {
+                System.err.println(this.getHostSettings().verboseInfoString("cannot close the client socket", true));
+                e.printStackTrace();
+            }
+        } catch (UnknownHostException e) {
+            System.err.println(this.getHostSettings().verboseInfoString("unknown host exception", true));
             e.printStackTrace();
-        }
-
-        try {
-            this.client.close();
         } catch (IOException e) {
+            System.err.println(this.getHostSettings().verboseInfoString("I/O exception", true));
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            System.err.println(this.getHostSettings().verboseInfoString("class not found exception", true));
             e.printStackTrace();
         }
-
     }
 
-    /*Getter methods*/
+        /*Getter methods*/
     public HostSettings getHostSettings(){return this.hostSettings; }
     public Boolean getRequireACK(){return this.requireACK; }
 

@@ -46,7 +46,7 @@ public class Host implements Runnable, ChordCallback {
     {
         this.setHostSettings(hostSettings);
         this.setResourceManager(resources);
-        this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
+        //this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
 
         this.initHostHandlerThread(new HostHandlerThread(
                 this.getHostSettings(),
