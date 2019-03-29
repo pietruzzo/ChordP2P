@@ -30,7 +30,7 @@ public class SocketNode {
             e.printStackTrace();
         }
         this.socketThread = new Thread(new ReadSocketRunnable());
-        this.socketThread.run();
+        this.socketThread.start();
     }
 
 

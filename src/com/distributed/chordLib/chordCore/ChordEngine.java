@@ -29,7 +29,7 @@ public class ChordEngine extends ChordClient {
         stabilize();
         fixFingers();
         Thread routine = new Thread(this::routineActions);
-        routine.run();
+        routine.start();
     }
 
     @Override
