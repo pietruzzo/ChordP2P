@@ -9,10 +9,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class Server {
     public static void main(String []args){
         String serverIP = "127.0.0.1";
-        Integer serverPort = 7654;
+        Integer chordPort = 7654;
+        Integer serverPort = 9999;
 
-        ChordNetworkSettings chs = new ChordNetworkSettings(serverPort);
-        HostSettings hs = new HostSettings(serverIP, chs, true);
+        ChordNetworkSettings chs = new ChordNetworkSettings(chordPort);
+        HostSettings hs = new HostSettings(serverIP, serverPort, chs, true);
 
         chs.setPerformBasicLookups(false);
         chs.setJoinExistingChordNetwork(false);

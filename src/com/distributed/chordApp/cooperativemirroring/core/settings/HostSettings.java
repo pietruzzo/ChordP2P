@@ -19,10 +19,10 @@ public class HostSettings implements Serializable
     //Object used for setting up the connection to a chord network by a specific host
     private ChordNetworkSettings chordNetworkSettings = null;
 
-    public HostSettings(String hostIP,ChordNetworkSettings chordNetworkSettings,Boolean verboseOperatingMode)
+    public HostSettings(String hostIP,Integer hostPort, ChordNetworkSettings chordNetworkSettings,Boolean verboseOperatingMode)
     {
         this.setHostIP(hostIP);
-        this.setHostPort(chordNetworkSettings.getAssociatedHostPort());
+        this.setHostPort(hostPort);
         this.setChordNetworkSettings(chordNetworkSettings);
         this.setVerboseOperatingMode(verboseOperatingMode);
     }

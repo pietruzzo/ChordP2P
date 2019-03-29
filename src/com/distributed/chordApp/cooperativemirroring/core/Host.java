@@ -101,9 +101,9 @@ public class Host implements Runnable, ChordCallback {
         try
         {
             if(cns.getJoinExistingChordNetwork())
-                cnep = ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), null);
+                cnep = ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedPort(), null);
             else
-                cnep = ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), null);
+                cnep = ChordBuilder.createChord(cns.getAssociatedPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), null);
 
         } catch (IOException e)
         {

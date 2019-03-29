@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public class ChordNetworkSettings implements Serializable {
     //Port of the host that has the following settings
-    private Integer associatedHostPort = null;
+    private Integer associatedPort = null;
     //Parameter used for not allowing any more changes in parameters
     private Boolean changesLocked = false;
 
@@ -31,7 +31,7 @@ public class ChordNetworkSettings implements Serializable {
     }
 
     /*Setter methods*/
-    private void setAssociatedHostPort(Integer associatedHostPort){ this.associatedHostPort = associatedHostPort; }
+    private void setAssociatedHostPort(Integer associatedPort){ this.associatedPort = associatedPort; }
 
     /**
      * Method used to state if the Host will join or create a chord network
@@ -121,7 +121,7 @@ public class ChordNetworkSettings implements Serializable {
     }
 
     /*Getter methods*/
-    public Integer getAssociatedHostPort(){ return this.associatedHostPort; }
+    public Integer getAssociatedPort(){ return this.associatedPort; }
     public Boolean getChangesLocked(){ return this.changesLocked; }
     public Boolean getJoinExistingChordNetwork(){ return this.joinExistingChordNetwork; }
     public String  getBootstrapServerAddress(){ return this.bootstrapServerAddress; }
@@ -137,7 +137,7 @@ public class ChordNetworkSettings implements Serializable {
         state += "\nChanges locked: ";
         if(this.getChangesLocked()) state += "<true>\n";
         else state += "<false>\n";
-        state += "\nAssociated Host Port: " + this.getAssociatedHostPort();
+        state += "\nAssociated Host Port: " + this.getAssociatedPort();
         state += "\nJoin an existing chord network: ";
         if(this.getJoinExistingChordNetwork()) state += "<true>\n";
         else state += "<false>\n";
