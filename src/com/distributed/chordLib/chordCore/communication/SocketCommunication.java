@@ -196,7 +196,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
                 try {
                     Socket newConnection = serverSocket.accept();
                     String ip = newConnection.getInetAddress().getHostAddress();
-                    SocketNode newSocketNode =  new SocketNode(ip, new Socket(ip, socketPort), callback, false);
+                    SocketNode newSocketNode = new SocketNode(ip, new Socket(ip, socketPort), callback, false);
                     socketNodes.put(ip, newSocketNode);
                 } catch (IOException e) {
                     System.err.println("Unable to accept new incoming connection");
@@ -204,7 +204,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
                     closeServerSocket = true;
                 }
             }
-        }).run();
+        }).start();
     }
 
     /**

@@ -66,7 +66,7 @@ public class HostSettings implements Serializable
         state += "\nHost port: " + this.getHostPort();
         if(this.getVerboseOperatingMode()) state += "\nVerbose operating mode";
         else state += "\nSilent operating mode";
-        state += "\nChord network settings: " + this.getChordNetworkSettings().toString();
+        //state += "\nChord network settings: " + this.getChordNetworkSettings().toString();
 
         return  state;
     }

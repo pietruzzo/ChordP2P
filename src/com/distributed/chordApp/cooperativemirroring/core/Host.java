@@ -38,22 +38,22 @@ public class Host implements Runnable, ChordCallback {
     private HostHandlerThread hostHandlerThread = null;
 
     //Boolean flag used for stopping the server (it can be restarted later )
-    private Boolean stopHost = null;
+    private Boolean stopHost = false;
     //Boolean flag used for state if we want to definitly shutdown a server (will definitly close the host)
-    private Boolean shutdownHost = null;
+    private Boolean shutdownHost = false;
 
     public Host(HostSettings hostSettings, @Nullable HashSet<Resource> resources)
     {
         this.setHostSettings(hostSettings);
         this.setResourceManager(resources);
-        //this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
+        this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
 
-        this.initHostHandlerThread(new HostHandlerThread(
+        /*this.initHostHandlerThread(new HostHandlerThread(
                 this.getHostSettings(),
                 this.chordEntryPoint,
                 this.resourcesManager,
                 true
-        ));
+        ));*/
 
         this.stopHost = false;
         this.shutdownHost = false ;
@@ -95,12 +95,15 @@ public class Host implements Runnable, ChordCallback {
     {
         Chord cnep = null;
 
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("trying to create or join a chrord network...", false));
+
         try
         {
             if(cns.getJoinExistingChordNetwork())
-                cnep = (Chord) ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), this.hostHandlerThread);
+                cnep = ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedHostPort(), null);
             else
-                cnep = (Chord) ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this.hostHandlerThread);
+                cnep = ChordBuilder.createChord(cns.getAssociatedHostPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), null);
 
         } catch (IOException e)
         {
@@ -110,6 +113,9 @@ public class Host implements Runnable, ChordCallback {
             this.finalize();
             System.exit(1);
         }
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("created or joined a chord network", false));
 
         this.chordEntryPoint = cnep;
     }
@@ -268,7 +274,6 @@ public class Host implements Runnable, ChordCallback {
         String state = "\n======{ HOST }======\n";
 
         state += "\nHost settings: " + this.getHostSettings().toString();
-        //state += "\nChord network settings: " + this.getChordNetworkSettings().toString();
         if(this.getHostStopped()) state += "\nHost stopped";
         else state += "\nHost running";
         if(this.getHostPoweredOff()) state += "\nHost shutted down";

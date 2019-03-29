@@ -1,5 +1,8 @@
 package com.distributed.chordApp.cooperativemirroring.app;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 /**
  * Class used for instntiating clients for the cooperative mirroring system
  *
@@ -14,8 +17,7 @@ public class Client {
     //Boolean flag used for turn-on the verbose mode for the current client
     private Boolean verbose = null;
 
-    public Client(String clientIP,Integer clientPort,Boolean verbose)
-    {
+    public Client(String clientIP,Integer clientPort,Boolean verbose) {
 
     }
 
@@ -26,16 +28,21 @@ public class Client {
 
     /*Application methods*/
 
-    private void menu()
+    private void clientConsole()
     {
         Boolean goAhead = true;
+        BufferedReader reader = new BufferedReader(new InputStreamReader((System.in)));
 
-        do {
-            System.out.println("\n======{Client Menu}=====");
-            System.out.println("1)Retrieve a resource");
-            System.out.println("2)Deposit a resource");
+
+        do
+        {
+            System.out.println("\n======{Client Console}======\n");
+            System.out.print("\n1)Deposit a new resource");
+            System.out.print("\n2)Retrive a resource\n");
+            System.out.print("\n0)Exit");
+            System.out.print("\nChoice> ");
+
         }while(goAhead);
-
     }
 
     /*Getters*/
