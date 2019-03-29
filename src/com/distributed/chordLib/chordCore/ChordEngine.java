@@ -198,10 +198,11 @@ public class ChordEngine extends ChordClient {
     }
 
     private void routineActions(){
+        Object monitor = new Object();
         while (!stopRoutine) {
 
             try {
-                this.wait(2000);
+                monitor.wait(2000);
             } catch (InterruptedException e) {
                 System.out.println("Routine actions Stopped");
             }
