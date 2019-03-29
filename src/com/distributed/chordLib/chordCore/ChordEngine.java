@@ -122,7 +122,8 @@ public class ChordEngine extends ChordClient {
 
     @Override
     protected void checkPredecessor() {
-        if (!comLayer.isAlive(fingerTable.getPredecessor())) fingerTable.setPredecessor(null);
+        Node predecessor = fingerTable.getPredecessor();
+        if (predecessor!= null && comLayer.isAlive(predecessor)) fingerTable.setPredecessor(null);
     }
 
 
@@ -203,7 +204,8 @@ public class ChordEngine extends ChordClient {
 
             try {
                 synchronized (this){
-                this.wait(2000);}
+                this.wait(2000);
+                }
             } catch (InterruptedException e) {
                 System.out.println("Routine actions Stopped");
             }
