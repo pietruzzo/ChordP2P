@@ -6,6 +6,7 @@ import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +25,7 @@ public class ChordEngine extends ChordClient {
      * @param module module of Chord Ring
      * @param callback Optional Callback for application
      */
-    public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, Integer module, ChordCallback callback) {
+    public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, @NotNull Integer module, ChordCallback callback) {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
         stabilize();
         fixFingers();
@@ -198,11 +199,11 @@ public class ChordEngine extends ChordClient {
     }
 
     private void routineActions(){
-        Object monitor = new Object();
         while (!stopRoutine) {
 
             try {
-                monitor.wait(2000);
+                synchronized (this){
+                this.wait(2000);}
             } catch (InterruptedException e) {
                 System.out.println("Routine actions Stopped");
             }
