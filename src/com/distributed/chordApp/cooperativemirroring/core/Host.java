@@ -12,8 +12,6 @@ import com.distributed.chordLib.ChordCallback;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
@@ -175,8 +173,6 @@ public class Host implements Runnable, ChordCallback {
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for a client request ...", false));
 
                     Socket client = server.accept();
-
-                    System.out.println("Connected to :"+client.getInetAddress().getHostAddress()+" At Port :"+client.getLocalPort());
 
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client request detected, instantiating a client handler thread ...", false));
 

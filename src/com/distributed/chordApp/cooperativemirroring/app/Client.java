@@ -33,11 +33,11 @@ public class Client {
 
     /*Application methods*/
 
-    private String clientInfoString(String infoMessage,boolean newLine)
+    private String clientInfoString(String infoMessage)
     {
-        String infoString = "[Client\\\\ " + this.getClientIP() + " : " + this.getClientPort() + ">";
+        String infoString = "[Client\\\\" + this.getClientIP() + ":" + this.getClientPort() + ">";
 
-        if(newLine)infoString += infoMessage + "\n";
+        infoString += infoMessage;
 
         return infoString;
     }
@@ -59,7 +59,7 @@ public class Client {
         ResponseMessage response = null;
 
         do {
-            System.out.println("\n======{CLIENT CONSOLE}======\n");
+            System.out.println("\n======{CLIENT\\\\" + this.getClientIP() + ":" + this.getClientPort() + " CONSOLE}======\n");
             System.out.println("1)Deposit a resource");
             System.out.println("2)Retrive a resource");
             System.out.println("0)Exit");
@@ -68,7 +68,7 @@ public class Client {
             try {
                 choice = Integer.parseInt(reader.readLine());
             } catch (IOException e) {
-                System.err.println(this.clientInfoString("Invalid input choice type, retry", true));
+                System.err.println(this.clientInfoString("Invalid input choice type, retry"));
                 choice = -1;
                 goAhead = true;
             }
@@ -78,12 +78,12 @@ public class Client {
                 case -1:
                     break;
                 case 0:
-                    System.out.println(this.clientInfoString("Terminating the current session", true));
+                    System.out.println(this.clientInfoString("Terminating the current session"));
                     goAhead = false ;
                     break;
                 case 1:
-                    System.out.println(this.clientInfoString("Deposit resource ", true));
-                    System.out.print(this.clientInfoString("Insert resource id: ", false));
+                    System.out.println(this.clientInfoString("Deposit resource "));
+                    System.out.print(this.clientInfoString("Insert resource id: "));
                     try {
                         resourceID = reader.readLine();
                     } catch (IOException e) {
@@ -101,8 +101,8 @@ public class Client {
                     break;
 
                 case 2:
-                    System.out.println(this.clientInfoString("Retrive resource ", true));
-                    System.out.print(this.clientInfoString("Insert resource id: ", false));
+                    System.out.println(this.clientInfoString("Retrive resource "));
+                    System.out.print(this.clientInfoString("Insert resource id: "));
                     try {
                         resourceID = reader.readLine();
                     } catch (IOException e) {
@@ -124,7 +124,7 @@ public class Client {
 
         }while(goAhead);
 
-        System.out.println(this.clientInfoString("Exiting from the client, bye", true));
+        System.out.println(this.clientInfoString("Exiting from the client, bye"));
 
     }
 
@@ -133,7 +133,7 @@ public class Client {
      */
     private RequestMessage buildRequest(String resourceID,Boolean depositResource)
     {
-        if(this.verbose) System.out.println("[Client> creating the request ...");
+        if(this.verbose) System.out.println(this.clientInfoString("creating the request ..."));
         RequestMessage request = null;
         Resource resource = null;
 
@@ -160,7 +160,7 @@ public class Client {
             );
         }
 
-        System.out.println("[Client> request message created");
+        if(this.verbose) System.out.println(this.clientInfoString("request created"));
 
         return request;
     }
@@ -170,24 +170,25 @@ public class Client {
      */
     private ResponseMessage sendRequest(String serverIP, Integer serverPort, RequestMessage requestMessage) throws IOException, ClassNotFoundException
     {
-        System.out.println("[Client > sending the request ... ");
+        if(this.verbose) System.out.println(this.clientInfoString("creating a connection with the server ..."));
         Socket server = new Socket(serverIP, serverPort);
         ResponseMessage response = null;
         ObjectOutputStream outChannel = new ObjectOutputStream(server.getOutputStream());
         ObjectInputStream inChannel = new ObjectInputStream(server.getInputStream());
+        if(this.verbose) System.out.println(this.clientInfoString("connection with the server created, sending the request ..."));
 
 
         outChannel.writeObject(requestMessage);
         outChannel.flush();
 
-        System.out.println("[Client > request sended, waiting for the response ... ");
+        if(this.verbose) System.out.println(this.clientInfoString("request sended , waiting for a response ..."));
 
         response = (ResponseMessage) inChannel.readObject();
 
-        System.out.println("[Client > response arrived ... ");
+        if(this.verbose) System.out.println(this.clientInfoString("response arrived"));
 
-        outChannel.close();
         inChannel.close();
+        outChannel.close();
         server.close();
 
         return response ;
