@@ -31,14 +31,18 @@ public class ClientHandlerThread implements Runnable
     private Socket client = null;
     //Used for state if the cliend handler request ack in case of request message forewarding
     private Boolean requireACK = null;
+    private ObjectInputStream inputChannel = null;
+    private ObjectOutputStream outputChannel = null;
 
-    public ClientHandlerThread(HostSettings hostSettings, Socket client, ResourcesManager resourcesManager, Chord chordEntryPoint, Boolean requireACK)
+    public ClientHandlerThread(HostSettings hostSettings, Socket client,ResourcesManager resourcesManager, Chord chordEntryPoint, Boolean requireACK)
     {
         this.setHostSettings(hostSettings);
         this.setClient(client);
         this.setResourcesManager(resourcesManager);
         this.setChordEntryPoint(chordEntryPoint);
         this.setRequireACK(requireACK);
+        this.initOutputChannel();
+        this.initInputChannel();
     }
 
     /*Setter methods*/
@@ -47,6 +51,37 @@ public class ClientHandlerThread implements Runnable
     private void setChordEntryPoint(Chord chordEntryPoint){this.chordEntryPoint = chordEntryPoint; }
     private void setResourcesManager(ResourcesManager resourcesManager){ this.resourcesManager = resourcesManager; }
     private void setRequireACK(Boolean requireACK){this.requireACK = requireACK; }
+
+    private void initOutputChannel()
+    {
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("opening output channel ...", true));
+
+        try {
+            this.outputChannel = new ObjectOutputStream(this.client.getOutputStream());
+        } catch (IOException e) {
+            System.err.println(this.getHostSettings().verboseInfoString("unable to open the output channel ", true));
+            e.printStackTrace();
+        }
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("output channel opened", true));
+    }
+
+    private void initInputChannel()
+    {
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("opening input channel ...", true));
+        try {
+            this.inputChannel = new ObjectInputStream(this.client.getInputStream());
+        } catch (IOException e) {
+            System.err.println(this.getHostSettings().verboseInfoString("unable to open the input channel ", true));
+            e.printStackTrace();
+        }
+
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("input channel opened", true));
+    }
 
     /*Application methods*/
 
@@ -226,9 +261,6 @@ public class ClientHandlerThread implements Runnable
     @Override
     public void run()
     {
-
-        //Input channel of the host that send the request to us
-        ObjectInputStream inputChannel = null;
         //Request message that the client send to us.
         RequestMessage requestMessage = null;
 
@@ -241,14 +273,12 @@ public class ClientHandlerThread implements Runnable
         try {
 
             if(this.getHostSettings().getVerboseOperatingMode())
-                System.out.println(this.getHostSettings().verboseInfoString("opening an input channel with the client ... " , true));
-
-            inputChannel = new ObjectInputStream(this.client.getInputStream());
-
-            if(this.getHostSettings().getVerboseOperatingMode())
-                System.out.println(this.getHostSettings().verboseInfoString("input channel opened , waiting for a request ..." , true));
+                System.out.println(this.getHostSettings().verboseInfoString("waiting for a request ..." , true));
 
             requestMessage = (RequestMessage) inputChannel.readObject();
+
+            if(this.getHostSettings().getVerboseOperatingMode())
+                System.out.println(this.getHostSettings().verboseInfoString("request arrived" , true));
 
             thisHost = this.resourceLookup(requestMessage.getResourceID()).equals(this.getHostSettings().getHostIP());
 
@@ -311,8 +341,6 @@ public class ClientHandlerThread implements Runnable
 
                 if (!requestMessage.getForewarded()) {
 
-                    ObjectOutputStream outputChannel = new ObjectOutputStream(this.client.getOutputStream());
-
                     outputChannel.writeObject(responseMessage);
 
                     outputChannel.close();
@@ -334,14 +362,11 @@ public class ClientHandlerThread implements Runnable
                         System.out.println(this.getHostSettings().verboseInfoString("writing the ACK message for the previous host" , true));
 
                     ackMessage = this.buildAckMessage(responseMessage);
-                    ObjectOutputStream outputChannel = new ObjectOutputStream(this.client.getOutputStream());
                     outputChannel.writeObject(ackMessage);
 
                     outputChannel.close();
                 }
             }
-
-            inputChannel.close();
 
             try {
                 this.client.close();

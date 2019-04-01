@@ -17,27 +17,15 @@ public class Server {
 
         chs.setPerformBasicLookups(false);
         chs.setJoinExistingChordNetwork(false);
-        //chs.setBootstrapServerAddress(serverIP);
-        //chs.setNumberOfFingers(2);
-        //chs.setNumberOfSuccessors(2);
-        //chs.setChordModule(2);
         chs.lockChanges();
 
         Thread t1 = null;
-
-        //ThreadPoolExecutor executor = null;
 
         Host host = new Host(hs, null);
 
         t1 = new Thread(host);
 
         t1.start();
-
-        //executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
-
-        //executor.execute(host);
-
-        //executor.shutdown();
 
     }
 }

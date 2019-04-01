@@ -12,6 +12,8 @@ import com.distributed.chordLib.ChordCallback;
 import jdk.internal.jline.internal.Nullable;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
@@ -48,12 +50,12 @@ public class Host implements Runnable, ChordCallback {
         this.setResourceManager(resources);
         this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
 
-        /*this.initHostHandlerThread(new HostHandlerThread(
+        this.initHostHandlerThread(new HostHandlerThread(
                 this.getHostSettings(),
                 this.chordEntryPoint,
                 this.resourcesManager,
                 true
-        ));*/
+        ));
 
         this.stopHost = false;
         this.shutdownHost = false ;
@@ -96,14 +98,20 @@ public class Host implements Runnable, ChordCallback {
         Chord cnep = null;
 
         if(this.getHostSettings().getVerboseOperatingMode())
-            System.out.println(this.getHostSettings().verboseInfoString("trying to create or join a chrord network...", false));
+        {
+            if(cns.getJoinExistingChordNetwork())
+                System.out.println(this.getHostSettings().verboseInfoString("trying to join a chrord network...", false));
+            else
+                System.out.println(this.getHostSettings().verboseInfoString("trying to create a chrord network...", false));
+        }
+
 
         try
         {
             if(cns.getJoinExistingChordNetwork())
-                cnep = ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedPort(), null);
+                cnep = ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedPort(), this);
             else
-                cnep = ChordBuilder.createChord(cns.getAssociatedPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), null);
+                cnep = ChordBuilder.createChord(cns.getAssociatedPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this);
 
         } catch (IOException e)
         {
@@ -115,7 +123,12 @@ public class Host implements Runnable, ChordCallback {
         }
 
         if(this.getHostSettings().getVerboseOperatingMode())
-            System.out.println(this.getHostSettings().verboseInfoString("created or joined a chord network", false));
+        {
+            if(cns.getJoinExistingChordNetwork())
+                System.out.println(this.getHostSettings().verboseInfoString("joined a chord network", false));
+            else
+                System.out.println(this.getHostSettings().verboseInfoString("created a chord network", false));
+        }
 
         this.chordEntryPoint = cnep;
     }
@@ -162,6 +175,8 @@ public class Host implements Runnable, ChordCallback {
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for a client request ...", false));
 
                     Socket client = server.accept();
+
+                    System.out.println("Connected to :"+client.getInetAddress().getHostAddress()+" At Port :"+client.getLocalPort());
 
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client request detected, instantiating a client handler thread ...", false));
 

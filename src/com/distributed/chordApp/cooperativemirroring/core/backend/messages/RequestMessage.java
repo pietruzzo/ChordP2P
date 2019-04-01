@@ -8,6 +8,7 @@ import java.io.Serializable;
  * Class used to describe a Request Message coming to an host
  */
 public class RequestMessage implements Serializable {
+    private static final long serialVersionUID = 50001L;
     //Original client IP address
     private String originalSenderIP = null;
     //Original client port

@@ -9,6 +9,7 @@ import java.io.Serializable;
  * Class that represent the response to a request message
  */
 public class ResponseMessage implements Serializable {
+    private static final long serialVersionUID = 50002L;
     //IP address of the host that reply to the request
     private String solverHostIP = null;
     //Port of the solver host

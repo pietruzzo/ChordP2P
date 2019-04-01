@@ -26,13 +26,25 @@ public class Client {
         this.clientConsole();
     }
 
-    /*Setter*/
+    /*Setter methods*/
     private void setClientIP(String clientIP){this.clientIP = clientIP; }
     private void setClientPort(Integer clientPort){this.clientPort = clientPort; }
     private void setVerbose(Boolean verbose){this.verbose = verbose; }
 
     /*Application methods*/
 
+    private String clientInfoString(String infoMessage,boolean newLine)
+    {
+        String infoString = "[Client\\\\ " + this.getClientIP() + " : " + this.getClientPort() + ">";
+
+        if(newLine)infoString += infoMessage + "\n";
+
+        return infoString;
+    }
+
+    /*
+     * Method used for allowing the client to perform some operations on a server
+     */
     private void clientConsole()
     {
         Boolean goAhead = true ;
@@ -40,7 +52,7 @@ public class Client {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
         String serverIP = "127.0.0.1";
-        Integer serverPort = 6666;
+        Integer serverPort = 9999;
 
         String resourceID = null;
         RequestMessage request = null;
@@ -56,7 +68,7 @@ public class Client {
             try {
                 choice = Integer.parseInt(reader.readLine());
             } catch (IOException e) {
-                System.err.println("[Client> Invalid input choice type, retry");
+                System.err.println(this.clientInfoString("Invalid input choice type, retry", true));
                 choice = -1;
                 goAhead = true;
             }
@@ -66,12 +78,12 @@ public class Client {
                 case -1:
                     break;
                 case 0:
-                    System.out.println("\n[Client> terminating the current session");
+                    System.out.println(this.clientInfoString("Terminating the current session", true));
                     goAhead = false ;
                     break;
                 case 1:
-                    System.out.println("\nDeposit resource");
-                    System.out.print("Insert resource id: ");
+                    System.out.println(this.clientInfoString("Deposit resource ", true));
+                    System.out.print(this.clientInfoString("Insert resource id: ", false));
                     try {
                         resourceID = reader.readLine();
                     } catch (IOException e) {
@@ -89,8 +101,8 @@ public class Client {
                     break;
 
                 case 2:
-                    System.out.println("\nRetrive resource");
-                    System.out.print("Insert resource id: ");
+                    System.out.println(this.clientInfoString("Retrive resource ", true));
+                    System.out.print(this.clientInfoString("Insert resource id: ", false));
                     try {
                         resourceID = reader.readLine();
                     } catch (IOException e) {
@@ -112,16 +124,16 @@ public class Client {
 
         }while(goAhead);
 
-        System.out.print("\nExiting from the client , bye\n");
+        System.out.println(this.clientInfoString("Exiting from the client, bye", true));
+
     }
 
-    /**
+    /*
      * Method used for building a new request for the server
-     * @param resourceID
-     * @param depositResource
-     * @return
      */
-    private RequestMessage buildRequest(String resourceID,Boolean depositResource){
+    private RequestMessage buildRequest(String resourceID,Boolean depositResource)
+    {
+        if(this.verbose) System.out.println("[Client> creating the request ...");
         RequestMessage request = null;
         Resource resource = null;
 
@@ -148,27 +160,31 @@ public class Client {
             );
         }
 
+        System.out.println("[Client> request message created");
+
         return request;
     }
 
-    /**
+    /*
      * Method used for sending a request to a Server
-     * @param serverIP
-     * @param serverPort
-     * @param requestMessage
-     * @return
-     * @throws IOException
-     * @throws ClassNotFoundException
      */
-    private ResponseMessage sendRequest(String serverIP, Integer serverPort, RequestMessage requestMessage) throws IOException, ClassNotFoundException {
+    private ResponseMessage sendRequest(String serverIP, Integer serverPort, RequestMessage requestMessage) throws IOException, ClassNotFoundException
+    {
+        System.out.println("[Client > sending the request ... ");
         Socket server = new Socket(serverIP, serverPort);
         ResponseMessage response = null;
-        ObjectInputStream inChannel = new ObjectInputStream(server.getInputStream());
         ObjectOutputStream outChannel = new ObjectOutputStream(server.getOutputStream());
+        ObjectInputStream inChannel = new ObjectInputStream(server.getInputStream());
+
 
         outChannel.writeObject(requestMessage);
+        outChannel.flush();
+
+        System.out.println("[Client > request sended, waiting for the response ... ");
 
         response = (ResponseMessage) inChannel.readObject();
+
+        System.out.println("[Client > response arrived ... ");
 
         outChannel.close();
         inChannel.close();
@@ -177,10 +193,9 @@ public class Client {
         return response ;
     }
 
-    /**
+    /*
      * Method used for printing a request that the client will ask to a server of the
      * cooperative mirroring application
-     * @param requestMessage
      */
     private void printRequest(RequestMessage requestMessage){
         String state = this.toString();
@@ -193,12 +208,9 @@ public class Client {
 
     }
 
-    /**
+    /*
      * Method used for printing the response to a specific request that a client has
      * send to a server of the cooperative mirroring application
-     *
-     * @param requestMessage
-     * @param responseMessage
      */
     private void printResponse(RequestMessage requestMessage, ResponseMessage responseMessage){
         String state = this.toString();
@@ -212,7 +224,7 @@ public class Client {
 
     }
 
-    /*Getter*/
+    /*Getter methods*/
     public String getClientIP(){return this.clientIP; }
     public Integer getClientPort(){return this.clientPort; }
     public Boolean getVerbose(){return this.verbose; }
@@ -230,7 +242,7 @@ public class Client {
     }
 
     public static void main(String []args){
-        Client c = new Client("127.0.0.1", 4567, true);
+        Client c = new Client("127.0.0.1", 7777, true);
     }
 
 }
