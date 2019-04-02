@@ -8,10 +8,10 @@ import jdk.internal.jline.internal.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.List;
 
 
@@ -24,7 +24,7 @@ public class FingerTable {
     private HashFunction hash;
     private int numSuccessors;
 
-    FingerTable (int nFingers, @Nullable Integer nSuccessors, HashFunction hash) {
+    FingerTable(int nFingers, @Nullable Integer nSuccessors, HashFunction hash) {
         this.hash = hash;
         fingers = new Node[nFingers];
         if (nSuccessors != null)
@@ -46,13 +46,14 @@ public class FingerTable {
     /**
      * @return successor of this node
      */
-    public Node getSuccessor(){
+    public Node getSuccessor() {
         if (successors.isEmpty()) throw new NoSuccessorsExceptions();
         return successors.get(0);
     }
 
     /**
      * Find the Node among Node, its successors and fingers most appropriate for key
+     *
      * @param id (not hashed yet)
      * @return Node in FingerTable or Node itself
      */
@@ -61,7 +62,7 @@ public class FingerTable {
 
         if (getSuccessor() == myNode) return myNode; //I'm the only node in the network
 
-        if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())){
+        if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())) {
             return myNode; //Look if I'm responsible for the key
         }
 
@@ -70,8 +71,8 @@ public class FingerTable {
         //Look into finger Table
         previous = myNode;
         for (int i = 0; i < fingers.length; i++) {
-            next= fingers[i];
-            if (next != null && hash.areOrdered(next.getkey(), objectKey, previous.getkey())){
+            next = fingers[i];
+            if (next != null && hash.areOrdered(next.getkey(), objectKey, previous.getkey())) {
                 return next; //Look if I'm responsible for the key
             }
             if (next != null) previous = next;
@@ -79,12 +80,17 @@ public class FingerTable {
         return next; //Max finger
     }
 
-    public Node getPredecessor(){ return predecessor; }
+    public Node getPredecessor() {
+        return predecessor;
+    }
 
-    public void setPredecessor(Node predecessor) {this.predecessor = predecessor; }
+    public void setPredecessor(Node predecessor) {
+        this.predecessor = predecessor;
+    }
 
     /**
      * Add successor to successor list and make consistent the latter
+     *
      * @param successor
      */
     public void setSuccessor(Node successor) {
@@ -93,13 +99,13 @@ public class FingerTable {
 
         this.successors.add(successor);
         successors.sort((o1, o2) -> {
-            if(hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return 1;
+            if (hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return 1;
             else if (o1.equals(o2)) return 0;
             else return -1;
         });
         for (int i = 1; i < successors.size(); i++) {
-            if (successors.get(i-1).equals(successors.get(i))){
-                successors.remove(i-1);
+            if (successors.get(i - 1).equals(successors.get(i))) {
+                successors.remove(i - 1);
             }
         }
         successors = successors.subList(0, numSuccessors);
@@ -113,15 +119,23 @@ public class FingerTable {
     /**
      * get number of fingers
      */
-    public int getNumFingers(){ return fingers.length; }
+    public int getNumFingers() {
+        return fingers.length;
+    }
 
-    public Node getFinger(int position){ return fingers[position]; }
+    public Node getFinger(int position) {
+        return fingers[position];
+    }
 
-    public void setFinger(Node node, int position){ fingers[position]= node; }
+    public void setFinger(Node node, int position) {
+        fingers[position] = node;
+    }
 
-    public int getNumSuccessors(){ return this.numSuccessors; }
+    public int getNumSuccessors() {
+        return this.numSuccessors;
+    }
 
-    public void removeFailedNode(Node node){
+    public void removeFailedNode(Node node) {
         successors.remove(node);
     }
 
@@ -134,8 +148,32 @@ public class FingerTable {
         return in.readLine();
     }
 
+    /**
+     * get first occurrence of local IP-4 on network interfaces
+     */
     private String getmyPrivateIPAddress() throws IOException {
-        InetAddress inetAddress = InetAddress.getLocalHost();
-        return inetAddress.getHostAddress();
+
+        String ip;
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface iface = interfaces.nextElement();
+            // filters out 127.0.0.1 and inactive interfaces
+            if (iface.isLoopback() || !iface.isUp())
+                continue;
+
+            Enumeration<InetAddress> addresses = iface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress addr = addresses.nextElement();
+
+                // *EDIT*
+                if (addr instanceof Inet6Address) continue;
+
+                ip = addr.getHostAddress();
+                System.out.println(iface.getDisplayName() + " " + ip);
+                return ip;
+            }
+
+        }
+        throw new IOException("Local address not found");
     }
 }
