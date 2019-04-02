@@ -70,7 +70,7 @@ public class ResourcesManager
         Resource result = null;
 
         for(Resource resource : this.resources){
-            if(resource.getResourceID() == resourceID){
+            if(resource.getResourceID().equals(resourceID)){
                 result = resource;
                 break;
             }

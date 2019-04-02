@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class Server {
     public static void main(String []args){
-        String serverIP = "127.0.0.1";
+        String serverIP = "127.0.1.1";
         Integer chordPort = 7654;
         Integer serverPort = 9999;
 
