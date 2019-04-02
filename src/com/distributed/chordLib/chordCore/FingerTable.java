@@ -108,7 +108,7 @@ public class FingerTable {
                 successors.remove(i - 1);
             }
         }
-        successors = successors.subList(0, numSuccessors);
+        successors = successors.subList(0, Math.min(numSuccessors, successors.size()));
     }
 
 

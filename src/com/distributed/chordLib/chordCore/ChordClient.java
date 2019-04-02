@@ -68,7 +68,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
         this.hash = new HashFunction(module);
 
         //setup network
-        fingerTable = new FingerTable(numFingers, numSuccessors, hash);
+        fingerTable = new FingerTable(nFingers, nSucc, hash);
         if (successor!= null) fingerTable.setSuccessor(successor);
     }
 
