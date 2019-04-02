@@ -24,8 +24,8 @@ public class SocketNode {
         this.incoming = incoming;
 
         try {
-            in = new ObjectInputStream(endpoint.getInputStream());
             out = new ObjectOutputStream(endpoint.getOutputStream());
+            in = new ObjectInputStream(endpoint.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
