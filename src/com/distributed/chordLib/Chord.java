@@ -16,7 +16,7 @@ public interface Chord {
     int DEFAULT_NUM_SUCCESSORS = 4;
     String DEFAULT_SERVER_IP = "127.0.0.1";
     int DEFAULT_SERVER_PORT = 1678;
-    boolean USE_PUBLIC_IP = true;
+    boolean USE_PUBLIC_IP = false;
     int DEFAULT_RETRY = 5;
     int DEFAULT_CHORD_MODULE = 20;
 
