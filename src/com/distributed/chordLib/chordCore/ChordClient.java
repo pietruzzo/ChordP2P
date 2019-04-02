@@ -9,6 +9,7 @@ import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
 import com.distributed.chordLib.chordCore.communication.SocketCommunication;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -38,21 +39,23 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      * @param module module of Chord Ring
      * @param chordCallback Optional Callback for application
      */
-    public ChordClient(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, @Nullable Integer port, int module, @Nullable ChordCallback chordCallback){
+    public ChordClient(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, @NotNull Integer port, @Nullable Integer module, @Nullable ChordCallback chordCallback){
         this.chordCallback = chordCallback;
-        this.hash = new HashFunction(module);
-        if (port == null) port= DEFAULT_SERVER_PORT;
+
         comLayer = new SocketCommunication(port, this);
+
 
         //handle parameters
         Node successor;
         Integer nFingers;
         Integer nSucc;
         if (bootstrapAddr != null) { //Join case -> get parameters
-            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr, hash.getSHA1(bootstrapAddr)), port);
+            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr, "X"), port);
             successor = message.successor;
             nFingers = message.numFingers;
             nSucc = message.numSuccessors;
+            module = message.module;
+
         } else{ //create network
             successor = null; //Current node is the only one
             nFingers = numFingers;
@@ -60,6 +63,9 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
         }
         if (nFingers == null) nFingers = DEFAULT_NUM_FINGERS;
         if (nSucc == null) nSucc = DEFAULT_NUM_SUCCESSORS;
+
+        //setup hash function
+        this.hash = new HashFunction(module);
 
         //setup network
         fingerTable = new FingerTable(numFingers, numSuccessors, hash);
@@ -155,11 +161,11 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
         public final Node successor;
         public final int module;
 
-        InitParameters(int numFingers, int numSuccessors, Node successor, int moduel){
+        InitParameters(int numFingers, int numSuccessors, Node successor, int module){
             this.numFingers = numFingers;
             this.numSuccessors = numSuccessors;
             this.successor = successor;
-            this.module = moduel;
+            this.module = module;
         }
     }
 }

@@ -47,6 +47,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     public SocketCommunication(int port, CommCallbackInterface callback){
         this.socketPort = port;
         this.callback = callback;
+        this.socketNodes = new HashMap<>();
         this.workers = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_MAX_POOL_SIZE, REQUEST_TIMEOUT, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(30));
         handleNewIncomingConnections();
 

@@ -25,7 +25,7 @@ public class ChordEngine extends ChordClient {
      * @param module module of Chord Ring
      * @param callback Optional Callback for application
      */
-    public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, @NotNull Integer module, ChordCallback callback) {
+    public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, @Nullable Integer module, ChordCallback callback) {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
         stabilize();
         fixFingers();
