@@ -138,8 +138,9 @@ public class ChordEngine extends ChordClient {
             }
             if(response != null) break;
         }
-        if (response != null) return response;
-        return this.findSuccessor(key).getIP();
+        if (response == null) response= this.findSuccessor(key).getIP();
+        if (response!= null && response.compareTo(fingerTable.getMyNode().getIP())==0) response = "127.0.0.1";
+        return response;
     }
 
     @Override
@@ -153,8 +154,9 @@ public class ChordEngine extends ChordClient {
             }
             if(response != null) break;
         }
-        if (response != null) return response;
-        return this.findSuccessorB(key).getIP();
+        if (response == null) response= this.findSuccessor(key).getIP();
+        if (response!= null && response.compareTo(fingerTable.getMyNode().getIP())==0) response = "127.0.0.1";
+        return response;
     }
 
     @Override
