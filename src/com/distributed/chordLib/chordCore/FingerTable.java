@@ -58,6 +58,9 @@ public class FingerTable {
      */
     public Node getNextNode(String id) {
         String objectKey = hash.getSHA1(id);
+
+        if (getSuccessor() == myNode) return myNode; //I'm the only node in the network
+
         if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())){
             return myNode; //Look if I'm responsible for the key
         }
