@@ -7,6 +7,7 @@ import com.distributed.chordLib.chordCore.communication.messages.*;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.Contract;
 
 import javax.management.relation.RoleInfoNotFoundException;
 import java.io.IOException;
@@ -252,7 +253,8 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     }
 
     private void handlePingMessage(PingRequestMessage reqMessage, SocketNode node){
-        node.writeSocket(reqMessage);
+        PingResponseMessage resMessage = new PingResponseMessage(reqMessage.getId());
+        node.writeSocket(resMessage);
     }
 
     private void handlePredecessorMessage(PredecessorRequestMessage reqMessage, SocketNode questioner){
@@ -329,7 +331,7 @@ class ComputationState {
             if (isTimeElapsed()) throw new TimeoutReachedException();
             try {
                 synchronized (thread) {
-                    thread.wait();
+                    thread.wait(SocketCommunication.REQUEST_TIMEOUT);
                 }
             } catch (InterruptedException e) {
                 throw new CommunicationFailureException();

@@ -39,6 +39,7 @@ public class SocketNode {
         try {
             out.writeObject(message);
             out.flush();
+            System.out.println("Send message " + message.toString() + " to " + endpoint.getInetAddress().toString());
         } catch (IOException e) {
             System.err.println("Unable to write message on socket " + nodeIP);
             e.printStackTrace();
@@ -89,6 +90,7 @@ public class SocketNode {
                 Object message = null;
                 try {
                     message = readSocket();
+                    System.out.println("Read message " + message.toString() + " from " + endpoint.getInetAddress().toString());
                     socketCommCallback.handleNewMessage((Message)message, getThis() );
                 } catch (IOException e) {
                     socketCommCallback.handleUnexpectedClosure(nodeIP);
