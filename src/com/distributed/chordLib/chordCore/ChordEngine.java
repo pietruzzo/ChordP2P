@@ -86,7 +86,7 @@ public class ChordEngine extends ChordClient {
             }
 
             Node x = comLayer.findPredecessor(s);
-            if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
+            if (x != null && hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
                 fingerTable.setSuccessor(x);
             }
             notify(x);
