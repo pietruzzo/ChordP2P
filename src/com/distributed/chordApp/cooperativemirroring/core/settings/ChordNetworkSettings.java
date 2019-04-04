@@ -64,7 +64,6 @@ public class ChordNetworkSettings implements Serializable {
      */
     public Boolean setNumberOfFingers(Integer numberOfFingers){
         if(this.changesLocked) return false ;
-
         this.numberOfFingers = numberOfFingers;
 
         return true;
@@ -77,7 +76,6 @@ public class ChordNetworkSettings implements Serializable {
      */
     public Boolean setPerformBasicLookups(Boolean performBasicLookups){
         if(this.changesLocked) return false;
-
         this.performBasicLookups = performBasicLookups;
 
         return true;
@@ -90,7 +88,6 @@ public class ChordNetworkSettings implements Serializable {
      */
     public Boolean setNumberOfSuccessors(Integer numberOfSuccessors){
         if(this.changesLocked) return false;
-
         this.numberOfSuccessors = numberOfSuccessors;
 
         return true;
@@ -103,7 +100,6 @@ public class ChordNetworkSettings implements Serializable {
      */
     public Boolean setChordModule(Integer chordModule){
         if(this.changesLocked) return false ;
-
         this.chordModule = chordModule;
 
         return true;
@@ -116,7 +112,6 @@ public class ChordNetworkSettings implements Serializable {
      */
     public Boolean lockChanges(){
         this.changesLocked = true;
-
         return changesLocked;
     }
 

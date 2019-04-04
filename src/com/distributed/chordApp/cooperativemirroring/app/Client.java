@@ -51,7 +51,7 @@ public class Client {
         Integer choice = -1;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        String serverIP = "192.168.43.29";
+        String serverIP = "127.0.0.1";
         Integer serverPort = 9999;
 
         String resourceID = null;
