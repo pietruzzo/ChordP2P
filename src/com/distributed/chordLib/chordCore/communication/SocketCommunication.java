@@ -332,7 +332,8 @@ class ComputationState {
                 synchronized (thread) {
                     thread.wait(SocketCommunication.REQUEST_TIMEOUT+1);
                 }
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | TimeoutReachedException e) {
+                e.printStackTrace();
                 throw new CommunicationFailureException();
             }
         }

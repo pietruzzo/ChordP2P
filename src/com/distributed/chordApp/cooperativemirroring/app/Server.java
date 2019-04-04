@@ -10,11 +10,13 @@ public class Server {
         Integer chordPort = 7654;
         Integer serverPort = 9999;
 
+
+
         ChordNetworkSettings chs = new ChordNetworkSettings(chordPort);
         HostSettings hs = new HostSettings(serverIP, serverPort, chs, true);
 
         chs.setPerformBasicLookups(false);
-        chs.setBootstrapServerAddress("192.168.43.60");
+        chs.setBootstrapServerAddress("192.168.43.59");
         chs.setJoinExistingChordNetwork(true);
         chs.lockChanges();
 
