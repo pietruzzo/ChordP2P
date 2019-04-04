@@ -329,9 +329,10 @@ class ComputationState {
             if (isTimeElapsed()) throw new TimeoutReachedException();
             try {
                 synchronized (thread) {
-                    thread.wait();
+                    thread.wait(SocketCommunication.REQUEST_TIMEOUT);
                 }
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | TimeoutReachedException e) {
+                e.printStackTrace();
                 throw new CommunicationFailureException();
             }
         }

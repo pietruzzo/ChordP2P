@@ -98,9 +98,9 @@ public class Host implements Runnable, ChordCallback {
         if(this.getHostSettings().getVerboseOperatingMode())
         {
             if(cns.getJoinExistingChordNetwork())
-                System.out.println(this.getHostSettings().verboseInfoString("trying to join a chrord network...", false));
+                System.out.println(this.getHostSettings().verboseInfoString("trying to join a chord network...", false));
             else
-                System.out.println(this.getHostSettings().verboseInfoString("trying to create a chrord network...", false));
+                System.out.println(this.getHostSettings().verboseInfoString("trying to create a chord network...", false));
         }
 
 
