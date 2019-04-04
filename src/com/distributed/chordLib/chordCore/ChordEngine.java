@@ -54,8 +54,18 @@ public class ChordEngine extends ChordClient {
 
     @Override
     protected Node findSuccessor(String id) {
+
         try{
-            return fingerTable.getNextNode(String.valueOf(id));
+
+            Node result = fingerTable.getNextNode(String.valueOf(id));
+
+            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hash.getSHA1(id), result.getkey())){
+                //not the successor of id -> send lookup
+                return comLayer.findSuccessor(result, id);
+            } else {
+                return result; //This is the successor
+            }
+
         } catch (NoSuccessorsExceptions e){
             this.closeNetwork();
             throw e;
@@ -86,10 +96,12 @@ public class ChordEngine extends ChordClient {
             }
 
             Node x = comLayer.findPredecessor(s);
-            if (x != null && hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
-                fingerTable.setSuccessor(x);
+            if (x != null) { //If my successor knows a predecessor
+                if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
+                    fingerTable.setSuccessor(x);
+                }
+                notify(x);
             }
-            notify(x);
 
             Node succ = fingerTable.getSuccessor();
             for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
@@ -211,7 +223,7 @@ public class ChordEngine extends ChordClient {
             } catch (InterruptedException e) {
                 System.out.println("Routine actions Stopped");
             }
-            try {
+            try { //TODO Raccogli il Timeout reached ed elimina il nodo oppure ignora ed aspetta lo stabilize?
                 fixFingers();
                 stabilize();
                 checkPredecessor();

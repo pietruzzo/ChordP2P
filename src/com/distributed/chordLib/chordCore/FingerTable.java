@@ -55,7 +55,7 @@ public class FingerTable {
      * Find the Node among Node, its successors and fingers most appropriate for key
      *
      * @param id (not hashed yet)
-     * @return Node in FingerTable or Node itself
+     * @return a previous Node in FingerTable or the Successor for the key
      */
     public Node getNextNode(String id) {
         String objectKey = hash.getSHA1(id);
@@ -66,18 +66,20 @@ public class FingerTable {
             return myNode; //Look if I'm responsible for the key
         }
 
-        Node previous = myNode;
+        Node previous = null;
         Node next = null;
-        //Look into finger Table
-        previous = myNode;
+        //Look into finger Table and cast most suitable finger to previous
         for (int i = 0; i < fingers.length; i++) {
             next = fingers[i];
-            if (next != null && hash.areOrdered(next.getkey(), objectKey, previous.getkey())) {
-                return next; //Look if I'm responsible for the key
+            if (next != null) {
+                if (previous != null && hash.areOrdered(previous.getkey(), objectKey, next.getkey())) {
+                    return previous; //If finger is not null and higher of key STOP
+                } else {
+                    previous = next;
+                }
             }
-            if (next != null) previous = next;
         }
-        return next; //Max finger
+        return getSuccessor(); //Max finger
     }
 
     public Node getPredecessor() {
