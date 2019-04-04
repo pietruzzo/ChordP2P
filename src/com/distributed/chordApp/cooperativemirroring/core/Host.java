@@ -9,7 +9,7 @@ import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordBuilder;
 
 import com.distributed.chordLib.ChordCallback;
-import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.ServerSocket;

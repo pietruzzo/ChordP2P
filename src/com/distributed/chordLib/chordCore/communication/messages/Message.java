@@ -1,6 +1,7 @@
 package com.distributed.chordLib.chordCore.communication.messages;
 
-import jdk.internal.jline.internal.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 

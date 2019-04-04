@@ -1,7 +1,7 @@
 package com.distributed.chordApp.cooperativemirroring.core.backend.messages;
 
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
-import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 

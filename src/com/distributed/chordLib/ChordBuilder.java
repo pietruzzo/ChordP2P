@@ -5,7 +5,7 @@ import com.distributed.chordLib.chordCore.ChordClient;
 import com.distributed.chordLib.chordCore.ChordEngine;
 import com.distributed.chordLib.chordCore.communication.messages.JoinRequestMessage;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
-import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,7 +28,7 @@ public class ChordBuilder {
      * @return ChordClient object
      * @throws IOException for communication failure
      */
-    public static Chord joinChord(@Nullable String bootstrap, @Nullable Integer port,  @Nullable ChordCallback callback) throws IOException {
+    public static Chord joinChord(@Nullable String bootstrap, @Nullable Integer port, @Nullable ChordCallback callback) throws IOException {
 
         Socket endpoint = null;
         if (bootstrap == null) bootstrap = Chord.DEFAULT_SERVER_IP;

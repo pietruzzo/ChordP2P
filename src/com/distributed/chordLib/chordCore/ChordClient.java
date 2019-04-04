@@ -8,8 +8,8 @@ import com.distributed.chordLib.chordCore.communication.CommCallInterface;
 import com.distributed.chordLib.chordCore.communication.CommCallbackInterface;
 import com.distributed.chordLib.chordCore.communication.SocketCommunication;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
-import jdk.internal.jline.internal.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.concurrent.ThreadPoolExecutor;

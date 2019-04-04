@@ -1,25 +1,20 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.ChordClient;
-import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
-import jdk.internal.jline.internal.Nullable;
-import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 
-import javax.management.relation.RoleInfoNotFoundException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.stream.Stream;
 
 public class SocketCommunication implements CommCallInterface, SocketIncomingHandling {
 
@@ -93,12 +88,11 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     @Override
     public boolean isAlive(Node node) {
         Message message = new PingRequestMessage();
-        waitResponse(message, getSocketNode(node.getIP()));
         try {
-            if (getResponseinWaiting(message.getId()) != null && getResponseinWaiting(message.getId()) instanceof PingResponseMessage)
-                return true;
-        } catch (Exception e){
-            System.out.println("No response to a ping message for " + node.getIP());
+            waitResponse(message, getSocketNode(node.getIP()));
+            return true;
+        } catch (CommunicationFailureException | TimeoutReachedException e){
+            System.out.println("No response to a ping message for " + node.getIP() + " for message" + message.toString());
         }
         return false;
     }
@@ -296,6 +290,10 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
 
     }
 
+    /**
+     * get response and deallocate saved computation state
+     * @ApiNote it can be invoked only one time on an object
+     */
     private ResponseMessage getResponseinWaiting(int id){
         Message message = waitingThreads.get(id).getResponse();
         waitingThreads.remove(id);
@@ -312,12 +310,12 @@ class ComputationState {
     Thread thread;
     Message response;
 
-    private Date begin;
+    private Instant end;
 
     ComputationState(Thread thread) {
         this.thread = thread;
         response = null;
-        begin = null;
+        end = null;
     }
 
     /**
@@ -326,12 +324,13 @@ class ComputationState {
      */
     public Message waitResponse() {
 
-        begin = Date.from(Instant.now());
+        end = Instant.now();
+        end = end.plusMillis(SocketCommunication.REQUEST_TIMEOUT);
         while (response == null ) {
             if (isTimeElapsed()) throw new TimeoutReachedException();
             try {
                 synchronized (thread) {
-                    thread.wait(SocketCommunication.REQUEST_TIMEOUT);
+                    thread.wait(SocketCommunication.REQUEST_TIMEOUT+1);
                 }
             } catch (InterruptedException e) {
                 throw new CommunicationFailureException();
@@ -356,6 +355,7 @@ class ComputationState {
     }
 
     private boolean isTimeElapsed(){
-        return (Date.from(Instant.now()).getTime() - begin.getTime()) > SocketCommunication.REQUEST_TIMEOUT;
+        Instant now = Instant.now();
+        return now.isAfter(end);
     }
 }

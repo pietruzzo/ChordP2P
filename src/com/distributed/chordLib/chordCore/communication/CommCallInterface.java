@@ -2,7 +2,7 @@ package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
-import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to be implemented by communication Layer

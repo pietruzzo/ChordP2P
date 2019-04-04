@@ -3,7 +3,7 @@ package com.distributed.chordLib.chordCore;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.UnableToGetMyIPException;
-import jdk.internal.jline.internal.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -137,6 +137,7 @@ public class FingerTable {
 
     public void removeFailedNode(Node node) {
         successors.remove(node);
+        System.out.println("failed node " + node.getIP() + " is removed, only " + successors.size() + " successors in list");
     }
 
 
