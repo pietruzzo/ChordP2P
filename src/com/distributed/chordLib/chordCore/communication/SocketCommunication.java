@@ -217,7 +217,12 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         //save this thread in waitingThreads
         this.waitingThreads.put(requestMessage.getId(), current);
         //suspend current thread
+        try {
             current.waitResponse();
+        } catch (TimeoutReachedException e){
+            //Add informations to error
+            throw new TimeoutReachedException(receiver.getNodeIP());
+        }
     }
 
     //region: SocketMessageReceivingHandling
@@ -332,7 +337,7 @@ class ComputationState {
                 synchronized (thread) {
                     thread.wait(SocketCommunication.REQUEST_TIMEOUT+1);
                 }
-            } catch (InterruptedException | TimeoutReachedException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
                 throw new CommunicationFailureException();
             }

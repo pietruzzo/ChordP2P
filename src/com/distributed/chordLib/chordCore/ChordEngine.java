@@ -213,23 +213,30 @@ public class ChordEngine extends ChordClient {
         return hash.getSHA1(ip);
     }
 
+    /**
+     * Method that executes all routines actions every n milliseconds
+     */
     private void routineActions(){
         while (!stopRoutine) {
 
             try {
                 synchronized (this){
-                this.wait(2000);
+                this.wait(ROUTINE_PERIOD);
                 }
             } catch (InterruptedException e) {
                 System.out.println("Routine actions Stopped");
             }
-            try { //TODO Raccogli il Timeout reached ed elimina il nodo oppure ignora ed aspetta lo stabilize?
+            try {
                 fixFingers();
                 stabilize();
                 checkPredecessor();
             } catch(CommunicationFailureException e){
                 System.out.println("Routine action failed, retry in 2 seconds");
-            } catch (NoSuccessorsExceptions e){
+            } catch (TimeoutReachedException e) {
+                //Consider as failed node
+                fingerTable.removeFailedNode(new Node(e.getWaitingNode(), hash.getSHA1(e.getWaitingNode())));
+            }
+            catch (NoSuccessorsExceptions e){
                 this.closeNetwork();
             }
         }
