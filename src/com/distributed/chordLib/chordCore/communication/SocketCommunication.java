@@ -143,6 +143,21 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         }
     }
 
+    /**
+     * Close all remaining connections and communication threads
+     */
+    @Override
+    public void closeCommLayer(){
+        closeChannel(null);
+        closeServerSocket = true;
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            System.out.println("forcing serversocket closing");
+        }
+
+    }
+
     @Override
     public void handleNewMessage(Message message, SocketNode node) {
         incomingMessageDispatching(node, message);

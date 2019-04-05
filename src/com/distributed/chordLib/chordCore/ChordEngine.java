@@ -174,7 +174,7 @@ public class ChordEngine extends ChordClient {
     @Override
     public void closeNetwork() {
         stopRoutine = true;
-        comLayer.closeChannel(null);
+        comLayer.closeCommLayer();
     }
 
     @Override

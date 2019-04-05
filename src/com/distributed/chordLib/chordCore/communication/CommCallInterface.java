@@ -63,4 +63,9 @@ public interface CommCallInterface {
      * @param nodes node used by application
      */
     void closeChannel(@Nullable Node[] nodes);
+
+    /**
+     * Close communication Layer
+     */
+    void closeCommLayer();
 }
