@@ -50,48 +50,55 @@ public class HostHandlerThread extends Thread implements ChordCallback
     /*Application methods*/
 
     @Override
-    public synchronized void notifyResponsabilityChange(String firstKey, String lastKey)
+    public synchronized void notifyResponsabilityChange()
     {
-        String destinationAddress = null;
-        Resource resource = new Resource(lastKey);
+        Boolean thisHost = false ;
 
-        resourcesManager.removeResource(firstKey);
-
-        if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) destinationAddress = this.chordEntryPoint.lookupKeyBasic(lastKey);
-        else destinationAddress = this.chordEntryPoint.lookupKey(lastKey);
-
-        if(destinationAddress.equals(this.getHostSettings().getHostIP())) resourcesManager.depositResource(resource);
-        else
+        for(Resource resource : this.resourcesManager.getResources())
         {
-            RequestMessage request = new RequestMessage(
-                                                        this.getHostSettings().getHostIP(),
-                                                        this.getHostSettings().getHostPort(),
-                                                        resource,
-                                                        this.getRequireAck(),
-                                                        false);
-            try {
-                Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
-                ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
+            String destinationAddress = null;
+            thisHost = false ;
 
-                outChannel.writeObject(request);
+            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
+            else destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
 
-                if(this.getRequireAck())
-                {
+            if(destinationAddress.equals(this.getHostSettings().getHostIP()) || destinationAddress.equals("127.0.0.1") || destinationAddress.equals("127.0.1.1"))
+                thisHost = true;
 
-                    ObjectInputStream inChannel = new ObjectInputStream(destinationSocket.getInputStream());
+            if(!thisHost)
+            {
+                RequestMessage request = new RequestMessage(
+                        this.getHostSettings().getHostIP(),
+                        this.getHostSettings().getHostPort(),
+                        resource,
+                        this.getRequireAck(),
+                        false);
+                try {
+                    Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
+                    ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
 
-                    ResponseMessage ackMessage = (ResponseMessage) inChannel.readObject();
+                    outChannel.writeObject(request);
 
-                    inChannel.close();
+                    if(this.getRequireAck())
+                    {
+
+                        ObjectInputStream inChannel = new ObjectInputStream(destinationSocket.getInputStream());
+
+                        ResponseMessage ackMessage = (ResponseMessage) inChannel.readObject();
+
+                        inChannel.close();
+                    }
+
+                    outChannel.close();
+                    destinationSocket.close();
+
+                    this.resourcesManager.removeResource(resource.getResourceID());
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
                 }
-
-                outChannel.close();
-                destinationSocket.close();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
             }
         }
 

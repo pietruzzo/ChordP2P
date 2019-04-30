@@ -288,7 +288,7 @@ public class ClientHandlerThread implements Runnable
 
             if (thisHost){
                 if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("the request was directed to this host; building a response ... " , true));
+                    System.out.println(this.getHostSettings().verboseInfoString("the request was directed to this host" , true));
                 responseMessage = this.buildResponseMessage(requestMessage);
             }
             else {
@@ -313,12 +313,12 @@ public class ClientHandlerThread implements Runnable
                 ObjectOutputStream nextOutputStream = new ObjectOutputStream(nextHost.getOutputStream());
 
                 if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("forewarding the request to: " + nextHostAddress  + " ..." , true));
+                    System.out.println(this.getHostSettings().verboseInfoString("forwarding the request to: " + nextHostAddress  + " ..." , true));
 
                 nextOutputStream.writeObject(forewardedRequestMessage);
 
                 if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("request forewarded " + nextHostAddress  , true));
+                    System.out.println(this.getHostSettings().verboseInfoString("request forwarded " + nextHostAddress  , true));
 
                 if (this.getRequireACK()) {
                     if(this.getHostSettings().getVerboseOperatingMode())

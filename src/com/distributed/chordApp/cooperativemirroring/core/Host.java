@@ -1,5 +1,7 @@
 package com.distributed.chordApp.cooperativemirroring.core;
 
+import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
+import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.core.settings.ChordNetworkSettings;
 import com.distributed.chordApp.cooperativemirroring.core.backend.ClientHandlerThread;
 import com.distributed.chordApp.cooperativemirroring.core.backend.HostHandlerThread;
@@ -12,6 +14,8 @@ import com.distributed.chordLib.ChordCallback;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
@@ -63,6 +67,71 @@ public class Host implements Runnable, ChordCallback {
             System.out.println(this.getHostSettings().verboseInfoString("Host ready to operate", false));
             System.out.println(this.toString());
         }
+    }
+
+    /**
+     * Method used for transfering all the resources of the current host to another host
+     * in case of network leaving
+     *
+     * @throws IOException
+     */
+    public void leaveChordNetwork() throws IOException, ClassNotFoundException {
+
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("leaving the chord network ...", false));
+
+        if(this.chordEntryPoint == null)
+        {
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("chord network not previously setted", false));
+            return ;
+        }
+
+        this.chordEntryPoint.closeNetwork();
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("chord network leaved, sending host resources to other hosts", false));
+
+
+        if(!this.hostSettings.hasShallopHost())
+        {
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("shallop host not setted", false));
+            return ;
+        }
+
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("opening the shallop host socket ...", false));
+        Socket destinationHostSocket = new Socket(this.hostSettings.getShallopHostIP(), this.hostSettings.getHostPort());
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("shallop host socket opened: " + this.hostSettings.getShallopHostIP(), false));
+
+        ObjectOutputStream output = new ObjectOutputStream(destinationHostSocket.getOutputStream());
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("opened destination host output channel", false));
+        ObjectInputStream input = new ObjectInputStream(destinationHostSocket.getInputStream());
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("opened destination host input channel", false));
+
+        for(Resource resource : this.resourcesManager.getResources())
+        {
+            RequestMessage request = new RequestMessage(this.hostSettings.getHostIP(), this.hostSettings.getHostPort(), resource, false, false);
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("created the Request Message for resource: " + resource.getResourceID(), false));
+
+            output.flush();
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("sending the resource to the destination host ...", false));
+            output.writeObject(request);
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("resource sended to the destination host", false));
+
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for the response ...", false));
+            ResponseMessage response = (ResponseMessage) input.readObject();
+            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("response arrived ...", false));
+
+            if(response.getRequestPerformedSuccessfully())
+            {
+                if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("resource deposited successfully on destination host", false));
+            }
+            else
+            {
+                if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("resource NOT deposited on destination host, the resource will be lost", false));
+            }
+        }
+
+        output.close();
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("output channel closed", false));
+        input.close();
+        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("input channel closed", false));
     }
 
     /*Setter methods*/
@@ -265,14 +334,12 @@ public class Host implements Runnable, ChordCallback {
 
     /**
      * Method used for changing a resource placement
-     * @param firstKey
-     * @param lastKey
      */
     @Override
-    public void notifyResponsabilityChange(String firstKey, String lastKey) {
+    public void notifyResponsabilityChange() {
         if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("changing a resource ....", false));
 
-        this.hostHandlerThread.notifyResponsabilityChange(firstKey, lastKey);
+        this.hostHandlerThread.notifyResponsabilityChange();
     }
 
     /*Getter methods*/
@@ -304,5 +371,12 @@ public class Host implements Runnable, ChordCallback {
         if(this.getHostSettings().getVerboseOperatingMode())
             System.out.println(this.getHostSettings().verboseInfoString("host handler thread stopped ", false));
 
+        try {
+            this.leaveChordNetwork();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }
