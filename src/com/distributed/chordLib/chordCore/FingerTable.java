@@ -44,43 +44,13 @@ public class FingerTable {
     }
 
     /**
-     * @return successor of this node
+     * @return get first successor
      */
     public Node getSuccessor() {
         if (successors.isEmpty()) throw new NoSuccessorsExceptions();
         return successors.get(0);
     }
 
-    /**
-     * Find the Node among Node, its successors and fingers most appropriate for key
-     *
-     * @param id (not hashed yet)
-     * @return a previous Node in FingerTable or the Successor for the key
-     */
-    public Node getNextNode(String id) {
-        String objectKey = hash.getSHA1(id);
-
-        if (getSuccessor() == myNode) return myNode; //I'm the only node in the network
-
-        if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())) {
-            return myNode; //Look if I'm responsible for the key
-        }
-
-        Node previous = null;
-        Node next = null;
-        //Look into finger Table and cast most suitable finger to previous
-        for (int i = 0; i < fingers.length; i++) {
-            next = fingers[i];
-            if (next != null) {
-                if (previous != null && hash.areOrdered(previous.getkey(), objectKey, next.getkey())) {
-                    return previous; //If finger is not null and higher of key STOP
-                } else {
-                    previous = next;
-                }
-            }
-        }
-        return getSuccessor(); //Max finger
-    }
 
     public Node getPredecessor() {
         return predecessor;
@@ -97,6 +67,8 @@ public class FingerTable {
      */
     public void setSuccessor(Node successor) {
 
+        System.out.println("Set Successor "+ successor.getIP());
+
         if (this.successors.contains(myNode)) this.successors.remove(myNode);
 
         this.successors.add(successor);
@@ -111,6 +83,8 @@ public class FingerTable {
             }
         }
         successors = successors.subList(0, Math.min(numSuccessors, successors.size()));
+
+        printFingerTable();
     }
 
 
@@ -130,6 +104,8 @@ public class FingerTable {
     }
 
     public void setFinger(Node node, int position) {
+        System.out.println("Set finger table");
+        printFingerTable();
         fingers[position] = node;
     }
 
@@ -137,8 +113,17 @@ public class FingerTable {
         return this.numSuccessors;
     }
 
+    /**
+     * Remove failed node from finger Table and Successor List
+     * @param node
+     */
     public void removeFailedNode(Node node) {
-        successors.remove(node);
+        for (Node s: successors) {
+            if (s.equals(node)) successors.remove(s);
+        }
+        for (int i = 0; i < fingers.length; i++) {
+            if (fingers[i] != null && fingers[i].equals(node)) fingers[i] = null;
+        }
         System.out.println("failed node " + node.getIP() + " is removed, only " + successors.size() + " successors in list");
     }
 
@@ -155,6 +140,7 @@ public class FingerTable {
         }
 
         for (int i = 0; i < fingers.length; i++) {
+            if (fingers[i]==null) continue;
             fingersString = fingersString + fingers[i].getIP() + ", ";
         }
 
@@ -162,7 +148,7 @@ public class FingerTable {
         System.out.println("___FINGERTABLE____");
         System.out.println("Successors: " + successorsString);
         System.out.println("Fingers: " + fingersString);
-        System.out.println("Predecessor: " + predecessor.getIP());
+        System.out.println("Predecessor: " + predecessorString);
         System.out.println("__________________");
     }
 

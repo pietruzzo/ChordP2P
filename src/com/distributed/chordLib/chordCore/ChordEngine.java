@@ -8,8 +8,6 @@ import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class ChordEngine extends ChordClient {
 
@@ -61,36 +59,39 @@ public class ChordEngine extends ChordClient {
     @Override
     protected Node findSuccessor(String id) {
 
-        Node result = null;
+        Node nextNode = null;
+
         try{
-
-            result = fingerTable.getNextNode(String.valueOf(id));
-
-            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hash.getSHA1(id), result.getkey())){
-                //not the successor of id -> send lookup
-                return comLayer.findSuccessor(result, id);
-            } else {
-                return result; //This is the successor
+            if (id == fingerTable.getMyNode().getIP()) {//I'm looking for myself
+            return fingerTable.getMyNode();
             }
+            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hash.getSHA1(id), fingerTable.getSuccessor().getkey())){
+            return fingerTable.getSuccessor(); //Successor is responsible
+            }
+
+            nextNode = closestPrecedingNode(Integer.parseInt(id));
+            return comLayer.findSuccessor(nextNode, id);
+
 
         } catch (NoSuccessorsExceptions e){ //Finger table has no successors
             this.closeNetwork();
             throw e;
         } catch (CommunicationFailureException e) { //Lookup on failed node, remove node and retry
-            fingerTable.removeFailedNode(result);
+            fingerTable.removeFailedNode(nextNode);
             return findSuccessor(id);
         }
     }
 
-    @Override @Deprecated
+    @Override
     protected Node closestPrecedingNode(int id) {
+        //Get preceding finger
+        for (int i = fingerTable.getNumFingers() - 1; i >= 0; i--) {
+            if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hash.getSHA1(String.valueOf(id))))
+                return fingerTable.getFinger(i);
+        }
         return null;
     }
 
-    @Override
-    protected Node findPredecessor(Node node) {
-        return comLayer.findPredecessor(node);
-    }
 
     @Override
     protected void stabilize() {
@@ -109,8 +110,8 @@ public class ChordEngine extends ChordClient {
                 if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
                     fingerTable.setSuccessor(x);
                 }
-                notify(x);
             }
+            notify(fingerTable.getSuccessor());
 
             Node succ = fingerTable.getSuccessor();
             for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
@@ -144,7 +145,7 @@ public class ChordEngine extends ChordClient {
     @Override
     protected void checkPredecessor() {
         Node predecessor = fingerTable.getPredecessor();
-        if (predecessor!= null && comLayer.isAlive(predecessor)) fingerTable.setPredecessor(null);
+        if (predecessor!= null && !comLayer.isAlive(predecessor)) fingerTable.setPredecessor(null);
     }
 
 
@@ -203,9 +204,8 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public void notifyIncoming(Node predecessor) {
-        String myPredecessorKey = fingerTable.getPredecessor().getkey();
         if (fingerTable.getPredecessor()==null ||
-                hash.areOrdered(myPredecessorKey, predecessor.getkey(), fingerTable.getMyNode().getkey())){
+                hash.areOrdered(fingerTable.getPredecessor().getkey(), predecessor.getkey(), fingerTable.getMyNode().getkey())){
             fingerTable.setPredecessor(predecessor);
             if (chordCallback!= null)
                 chordCallback.notifyResponsabilityChange(predecessor.getkey(), fingerTable.getMyNode().getkey());

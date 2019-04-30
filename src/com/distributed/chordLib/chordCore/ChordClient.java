@@ -108,15 +108,9 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n;
      * @return a preceding node for id
      */
-    @Deprecated
     protected abstract Node closestPrecedingNode(int id);
 
-    /**
-     * Ask for the predecessor of node
-     * @param node
-     * @return
-     */
-    protected abstract Node findPredecessor(Node node);
+
 
     /**
      * Called periodically, verify successors and notify them if you are their predecessor
