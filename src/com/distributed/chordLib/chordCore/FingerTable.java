@@ -148,6 +148,7 @@ public class FingerTable {
     public void printFingerTable(){
         String successorsString ="";
         String fingersString = "";
+        String predecessorString = "NOPREDECESSOR";
 
         for (int i = 0; i < successors.size(); i++) {
             successorsString = successorsString + successors.get(i).getIP() +", ";
@@ -157,10 +158,11 @@ public class FingerTable {
             fingersString = fingersString + fingers[i].getIP() + ", ";
         }
 
+        if(predecessor != null)  predecessorString = predecessor.getIP();
         System.out.println("___FINGERTABLE____");
         System.out.println("Successors: " + successorsString);
         System.out.println("Fingers: " + fingersString);
-        System.out.println("Predecessor: " + this.getPredecessor().getIP());
+        System.out.println("Predecessor: " + predecessor.getIP());
         System.out.println("__________________");
     }
 
