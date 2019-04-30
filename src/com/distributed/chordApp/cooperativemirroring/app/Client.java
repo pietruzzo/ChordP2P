@@ -93,9 +93,9 @@ public class Client {
                     try {
                         response = this.sendRequest(serverIP, serverPort, request);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.out.println("\n[Server unreached]");
                     } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                        System.out.println("\nRequest not forewarded");
                     }
                     this.printResponse(request, response);
                     break;
@@ -112,9 +112,9 @@ public class Client {
                     try {
                         response = this.sendRequest(serverIP, serverPort, request);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.out.println("\n[Server unreached]");
                     } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
+                        System.out.println("\nRequest not forewarded");
                     }
                     this.printResponse(request, response);
                     break;

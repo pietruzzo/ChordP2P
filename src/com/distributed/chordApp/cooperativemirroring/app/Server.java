@@ -6,7 +6,7 @@ import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 
 public class Server {
     public static void main(String []args){
-        String serverIP = "127.0.0.1";
+        String serverIP = "192.168.137.199";
         Integer chordPort = 7654;
         Integer serverPort = 9999;
 
@@ -17,7 +17,7 @@ public class Server {
 
         chs.setPerformBasicLookups(false);
         chs.setBootstrapServerAddress("192.168.137.199");
-        chs.setJoinExistingChordNetwork(true);
+        chs.setJoinExistingChordNetwork(false);
         chs.lockChanges();
 
         Thread t1 = null;
