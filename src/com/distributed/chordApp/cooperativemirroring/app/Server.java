@@ -16,7 +16,7 @@ public class Server {
         HostSettings hs = new HostSettings(serverIP, serverPort, chs, true);
 
         chs.setPerformBasicLookups(false);
-        chs.setBootstrapServerAddress("192.168.43.59");
+        chs.setBootstrapServerAddress("192.168.137.199");
         chs.setJoinExistingChordNetwork(true);
         chs.lockChanges();
 

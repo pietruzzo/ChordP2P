@@ -142,6 +142,27 @@ public class FingerTable {
         System.out.println("failed node " + node.getIP() + " is removed, only " + successors.size() + " successors in list");
     }
 
+    /**
+     * Debug informtions for Chord Datastructures
+     */
+    public void printFingerTable(){
+        String successorsString ="";
+        String fingersString = "";
+
+        for (int i = 0; i < successors.size(); i++) {
+            successorsString = successorsString + successors.get(i).getIP() +", ";
+        }
+
+        for (int i = 0; i < fingers.length; i++) {
+            fingersString = fingersString + fingers[i].getIP() + ", ";
+        }
+
+        System.out.println("___FINGERTABLE____");
+        System.out.println("Successors: " + successorsString);
+        System.out.println("Fingers: " + fingersString);
+        System.out.println("Predecessor: " + this.getPredecessor().getIP());
+        System.out.println("__________________");
+    }
 
     private String getmyPublicIPAddress() throws IOException {
         URL whatismyip = new URL("http://checkip.amazonaws.com");

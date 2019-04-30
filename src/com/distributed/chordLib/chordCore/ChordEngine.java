@@ -236,9 +236,14 @@ public class ChordEngine extends ChordClient {
                 System.out.println("Routine actions Stopped");
             }
             try {
+                System.out.println("Fix Fingers:---");
                 fixFingers();
+                System.out.println("Stabilize:---");
                 stabilize();
+                System.out.println("Check predecessor:---");
                 checkPredecessor();
+                System.out.println("End Routine:---");
+                fingerTable.printFingerTable();
             } catch(CommunicationFailureException e){
                 System.out.println("Routine action failed, retry in 2 seconds");
             } catch (TimeoutReachedException e) {
