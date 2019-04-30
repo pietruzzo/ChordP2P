@@ -3,7 +3,6 @@ package com.distributed.chordApp.cooperativemirroring.core.backend;
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
-import com.distributed.chordApp.cooperativemirroring.core.settings.ChordNetworkSettings;
 import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordCallback;
@@ -11,6 +10,7 @@ import com.distributed.chordLib.ChordCallback;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -74,7 +74,11 @@ public class HostHandlerThread extends Thread implements ChordCallback
                         this.getRequireAck(),
                         false);
                 try {
-                    Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
+                    //Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
+                    Socket destinationSocket = new Socket();
+                    destinationSocket.connect(new InetSocketAddress(destinationAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
+                    destinationSocket.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+
                     ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
 
                     outChannel.writeObject(request);

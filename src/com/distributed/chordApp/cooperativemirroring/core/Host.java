@@ -100,9 +100,7 @@ public class Host implements Runnable, ChordCallback {
         if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("shallop host socket opened: " + this.hostSettings.getShallopHostIP(), false));
 
         ObjectOutputStream output = new ObjectOutputStream(destinationHostSocket.getOutputStream());
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("opened destination host output channel", false));
         ObjectInputStream input = new ObjectInputStream(destinationHostSocket.getInputStream());
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("opened destination host input channel", false));
 
         for(Resource resource : this.resourcesManager.getResources())
         {
@@ -129,9 +127,8 @@ public class Host implements Runnable, ChordCallback {
         }
 
         output.close();
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("output channel closed", false));
         input.close();
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("input channel closed", false));
+
     }
 
     /*Setter methods*/
@@ -285,7 +282,7 @@ public class Host implements Runnable, ChordCallback {
     }
 
     /**
-     * Method used for stopping momentaneously the host
+     * Method used for stopping momentaneusly the host
      * (it could be restarted later)
      * @return Boolean value that represent if the host is in the stop state
      */
@@ -317,7 +314,7 @@ public class Host implements Runnable, ChordCallback {
     }
 
     /**
-     * Method used for permamently shutting down a host
+     * Method used for permanently shutting down a host
      * (it cannot be restarted anyhow)
      * @return
      */

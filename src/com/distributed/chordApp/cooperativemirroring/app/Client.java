@@ -5,6 +5,7 @@ import com.distributed.chordApp.cooperativemirroring.core.backend.messages.Reque
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -93,15 +94,15 @@ public class Client {
                     try {
                         response = this.sendRequest(serverIP, serverPort, request);
                     } catch (IOException e) {
-                        System.out.println("\n[Server unreached]");
+                        System.out.println("\n[Server unreached ]");
                     } catch (ClassNotFoundException e) {
-                        System.out.println("\nRequest not forewarded");
+                        System.out.println("\nRequest not forwarded ");
                     }
                     this.printResponse(request, response);
                     break;
 
                 case 2:
-                    System.out.println(this.clientInfoString("Retrive resource "));
+                    System.out.println(this.clientInfoString("Retrieve resource "));
                     System.out.print(this.clientInfoString("Insert resource id: "));
                     try {
                         resourceID = reader.readLine();
@@ -114,7 +115,7 @@ public class Client {
                     } catch (IOException e) {
                         System.out.println("\n[Server unreached]");
                     } catch (ClassNotFoundException e) {
-                        System.out.println("\nRequest not forewarded");
+                        System.out.println("\nRequest not forwarded");
                     }
                     this.printResponse(request, response);
                     break;
@@ -171,7 +172,9 @@ public class Client {
     private ResponseMessage sendRequest(String serverIP, Integer serverPort, RequestMessage requestMessage) throws IOException, ClassNotFoundException
     {
         if(this.verbose) System.out.println(this.clientInfoString("creating a connection with the server ..."));
-        Socket server = new Socket(serverIP, serverPort);
+        Socket server = new Socket();
+        server.connect(new InetSocketAddress(serverIP, serverPort), 5000);
+        server.setSoTimeout(5000);
         ResponseMessage response = null;
         ObjectOutputStream outChannel = new ObjectOutputStream(server.getOutputStream());
         ObjectInputStream inChannel = new ObjectInputStream(server.getInputStream());

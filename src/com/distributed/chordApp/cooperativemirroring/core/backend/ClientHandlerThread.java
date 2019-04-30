@@ -9,6 +9,7 @@ import com.distributed.chordLib.Chord;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -304,7 +305,10 @@ public class ClientHandlerThread implements Runnable
                 if(this.getHostSettings().getVerboseOperatingMode())
                     System.out.println(this.getHostSettings().verboseInfoString("opening a channel with another host: " + nextHostAddress + " ..." , true));
 
-                Socket nextHost = new Socket(nextHostAddress, this.getHostSettings().getHostPort());
+                //Socket nextHost = new Socket(nextHostAddress, this.getHostSettings().getHostPort());
+                Socket nextHost = new Socket();
+                nextHost.connect(new InetSocketAddress(nextHostAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
+                nextHost.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
 
                 if(this.getHostSettings().getVerboseOperatingMode())
                     System.out.println(this.getHostSettings().verboseInfoString("opened a channel with host: " + nextHostAddress  , true));
@@ -351,7 +355,11 @@ public class ClientHandlerThread implements Runnable
                 }
                 //Caso in cui la richiesta sia stata inoltrata da un'altro host
                 else {
-                    Socket destinationHost = new Socket(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort());
+                    //Socket destinationHost = new Socket(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort());
+                    Socket destinationHost = new Socket();
+                    destinationHost.connect(new InetSocketAddress(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort()));
+                    destinationHost.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+
                     ObjectOutputStream destinationChannel = new ObjectOutputStream(destinationHost.getOutputStream());
 
                     destinationChannel.writeObject(responseMessage);
