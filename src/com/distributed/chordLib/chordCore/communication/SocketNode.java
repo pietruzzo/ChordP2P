@@ -97,7 +97,6 @@ public class SocketNode {
                     socketCommCallback.handleUnexpectedClosure(nodeIP);
                     System.out.println("Error in reading from socket, probably closed");
                     System.out.println("Closing socket " + nodeIP);
-                    throw new CommunicationFailureException();
                 }
 
             }
