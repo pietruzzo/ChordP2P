@@ -19,7 +19,7 @@ public interface Chord {
     boolean USE_PUBLIC_IP = false;
     int DEFAULT_RETRY = 5;
     int DEFAULT_CHORD_MODULE = 20;
-    int ROUTINE_PERIOD = 2000;
+    int ROUTINE_PERIOD = 10000;
 
     /**
      * Lookup for key in chord network

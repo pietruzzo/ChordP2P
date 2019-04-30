@@ -2,6 +2,7 @@ package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.Message;
+import com.distributed.chordLib.exceptions.CommunicationFailureException;
 
 import java.io.*;
 import java.net.Socket;
@@ -39,7 +40,7 @@ public class SocketNode {
         try {
             out.writeObject(message);
             out.flush();
-            System.out.println("Send message " + message.toString() + " to " + endpoint.getInetAddress().toString());
+            System.out.println("Send message " + message.toString() + "[id: "+ ((Message) message).getId() + "]" + " to " + endpoint.getInetAddress().toString());
         } catch (IOException e) {
             System.err.println("Unable to write message on socket " + nodeIP);
             e.printStackTrace();
@@ -90,12 +91,13 @@ public class SocketNode {
                 Object message = null;
                 try {
                     message = readSocket();
-                    System.out.println("Read message " + message.toString() + " from " + endpoint.getInetAddress().toString());
+                    System.out.println("Read message " + message.toString() + "[id: "+ ((Message) message).getId() + "]" + " from " + endpoint.getInetAddress().toString());
                     socketCommCallback.handleNewMessage((Message)message, getThis() );
                 } catch (IOException e) {
                     socketCommCallback.handleUnexpectedClosure(nodeIP);
                     System.out.println("Error in reading from socket, probably closed");
                     System.out.println("Closing socket " + nodeIP);
+                    throw new CommunicationFailureException();
                 }
 
             }

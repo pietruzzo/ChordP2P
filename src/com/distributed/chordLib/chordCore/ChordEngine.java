@@ -42,11 +42,17 @@ public class ChordEngine extends ChordClient {
             return myNode; //Look if I'm responsible for the key
         }
         else {
+            Node successor = null;
             try {
-                return comLayer.findSuccessorB(fingerTable.getSuccessor(), String.valueOf(id));
+                successor = fingerTable.getSuccessor();
+                return comLayer.findSuccessorB(successor, String.valueOf(id));
             } catch (NoSuccessorsExceptions e){
                 this.closeNetwork();
                 throw e;
+            }
+            catch (CommunicationFailureException e) { //Lookup on failed node, remove node and retry
+                fingerTable.removeFailedNode(successor);
+                return findSuccessorB(id);
             }
 
         }
@@ -55,9 +61,10 @@ public class ChordEngine extends ChordClient {
     @Override
     protected Node findSuccessor(String id) {
 
+        Node result = null;
         try{
 
-            Node result = fingerTable.getNextNode(String.valueOf(id));
+            result = fingerTable.getNextNode(String.valueOf(id));
 
             if (hash.areOrdered(fingerTable.getMyNode().getkey(), hash.getSHA1(id), result.getkey())){
                 //not the successor of id -> send lookup
@@ -66,11 +73,13 @@ public class ChordEngine extends ChordClient {
                 return result; //This is the successor
             }
 
-        } catch (NoSuccessorsExceptions e){
+        } catch (NoSuccessorsExceptions e){ //Finger table has no successors
             this.closeNetwork();
             throw e;
+        } catch (CommunicationFailureException e) { //Lookup on failed node, remove node and retry
+            fingerTable.removeFailedNode(result);
+            return findSuccessor(id);
         }
-
     }
 
     @Override @Deprecated
