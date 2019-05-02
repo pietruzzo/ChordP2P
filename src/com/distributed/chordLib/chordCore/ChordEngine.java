@@ -69,7 +69,7 @@ public class ChordEngine extends ChordClient {
             return fingerTable.getSuccessor(); //Successor is responsible
             }
 
-            nextNode = closestPrecedingNode(Integer.parseInt(id));
+            nextNode = closestPrecedingNode(id);
             return comLayer.findSuccessor(nextNode, id);
 
 
@@ -83,10 +83,10 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    protected Node closestPrecedingNode(int id) {
+    protected Node closestPrecedingNode(String id) {
         //Get preceding finger
         for (int i = fingerTable.getNumFingers() - 1; i >= 0; i--) {
-            if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hash.getSHA1(String.valueOf(id))))
+            if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hash.getSHA1(id)))
                 return fingerTable.getFinger(i);
         }
         return null;
