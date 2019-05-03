@@ -45,8 +45,17 @@ public class SystemUtilities {
         String ipconfig = sb.toString();
         Pattern pt = Pattern.compile("192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}");
         Matcher mt = pt.matcher(ipconfig);
-        mt.find();
-        currentIP = mt.group();
+        Boolean found = mt.find();
+
+        if(!found)
+        {
+            currentIP = "127.0.0.1";
+        }
+        else
+        {
+            currentIP = mt.group();
+        }
+
 
         return currentIP;
     }
