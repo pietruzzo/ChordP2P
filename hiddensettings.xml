@@ -1,0 +1,6 @@
+<HiddenSettings>
+    <ApplicationServerPort>9999</ApplicationServerPort>
+    <ApplicationClientPort>7777</ApplicationClientPort>
+    <ChordPort>7654</ChordPort>
+    <JoinChordNetwork>true</JoinChordNetwork>
+</HiddenSettings>

@@ -3,6 +3,8 @@ package com.distributed.chordApp.cooperativemirroring.app;
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
+import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
+import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -52,8 +54,8 @@ public class Client {
         Integer choice = -1;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-        String serverIP = "192.168.137.199";
-        Integer serverPort = 9999;
+        String serverIP = ChordSettingsLoader.getBootstrapServerIP();
+        Integer serverPort = ChordSettingsLoader.getApplicationServerPort();
 
         String resourceID = null;
         RequestMessage request = null;
@@ -246,7 +248,10 @@ public class Client {
     }
 
     public static void main(String []args){
-        Client c = new Client("127.0.0.1", 7777, true);
+        String clientIP = SystemUtilities.getThisMachineIP();
+        Integer clientPort = ChordSettingsLoader.getApplicationClientPort();
+
+        Client c = new Client(clientIP, clientPort, true);
     }
 
 }
