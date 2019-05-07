@@ -100,29 +100,31 @@ public class ChordEngine extends ChordClient {
         Node myN = fingerTable.getMyNode();
         Node s = fingerTable.getSuccessor();
 
-        if (s != myN) { //If I'm not the only node in the network
-            //Get first not failed successor
-            while (!comLayer.isAlive(s)) {
+
+        //Get first not failed successor that it's not me
+        while (!s.equals(myN) && !comLayer.isAlive(s)) {
+            if (!s.equals(myN)) {
                 fingerTable.removeFailedNode(s);
-                s = fingerTable.getSuccessor();
             }
-
-            Node x = comLayer.findPredecessor(s);
-            if (x != null) { //If my successor knows a predecessor
-                if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
-                    fingerTable.setSuccessor(x);
-                }
-            }
-            notify(fingerTable.getSuccessor());
-
-            Node succ = fingerTable.getSuccessor();
-            for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
-                succ = findSuccessor(succ.getkey());
-                if (succ.equals(myN)) break; //Stop If number of nodes in network are less than Num of Successors
-                fingerTable.setSuccessor(succ);
-            }
+            s = fingerTable.getSuccessor();
         }
 
+            if (!s.equals(myN)) {
+                Node x = comLayer.findPredecessor(s);
+                if (x != null) { //If my successor knows a predecessor
+                    if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
+                        fingerTable.setSuccessor(x);
+                    }
+                }
+                notify(fingerTable.getSuccessor());
+
+                Node succ = fingerTable.getSuccessor();
+                for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
+                    succ = findSuccessor(succ.getkey());
+                    if (succ.equals(myN)) break; //Stop If number of nodes in network are less than Num of Successors
+                    fingerTable.setSuccessor(succ);
+                }
+            }
     }
 
     @Override
