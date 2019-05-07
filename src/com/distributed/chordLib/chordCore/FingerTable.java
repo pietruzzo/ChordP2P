@@ -71,9 +71,12 @@ public class FingerTable {
 
         if (this.successors.contains(myNode)) this.successors.remove(myNode);
 
-        this.successors.add(successor);
+        if (!this.successors.contains(successor))
+            this.successors.add(successor);
+
         successors.sort((o1, o2) -> {
             if (hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return 1;
+            else if (o1.equals(this.getMyNode())) return 1; //Put MyNode always on tail
             else if (o1.equals(o2)) return 0;
             else return -1;
         });
@@ -111,6 +114,12 @@ public class FingerTable {
 
     public int getNumSuccessors() {
         return this.numSuccessors;
+    }
+
+    public boolean successoIsFull(){
+        if (successors.size()< this.getNumSuccessors())
+            return false;
+        return true;
     }
 
     /**

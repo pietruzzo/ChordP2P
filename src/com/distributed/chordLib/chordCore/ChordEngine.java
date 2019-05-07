@@ -65,9 +65,9 @@ public class ChordEngine extends ChordClient {
 
         try{
             if (hashed_key.compareTo(fingerTable.getMyNode().getkey()) == 0) {//I'm looking for myself
-            return fingerTable.getMyNode();
+            return fingerTable.getSuccessor();
             }
-            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())){
+            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())) {
             return fingerTable.getSuccessor(); //Successor is responsible
             }
 
@@ -211,6 +211,10 @@ public class ChordEngine extends ChordClient {
         if (fingerTable.getPredecessor()==null ||
                 hash.areOrdered(fingerTable.getPredecessor().getkey(), predecessor.getkey(), fingerTable.getMyNode().getkey())){
             fingerTable.setPredecessor(predecessor);
+            if (!fingerTable.successoIsFull()){
+                //Add node to successor list
+                fingerTable.setSuccessor(predecessor);
+            }
             if (chordCallback!= null)
                 chordCallback.notifyResponsabilityChange();
         }
