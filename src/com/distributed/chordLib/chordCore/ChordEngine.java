@@ -8,6 +8,8 @@ import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static com.distributed.chordLib.chordCore.HashFunction.*;
+
 
 public class ChordEngine extends ChordClient {
 
@@ -32,45 +34,45 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    protected Node findSuccessorB(String id) {
+    protected Node findSuccessorB(Hash hashed_key) {
         Node predecessor = fingerTable.getPredecessor();
         Node myNode = fingerTable.getMyNode();
-        String objectKey = hash.getSHA1(String.valueOf(id));
-        if (predecessor != null && hash.areOrdered(predecessor.getkey(), objectKey, myNode.getkey())){
+
+        if (predecessor != null && hash.areOrdered(predecessor.getkey(), hashed_key, myNode.getkey())){
             return myNode; //Look if I'm responsible for the key
         }
         else {
             Node successor = null;
             try {
                 successor = fingerTable.getSuccessor();
-                return comLayer.findSuccessorB(successor, String.valueOf(id));
+                return comLayer.findSuccessorB(successor, hashed_key);
             } catch (NoSuccessorsExceptions e){
                 this.closeNetwork();
                 throw e;
             }
             catch (CommunicationFailureException e) { //Lookup on failed node, remove node and retry
                 fingerTable.removeFailedNode(successor);
-                return findSuccessorB(id);
+                return findSuccessorB(hashed_key);
             }
 
         }
     }
 
     @Override
-    protected Node findSuccessor(String id) {
+    protected Node findSuccessor(Hash hashed_key) {
 
         Node nextNode = null;
 
         try{
-            if (id == fingerTable.getMyNode().getIP()) {//I'm looking for myself
+            if (hashed_key.compareTo(fingerTable.getMyNode().getkey()) == 0) {//I'm looking for myself
             return fingerTable.getMyNode();
             }
-            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hash.getSHA1(id), fingerTable.getSuccessor().getkey())){
+            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())){
             return fingerTable.getSuccessor(); //Successor is responsible
             }
 
-            nextNode = closestPrecedingNode(id);
-            return comLayer.findSuccessor(nextNode, id);
+            nextNode = closestPrecedingNode(hashed_key);
+            return comLayer.findSuccessor(nextNode, hashed_key);
 
 
         } catch (NoSuccessorsExceptions e){ //Finger table has no successors
@@ -78,15 +80,15 @@ public class ChordEngine extends ChordClient {
             throw e;
         } catch (CommunicationFailureException e) { //Lookup on failed node, remove node and retry
             fingerTable.removeFailedNode(nextNode);
-            return findSuccessor(id);
+            return findSuccessor(hashed_key);
         }
     }
 
     @Override
-    protected Node closestPrecedingNode(String id) {
+    protected Node closestPrecedingNode(Hash hashed_key) {
         //Get preceding finger
         for (int i = fingerTable.getNumFingers() - 1; i >= 0; i--) {
-            if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hash.getSHA1(id)))
+            if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hashed_key))
                 return fingerTable.getFinger(i);
         }
         return null;
@@ -137,7 +139,7 @@ public class ChordEngine extends ChordClient {
         for (int i = 0; i < fingerTable.getNumFingers(); i++) {
             next = next + 1;
             if (next > m) next = 1;
-            fingerTable.setFinger(findSuccessor(fingerTable.getMyNode().getkey()+ (Math.pow(2, (next-1)))),i);
+            fingerTable.setFinger(findSuccessor(hash.moduloSum(fingerTable.getMyNode().getkey(), (long) Math.pow(2, (next-1)))),i);
         }
 
     }
@@ -151,32 +153,34 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException {
+        Hash hashedKey = hash.getSHA1(key); //Get hash of the key for lookup
         String response = null;
         for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
             try {
-                response = this.findSuccessor(key).getIP();
+                response = this.findSuccessor(hashedKey).getIP();
             } catch (TimeoutReachedException | CommunicationFailureException e){
                 response = null;
             }
             if(response != null) break;
         }
-        if (response == null) response= this.findSuccessor(key).getIP();
+        if (response == null) response= this.findSuccessor(hashedKey).getIP();
         if (response!= null && response.compareTo(fingerTable.getMyNode().getIP())==0) response = "127.0.0.1";
         return response;
     }
 
     @Override
     public String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException {
+        Hash hashedKey = hash.getSHA1(key); //Get hash of the key for lookup
         String response = null;
         for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
             try {
-                response = this.findSuccessorB(key).getIP();
+                response = this.findSuccessorB(hashedKey).getIP();
             } catch (TimeoutReachedException | CommunicationFailureException e){
                 response = null;
             }
             if(response != null) break;
         }
-        if (response == null) response= this.findSuccessorB(key).getIP();
+        if (response == null) response= this.findSuccessorB(hashedKey).getIP();
         if (response!= null && response.compareTo(fingerTable.getMyNode().getIP())==0) response = "127.0.0.1";
         return response;
     }
@@ -189,16 +193,16 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public InitParameters handleJoinRequest(String IP) {
-        return new InitParameters(fingerTable.getNumFingers(), fingerTable.getNumSuccessors(), findSuccessor(IP), hash.getM());
+        return new InitParameters(fingerTable.getNumFingers(), fingerTable.getNumSuccessors(), findSuccessor(hash.getSHA1(IP)), hash.getM());
     }
 
     @Override
-    public Node handleLookupB(String key) {
+    public Node handleLookupB(Hash key) {
         return this.findSuccessorB(key);
     }
 
     @Override
-    public Node handleLookup(String key) {
+    public Node handleLookup(Hash key) {
         return this.findSuccessor(key);
     }
 
@@ -218,7 +222,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public String getkey(String ip) {
+    public Hash getkey(String ip) {
         return hash.getSHA1(ip);
     }
 

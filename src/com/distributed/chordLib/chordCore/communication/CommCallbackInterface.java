@@ -1,7 +1,10 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.ChordClient;
+import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
+
+import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 public interface CommCallbackInterface {
 
@@ -18,14 +21,14 @@ public interface CommCallbackInterface {
      * @param key
      * @return node responsible for key
      */
-    Node handleLookupB(String key);
+    Node handleLookupB(Hash key);
 
     /**
      * Callback for remote Standard Lookup Request
      * @param key
      * @return node responsible for key
      */
-    Node handleLookup(String key);
+    Node handleLookup(Hash key);
 
     /**
      * a node says to me that he is my predecessor
@@ -44,5 +47,5 @@ public interface CommCallbackInterface {
      * @param ip
      * @return
      */
-    String getkey(String ip);
+    Hash getkey(String ip);
 }

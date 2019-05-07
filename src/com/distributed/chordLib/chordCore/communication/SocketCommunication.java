@@ -1,6 +1,7 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.ChordClient;
+import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
@@ -15,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+
+import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 public class SocketCommunication implements CommCallInterface, SocketIncomingHandling {
 
@@ -58,14 +61,14 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     }
 
     @Override
-    public Node findSuccessorB(Node node, String key) {
+    public Node findSuccessorB(Node node, Hash key) {
         Message message = new BasicLookupRequestMessage(key);
         waitResponse(message, getSocketNode(node.getIP()));
         return ((LookupResponseMessage) getResponseinWaiting(message.getId())).node;
     }
 
     @Override
-    public Node findSuccessor(Node node, String key) {
+    public Node findSuccessor(Node node, Hash key) {
         Message message = new LookupRequestMessage(key);
         waitResponse(message, getSocketNode(node.getIP()));
         return ((LookupResponseMessage) getResponseinWaiting(message.getId())).node;

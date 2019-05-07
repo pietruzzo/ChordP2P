@@ -6,9 +6,9 @@ import java.io.Serializable;
 public class Node implements Serializable {
 
     private final String IP;
-    private final String key;
+    private final HashFunction.Hash key;
 
-    public Node(String IP, String key) {
+    public Node(String IP, HashFunction.Hash key) {
         this.IP = IP;
         this.key = key;
     }
@@ -18,7 +18,7 @@ public class Node implements Serializable {
     /**
      * @return the hash for the IP
      */
-    public String getkey(){return key;}
+    public HashFunction.Hash getkey(){return key;}
 
     /**
      * Find if nodes are equals

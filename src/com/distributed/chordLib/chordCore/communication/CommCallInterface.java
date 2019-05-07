@@ -1,8 +1,11 @@
 package com.distributed.chordLib.chordCore.communication;
 
+import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.JoinResponseMessage;
 import org.jetbrains.annotations.Nullable;
+
+import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 /**
  * Interface to be implemented by communication Layer
@@ -26,7 +29,7 @@ public interface CommCallInterface {
      * @return Node responsible for the key
      * @implNote synchronous call
      */
-    Node findSuccessorB (Node node, String key);
+    Node findSuccessorB (Node node, Hash key);
 
     /**
      * Standard Lookup
@@ -35,7 +38,7 @@ public interface CommCallInterface {
      * @return Node responsible for the key
      * @implNote synchronous call
      */
-    Node findSuccessor (Node node, String key);
+    Node findSuccessor (Node node, Hash key);
 
     /**
      * get predecessor for node

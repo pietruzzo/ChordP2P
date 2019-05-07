@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.Serializable;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.distributed.chordLib.chordCore.HashFunction.*;
+
 public abstract class ChordClient implements com.distributed.chordLib.Chord, CommCallbackInterface {
 
     //region Attributes
@@ -31,6 +33,8 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
     /**
      * Contructor for chord Network
      * Initialize Chord FingerTable, communication Layer and open connection to bootstrapIP (or create a new Chord Network if bootstrap is null)
+     * If no Bootstrap address is indicated -> it will create a new ChordNetwork
+     * If Bootstrap Address is provide -> Try to join Chord Network and retrive configuration parameters
      * @param numFingers Number of fingers in finger table (if null, get from )
      * @param numSuccessors Number of stored successors (if null use default)
      * @param bootstrapAddr to Join an existing ChordClient Network
@@ -49,8 +53,8 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
         Node successor;
         Integer nFingers;
         Integer nSucc;
-        if (bootstrapAddr != null) { //Join case -> get parameters
-            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr, "X"), port);
+        if (bootstrapAddr != null) { //Join case -> get parameters from bootstrapNode
+            JoinResponseMessage message = comLayer.join(new Node(bootstrapAddr, null), port);
             successor = message.successor;
             nFingers = message.numFingers;
             nSucc = message.numSuccessors;
@@ -61,6 +65,8 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
             nFingers = numFingers;
             nSucc = numSuccessors;
         }
+
+        //Set default parameters if nothig has been indicated
         if (nFingers == null) nFingers = DEFAULT_NUM_FINGERS;
         if (nSucc == null) nSucc = DEFAULT_NUM_SUCCESSORS;
 
@@ -83,7 +89,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      * // forward the query around the circle
      * return successor.find successor(id);
      */
-    protected abstract Node findSuccessorB(String id);
+    protected abstract Node findSuccessorB(Hash id);
 
 
     /**
@@ -97,7 +103,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n'.find successor(id);
      * @return successor Node
      */
-    protected abstract Node findSuccessor(String id);
+    protected abstract Node findSuccessor(Hash id);
 
     /**
      * search the local table for the highest predecessor of id
@@ -108,7 +114,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
      *  return n;
      * @return a preceding node for id
      */
-    protected abstract Node closestPrecedingNode(String id);
+    protected abstract Node closestPrecedingNode(Hash id);
 
 
 

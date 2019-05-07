@@ -18,7 +18,7 @@ public interface Chord {
     int DEFAULT_SERVER_PORT = 1678;
     boolean USE_PUBLIC_IP = false;
     int DEFAULT_RETRY = 5;
-    int DEFAULT_CHORD_MODULE = 20;
+    int DEFAULT_CHORD_MODULE = 20; //Expressed in bit length
     int ROUTINE_PERIOD = 10000;
 
     /**
