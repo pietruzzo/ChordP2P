@@ -131,15 +131,15 @@ public class HashFunction {
 
             this.digest = new boolean[length];
             for (int i = 0; i < digest.length; i++) {
-                int byteIndex = digest.length - i;
+                int byteIndex = digest.length - i - 1;
                 int value = digest[byteIndex]; //Read byte as integer
                 String rep = Integer.toBinaryString(value); //Convert integer to binary string
                 for (int j = 0; j < rep.length(); j++) {
-                    int bitIndex = rep.length() - j;
+                    int bitIndex = rep.length() - j -1;
                     int c = rep.charAt(bitIndex); //get char
-                    if (byteIndex * 8 + bitIndex > (byteIndex * 8 + bitIndex) - length) { //not overtake length
-                        if (c == 1) this.digest[byteIndex * 8 + bitIndex] = true;
-                        if (c == 0) this.digest[byteIndex * 8 + bitIndex] = false;
+                    if (byteIndex * 8 + bitIndex < length) { //not overtake length
+                        if (c == '1') this.digest[byteIndex * 8 + bitIndex] = true;
+                        if (c == '0') this.digest[byteIndex * 8 + bitIndex] = false;
                     }
                     else break; //if exceeds length, stop for cycle
                 }
