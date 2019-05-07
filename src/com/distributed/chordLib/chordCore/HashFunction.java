@@ -1,21 +1,11 @@
 package com.distributed.chordLib.chordCore;
 
-import com.android.aapt.Resources;
 import com.google.common.collect.Lists;
-import javassist.bytecode.ByteArray;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.velocity.util.ArrayListWrapper;
-
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
-import static java.lang.Math.min;
 
 public class HashFunction {
 
