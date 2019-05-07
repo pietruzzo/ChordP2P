@@ -121,8 +121,11 @@ public class ChordEngine extends ChordClient {
                 Node succ = fingerTable.getSuccessor();
                 for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
                     succ = findSuccessor(succ.getkey());
-                    if (succ.equals(myN)) break; //Stop If number of nodes in network are less than Num of Successors
+
                     fingerTable.setSuccessor(succ);
+
+                    //Stop if number of nodes in network are less than Num of Successors
+                    if (succ.equals(myN)) break;
                 }
             }
     }
