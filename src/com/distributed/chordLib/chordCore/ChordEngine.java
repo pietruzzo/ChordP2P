@@ -64,14 +64,17 @@ public class ChordEngine extends ChordClient {
         Node nextNode = null;
 
         try{
-            if (hashed_key.compareTo(fingerTable.getMyNode().getkey()) == 0) {//I'm looking for myself
-            return fingerTable.getSuccessor();
-            }
-            if (hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())) {
-            return fingerTable.getSuccessor(); //Successor is responsible
+            //If n is responsible, or among n ad s or s, return successor
+            if (
+                    hashed_key.compareTo(fingerTable.getMyNode().getkey()) == 0
+                    ||hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())
+                    || fingerTable.getSuccessor().getkey().compareTo(fingerTable.getMyNode().getkey()) == 0
+            ) {
+            return fingerTable.getSuccessor(); //Successor is responsible if key inside (n, successor]
             }
 
             nextNode = closestPrecedingNode(hashed_key);
+            if (nextNode == null) nextNode = fingerTable.getSuccessor();
             return comLayer.findSuccessor(nextNode, hashed_key);
 
 
@@ -91,7 +94,7 @@ public class ChordEngine extends ChordClient {
             if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hashed_key))
                 return fingerTable.getFinger(i);
         }
-        return null;
+        return fingerTable.getSuccessor();
     }
 
 

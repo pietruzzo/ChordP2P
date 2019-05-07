@@ -149,22 +149,28 @@ public class HashFunction {
          * @return 1 if this.digest > hash.digest, -1 if this.digest < hash.digest, 0 otherwise
          */
         public int compareTo(Hash hash){
+
             boolean[] otherDigest = hash.getDigest();
+
             int maxLength = Math.max(this.digest.length, otherDigest.length);
             int minLength = Math.min(this.digest.length, otherDigest.length);
-            if (otherDigest.length == maxLength){
-                for (int i = 0; i < maxLength-minLength; i++) {
-                    if (otherDigest[i]) return -1;
+
+            if (minLength!=maxLength) { //one vector is longer than another one
+
+                if (otherDigest.length == maxLength) {
+                    for (int i = 0; i < maxLength - minLength; i++) {
+                        if (otherDigest[i]) return -1;
+                    }
+                } else {
+                    for (int i = 0; i < maxLength - minLength; i++) {
+                        if (digest[i]) return 1;
+                    }
                 }
             }
-            if (digest.length == maxLength){
-                for (int i = 0; i < maxLength-minLength; i++) {
-                    if (digest[i]) return 1;
-                }
-            }
+
             for (int i = 0; i < minLength; i++) {
                 boolean thisElement = digest[digest.length-minLength+i];
-                boolean otherElement= digest[otherDigest.length-minLength+i];
+                boolean otherElement= otherDigest[otherDigest.length-minLength+i];
                 if (thisElement && !otherElement) return 1;
                 else if (!thisElement && otherElement) return -1;
             }

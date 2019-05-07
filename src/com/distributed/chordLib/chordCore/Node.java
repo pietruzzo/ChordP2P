@@ -27,8 +27,14 @@ public class Node implements Serializable {
      */
     @Override
     public boolean equals(Object node){
+
         if (node instanceof Node) {
-            if (this.IP == ((Node) node).getIP() && this.key == ((Node) node).getkey()) return true;
+            String nodeIP = ((Node) node).getIP();
+            HashFunction.Hash nodeHash = ((Node) node).getkey();
+
+            if (this.IP.equals(nodeIP) && this.key.compareTo(nodeHash) == 0) {
+                return true;
+            }
         }
         return false;
     }
