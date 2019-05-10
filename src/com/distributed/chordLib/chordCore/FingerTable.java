@@ -133,6 +133,9 @@ public class FingerTable {
         for (int i = 0; i < fingers.length; i++) {
             if (fingers[i] != null && fingers[i].equals(node)) fingers[i] = null;
         }
+        if (this.predecessor.equals(node)){
+            this.predecessor = null;
+        }
         System.out.println("failed node " + node.getIP() + " is removed, only " + successors.size() + " successors in list");
     }
 
