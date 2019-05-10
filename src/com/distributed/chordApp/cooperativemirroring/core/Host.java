@@ -52,13 +52,6 @@ public class Host implements Runnable, ChordCallback {
         this.setResourceManager(resources);
         this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
 
-        this.initHostHandlerThread(new HostHandlerThread(
-                this.getHostSettings(),
-                this.chordEntryPoint,
-                this.resourcesManager,
-                true
-        ));
-
         this.stopHost = false;
         this.shutdownHost = false ;
 
@@ -67,6 +60,19 @@ public class Host implements Runnable, ChordCallback {
             System.out.println(this.getHostSettings().verboseInfoString("Host ready to operate", false));
             System.out.println(this.toString());
         }
+    }
+
+    /**
+     * Method used for enjoying a chord network
+     */
+    public void enjoyChordNetwork()
+    {
+        this.initHostHandlerThread(new HostHandlerThread(
+                this.getHostSettings(),
+                this.chordEntryPoint,
+                this.resourcesManager,
+                true
+        ));
     }
 
     /**
