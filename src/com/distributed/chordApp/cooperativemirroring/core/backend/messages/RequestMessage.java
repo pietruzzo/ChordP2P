@@ -26,6 +26,8 @@ public class RequestMessage implements Serializable {
     private Boolean ackRequested = null;
     //Boolean value used to state if this message has been forwarded
     private Boolean forewarded = null;
+    //Boolean flag used to state if the request was sended by a host
+    private Boolean hostDepositRequest = false;
 
     //Constructor called when a retrieve resource request has to be sent
     public RequestMessage(String originalSenderIP,Integer originalSenderPort,String resourceID, Boolean ackRequested,Boolean forewarded){
@@ -59,6 +61,8 @@ public class RequestMessage implements Serializable {
     private void setAckRequested(Boolean ackRequested){ this.ackRequested = ackRequested; }
     private void setForewarded(Boolean forewarded){this.forewarded = forewarded; }
 
+    public void setHostDepositRequest(boolean hostDepositRequest){this.hostDepositRequest = hostDepositRequest; }
+
     /*Getter methods*/
     public String getOriginalSenderIP(){return this.originalSenderIP; }
     public Integer getOriginalSenderPort(){return this.originalSenderPort; }
@@ -67,6 +71,7 @@ public class RequestMessage implements Serializable {
     public Resource getResource(){ return this.resource; }
     public Boolean getAckRequested(){ return this.ackRequested; }
     public Boolean getForewarded(){return this.forewarded; }
+    public Boolean getHostDepositRequest(){return this.hostDepositRequest; }
 
     @Override
     public String toString(){
@@ -81,6 +86,7 @@ public class RequestMessage implements Serializable {
         else state += "\nACK not requested";
         if(this.getForewarded()) state += "\nRequest forewarded";
         else state += "\nDirect request";
+        if(this.getHostDepositRequest()) state += "\n<Host Deposit Request>";
 
         return state;
     }
