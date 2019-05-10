@@ -41,7 +41,7 @@ public class Server {
 
         chs.lockChanges();
 
-        Thread t1 = null;
+        Thread t1;
 
         Host host = new Host(hs, null);
 

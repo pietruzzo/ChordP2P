@@ -64,7 +64,7 @@ public class Client {
         do {
             System.out.println("\n======{CLIENT\\\\" + this.getClientIP() + ":" + this.getClientPort() + " CONSOLE}======\n");
             System.out.println("1)Deposit a resource");
-            System.out.println("2)Retrive a resource");
+            System.out.println("2)Retrieve a resource");
             System.out.println("0)Exit");
             System.out.print("[Choice> ");
 

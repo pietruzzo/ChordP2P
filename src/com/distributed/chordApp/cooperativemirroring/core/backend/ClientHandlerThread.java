@@ -260,11 +260,13 @@ public class ClientHandlerThread implements Runnable
      }
 
     @Override
+    //Gestisco le richieste di un client
     public void run()
     {
         //Request message that the client send to us.
         RequestMessage requestMessage = null;
 
+        //Nel caso in cui io debba inoltrare la richiesta
         RequestMessage forewardedRequestMessage = null;
         ResponseMessage responseMessage = null;
         ResponseMessage ackMessage = null;
@@ -294,7 +296,7 @@ public class ClientHandlerThread implements Runnable
             }
             else {
                 if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("the request was directed to another host; building a forewarding request ..." , true));
+                    System.out.println(this.getHostSettings().verboseInfoString("the request was directed to another host; building a forwarding request ..." , true));
                 forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage, this.getRequireACK());
             }
 
@@ -331,6 +333,10 @@ public class ClientHandlerThread implements Runnable
 
                     ackMessage = (ResponseMessage) nextInputChannel.readObject();
 
+                    outputChannel.writeObject(ackMessage);
+
+                    outputChannel.close();
+
                     if(this.getHostSettings().getVerboseOperatingMode())
                         System.out.println(this.getHostSettings().verboseInfoString("ACK arrived" , true));
 
@@ -344,31 +350,40 @@ public class ClientHandlerThread implements Runnable
             if (thisHost)
             {
 
-                if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("sending the response to the original host " , true));
 
-                if (!requestMessage.getForewarded()) {
+                if (!requestMessage.getForewarded())
+                {
+
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("direct request, sending back the response ... " , true));
 
                     outputChannel.writeObject(responseMessage);
 
                     outputChannel.close();
                 }
                 //Caso in cui la richiesta sia stata inoltrata da un'altro host
-                else {
+                /*else {
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("forwarded request, creating a channel with the client ... " , true));
                     //Socket destinationHost = new Socket(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort());
-                    Socket destinationHost = new Socket();
-                    destinationHost.connect(new InetSocketAddress(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort()));
-                    destinationHost.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+                    Socket destinationHost = new Socket(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort());
+                    //destinationHost.connect();
+                    //destinationHost.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("client channel created, sending the response ..." , true));
 
                     ObjectOutputStream destinationChannel = new ObjectOutputStream(destinationHost.getOutputStream());
 
+                    destinationChannel.flush();
                     destinationChannel.writeObject(responseMessage);
 
                     destinationChannel.close();
                     destinationHost.close();
-                }
+                }*/
 
-                if (requestMessage.getForewarded() && requestMessage.getAckRequested()) {
+                if (requestMessage.getForewarded() && requestMessage.getAckRequested())
+                {
 
                     if(this.getHostSettings().getVerboseOperatingMode())
                         System.out.println(this.getHostSettings().verboseInfoString("writing the ACK message for the previous host" , true));

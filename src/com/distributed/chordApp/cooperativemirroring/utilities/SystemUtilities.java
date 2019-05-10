@@ -100,7 +100,6 @@ public class SystemUtilities {
             }
         } catch (SocketException e) {
             System.err.println("Unable to retrive the current host IP, using the 127.0.0.1 instead");
-            result = "127.0.0.1";
         }
 
         if(result == null)
