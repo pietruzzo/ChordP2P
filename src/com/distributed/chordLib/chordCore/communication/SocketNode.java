@@ -94,6 +94,7 @@ public class SocketNode {
                     System.out.println("Read message " + message.toString() + "[id: "+ ((Message) message).getId() + "]" + " from " + endpoint.getInetAddress().toString());
                     socketCommCallback.handleNewMessage((Message)message, getThis() );
                 } catch (IOException e) {
+                    e.printStackTrace();
                     socketCommCallback.handleUnexpectedClosure(nodeIP);
                     System.out.println("Error in reading from socket, probably closed");
                     System.out.println("Closing socket " + nodeIP);

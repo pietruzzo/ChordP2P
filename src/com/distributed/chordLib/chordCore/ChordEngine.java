@@ -219,13 +219,15 @@ public class ChordEngine extends ChordClient {
         if (fingerTable.getPredecessor()==null ||
                 hash.areOrdered(fingerTable.getPredecessor().getkey(), predecessor.getkey(), fingerTable.getMyNode().getkey())){
             fingerTable.setPredecessor(predecessor);
+
+            if (chordCallback!= null)
+                chordCallback.notifyResponsabilityChange();
+
+        }
             if (!fingerTable.successoIsFull()){
                 //Add node to successor list
                 fingerTable.setSuccessor(predecessor);
             }
-            if (chordCallback!= null)
-                chordCallback.notifyResponsabilityChange();
-        }
     }
 
     @Override
