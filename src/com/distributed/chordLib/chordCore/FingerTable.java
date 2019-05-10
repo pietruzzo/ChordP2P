@@ -69,8 +69,6 @@ public class FingerTable {
 
         System.out.println("Set Successor "+ successor.getIP());
 
-        if (this.successors.contains(myNode)) this.successors.remove(myNode);
-
         if (!this.successors.contains(successor))
             this.successors.add(successor);
 

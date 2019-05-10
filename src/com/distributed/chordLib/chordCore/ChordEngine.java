@@ -63,13 +63,15 @@ public class ChordEngine extends ChordClient {
 
         Node nextNode = null;
 
+        if (hashed_key.compareTo(fingerTable.getMyNode().getkey()) == 0) return fingerTable.getMyNode();
+
         try{
             //If n is responsible, or among n ad s or s, return successor
             if (
-                    hashed_key.compareTo(fingerTable.getMyNode().getkey()) == 0
-                    ||hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())
+                    hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())
                     || fingerTable.getSuccessor().getkey().compareTo(fingerTable.getMyNode().getkey()) == 0
             ) {
+                System.out.println("SUCCESSOR IS RESPONSIBLE");
             return fingerTable.getSuccessor(); //Successor is responsible if key inside (n, successor]
             }
 
@@ -123,7 +125,7 @@ public class ChordEngine extends ChordClient {
 
                 Node succ = fingerTable.getSuccessor();
                 for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
-                    succ = findSuccessor(succ.getkey());
+                    succ = findSuccessor(hash.moduloSum(succ.getkey(), 1));
 
                     fingerTable.setSuccessor(succ);
 
@@ -216,6 +218,12 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public void notifyIncoming(Node predecessor) {
+
+        if (!fingerTable.successoIsFull()){
+            //Add node to successor list
+            fingerTable.setSuccessor(predecessor);
+        }
+
         if (fingerTable.getPredecessor()==null ||
                 hash.areOrdered(fingerTable.getPredecessor().getkey(), predecessor.getkey(), fingerTable.getMyNode().getkey())){
             fingerTable.setPredecessor(predecessor);
@@ -224,10 +232,7 @@ public class ChordEngine extends ChordClient {
                 chordCallback.notifyResponsabilityChange();
 
         }
-            if (!fingerTable.successoIsFull()){
-                //Add node to successor list
-                fingerTable.setSuccessor(predecessor);
-            }
+
     }
 
     @Override

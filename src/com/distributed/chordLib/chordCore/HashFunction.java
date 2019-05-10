@@ -31,7 +31,9 @@ public class HashFunction {
      */
     public Hash getSHA1(String inputString){
         byte[] digest = md.digest(inputString.getBytes());
-        return new Hash(digest, m);
+        Hash h = new Hash(digest, m);
+        System.out.println("Hash for " + inputString + " is: " + h.toString());
+        return h;
     }
 
 
