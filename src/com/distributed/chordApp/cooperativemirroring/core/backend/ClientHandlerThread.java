@@ -283,7 +283,17 @@ public class ClientHandlerThread implements Runnable
             if(this.getHostSettings().getVerboseOperatingMode())
                 System.out.println(this.getHostSettings().verboseInfoString("request arrived" , true));
 
-            String resourceKeeperIP = this.resourceLookup(requestMessage.getResourceID());
+            String resourceKeeperIP ;
+
+            if(requestMessage.getHostDepositRequest())
+            {
+                resourceKeeperIP = this.getHostSettings().getHostIP();
+            }
+            else
+            {
+                resourceKeeperIP = this.resourceLookup(requestMessage.getResourceID());
+            }
+
             if((resourceKeeperIP.equals("127.0.0.1")) || (resourceKeeperIP.equals("127.0.1.1")) || (resourceKeeperIP.equals(this.getHostSettings().getHostIP())))
             {
                 thisHost = true;
