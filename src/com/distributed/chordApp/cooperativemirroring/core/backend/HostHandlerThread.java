@@ -90,9 +90,17 @@ public class HostHandlerThread extends Thread implements ChordCallback
                     //destinationSocket.connect(new InetSocketAddress(destinationAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
                     //destinationSocket.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
 
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("opening output channel....", false));
+
+
                     ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
 
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("output channel opened", false));
+
                     outChannel.writeObject(request);
+                    outChannel.flush();
 
                     if(this.getHostSettings().getVerboseOperatingMode())
                         System.out.println(this.getHostSettings().verboseInfoString("request sended ....", false));

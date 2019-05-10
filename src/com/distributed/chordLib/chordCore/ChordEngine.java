@@ -96,7 +96,7 @@ public class ChordEngine extends ChordClient {
             if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hashed_key))
                 return fingerTable.getFinger(i);
         }
-        return fingerTable.getSuccessor();
+        return null;
     }
 
 
