@@ -208,6 +208,7 @@ public class Host implements Runnable, ChordCallback {
     {
         ServerSocket server = null;
         ThreadPoolExecutor executor = null;
+        boolean firstRun = true;
 
         try {
 
@@ -243,6 +244,13 @@ public class Host implements Runnable, ChordCallback {
                 while(!this.stopHost)
                 {
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for a client request ...", false));
+
+                    if(firstRun)
+                    {
+                        this.enjoyChordNetwork();
+
+                        firstRun = false;
+                    }
 
                     Socket client = server.accept();
 

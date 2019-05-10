@@ -49,7 +49,5 @@ public class Server {
 
         t1.start();
 
-        host.enjoyChordNetwork();
-
     }
 }
