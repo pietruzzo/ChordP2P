@@ -50,7 +50,6 @@ public class Host implements Runnable, ChordCallback {
     {
         this.setHostSettings(hostSettings);
         this.setResourceManager(resources);
-        this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
 
         this.stopHost = false;
         this.shutdownHost = false ;
@@ -183,6 +182,8 @@ public class Host implements Runnable, ChordCallback {
             else
                 cnep = ChordBuilder.createChord(cns.getAssociatedPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this);
 
+
+
         } catch (IOException e)
         {
             System.err.println(this.getHostSettings().verboseInfoString("impossible to join a chord network", false));
@@ -245,14 +246,20 @@ public class Host implements Runnable, ChordCallback {
                 {
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for a client request ...", false));
 
+                    Socket client;
                     if(firstRun)
                     {
+                        this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
+                        client = server.accept();
                         this.enjoyChordNetwork();
 
                         firstRun = false;
                     }
+                    else
+                    {
+                        client = server.accept();
+                    }
 
-                    Socket client = server.accept();
 
                     if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client request detected, instantiating a client handler thread ...", false));
 
