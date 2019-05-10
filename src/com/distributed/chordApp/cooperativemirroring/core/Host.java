@@ -334,7 +334,8 @@ public class Host implements Runnable, ChordCallback {
      */
     @Override
     public void notifyResponsabilityChange() {
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("changing a resource ....", false));
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("changing a resource ....", false));
 
         this.hostHandlerThread.notifyResponsabilityChange();
     }

@@ -35,6 +35,7 @@ public class HostHandlerThread extends Thread implements ChordCallback
                              ResourcesManager resourcesManager,
                              Boolean requireAck)
     {
+        this.setHostSettings(hostSettings);
         this.setChordEntryPoint(chordEntryPoint);
         this.setResourcesManager(resourcesManager);
         this.setRequireAck(requireAck);
@@ -53,11 +54,16 @@ public class HostHandlerThread extends Thread implements ChordCallback
     public synchronized void notifyResponsabilityChange()
     {
         Boolean thisHost = false ;
+        if(this.getHostSettings().getVerboseOperatingMode())
+            System.out.println(this.getHostSettings().verboseInfoString("notified of responsability changes, updating resources ....", false));
 
         for(Resource resource : this.resourcesManager.getResources())
         {
             String destinationAddress = null;
             thisHost = false ;
+
+            if(this.getHostSettings().getVerboseOperatingMode())
+                System.out.println(this.getHostSettings().verboseInfoString("verifying resource: " + resource.getResourceID() + " ...", false));
 
             if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
             else destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
@@ -67,28 +73,41 @@ public class HostHandlerThread extends Thread implements ChordCallback
 
             if(!thisHost)
             {
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("need to exchange the resource with" + destinationAddress + " ....", false));
+
                 RequestMessage request = new RequestMessage(
                         this.getHostSettings().getHostIP(),
                         this.getHostSettings().getHostPort(),
                         resource,
-                        this.getRequireAck(),
+                        this.requireAck,
                         false);
                 try {
-                    //Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
-                    Socket destinationSocket = new Socket();
-                    destinationSocket.connect(new InetSocketAddress(destinationAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
-                    destinationSocket.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("sending request to " + destinationAddress +" ....", false));
+                    Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
+                    //Socket destinationSocket = new Socket();
+                    //destinationSocket.connect(new InetSocketAddress(destinationAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
+                    //destinationSocket.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
 
                     ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
 
                     outChannel.writeObject(request);
 
+                    if(this.getHostSettings().getVerboseOperatingMode())
+                        System.out.println(this.getHostSettings().verboseInfoString("request sended ....", false));
+
                     if(this.getRequireAck())
                     {
+                        if(this.getHostSettings().getVerboseOperatingMode())
+                            System.out.println(this.getHostSettings().verboseInfoString("waiting for a response ....", false));
 
                         ObjectInputStream inChannel = new ObjectInputStream(destinationSocket.getInputStream());
 
                         ResponseMessage ackMessage = (ResponseMessage) inChannel.readObject();
+
+                        if(this.getHostSettings().getVerboseOperatingMode())
+                            System.out.println(this.getHostSettings().verboseInfoString("response arrived", false));
 
                         inChannel.close();
                     }
@@ -103,6 +122,11 @@ public class HostHandlerThread extends Thread implements ChordCallback
                 } catch (ClassNotFoundException e) {
                     e.printStackTrace();
                 }
+            }
+            else
+            {
+                if(this.getHostSettings().getVerboseOperatingMode())
+                    System.out.println(this.getHostSettings().verboseInfoString("the resource has to be stored on this host", false));
             }
         }
 

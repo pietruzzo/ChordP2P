@@ -13,7 +13,7 @@ public class ChordNetworkSettings implements Serializable {
     private Boolean changesLocked = false;
 
     //Boolean flag used to state if the client handlers have to perform a basic lookup
-    private Boolean performBasicLookups = null;
+    private Boolean performBasicLookups = false;
 
     //Boolean used to state if the host should join an existing network or not
     private Boolean joinExistingChordNetwork = null;
