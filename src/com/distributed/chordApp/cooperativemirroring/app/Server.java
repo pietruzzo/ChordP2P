@@ -24,7 +24,7 @@ public class Server {
 
 
         ChordNetworkSettings chs = new ChordNetworkSettings(chordPort);
-        HostSettings hs = new HostSettings(serverIP, serverPort, chs, true);
+        HostSettings hs = new HostSettings(serverIP, serverPort, chs, false);
 
         chs.setPerformBasicLookups(false);
 

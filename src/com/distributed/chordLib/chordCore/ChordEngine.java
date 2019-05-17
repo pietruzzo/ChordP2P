@@ -176,6 +176,10 @@ public class ChordEngine extends ChordClient {
 
         System.out.println("___________________");
         System.out.println("Lookup result: " + response + " (mynode: " + fingerTable.getMyNode().getIP() + ")" );
+        System.out.println("myNode hash: " + fingerTable.getMyNode().getkey().toString());
+        System.out.println("mySucc hash: " + fingerTable.getSuccessor().getkey().toString());
+        System.out.println("given  hash: " + hashedKey);
+        System.out.println("my, key, succ: " + hash.areOrdered(fingerTable.getMyNode().getkey(), hashedKey, fingerTable.getSuccessor().getkey()));
         System.out.println("___________________");
         if (response!= null && response.compareTo(fingerTable.getMyNode().getIP())==0) response = "127.0.0.1";
         return response;
@@ -232,7 +236,13 @@ public class ChordEngine extends ChordClient {
             fingerTable.setPredecessor(predecessor);
 
             if (chordCallback!= null)
-                chordCallback.notifyResponsabilityChange();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        chordCallback.notifyResponsabilityChange();
+                    }
+                }).start();
+
 
         }
 
