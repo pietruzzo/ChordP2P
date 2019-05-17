@@ -82,6 +82,7 @@ public class HostHandlerThread extends Thread implements ChordCallback
                         resource,
                         this.requireAck,
                         false);
+                request.setHostDepositRequest(true);
                 try {
                     if(this.getHostSettings().getVerboseOperatingMode())
                         System.out.println(this.getHostSettings().verboseInfoString("sending request to " + destinationAddress +" ....", false));

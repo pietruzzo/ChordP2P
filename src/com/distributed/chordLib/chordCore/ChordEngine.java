@@ -71,7 +71,6 @@ public class ChordEngine extends ChordClient {
                     hash.areOrdered(fingerTable.getMyNode().getkey(), hashed_key, fingerTable.getSuccessor().getkey())
                     || fingerTable.getSuccessor().getkey().compareTo(fingerTable.getMyNode().getkey()) == 0
             ) {
-                System.out.println("SUCCESSOR IS RESPONSIBLE");
             return fingerTable.getSuccessor(); //Successor is responsible if key inside (n, successor]
             }
 
@@ -174,6 +173,10 @@ public class ChordEngine extends ChordClient {
             if(response != null) break;
         }
         if (response == null) response= this.findSuccessor(hashedKey).getIP();
+
+        System.out.println("___________________");
+        System.out.println("Lookup result: " + response + " (mynode: " + fingerTable.getMyNode().getIP() + ")" );
+        System.out.println("___________________");
         if (response!= null && response.compareTo(fingerTable.getMyNode().getIP())==0) response = "127.0.0.1";
         return response;
     }
