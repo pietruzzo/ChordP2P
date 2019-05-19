@@ -1,5 +1,7 @@
 package com.distributed.chordApp.cooperativemirroring.core;
 
+import com.distributed.chordApp.cooperativemirroring.core.backend.SocketManager;
+import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.core.settings.ChordNetworkSettings;
@@ -14,8 +16,6 @@ import com.distributed.chordLib.ChordCallback;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
@@ -30,7 +30,8 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @date 2019-03-27
  * @version 2.0
  */
-public class Host implements Runnable, ChordCallback {
+public class Host implements Runnable, ChordCallback
+{
     //Settings for the current host
     private HostSettings hostSettings = null;
 
@@ -55,11 +56,7 @@ public class Host implements Runnable, ChordCallback {
         this.stopHost = false;
         this.shutdownHost = false ;
 
-        if(this.getHostSettings().getVerboseOperatingMode())
-        {
-            System.out.println(this.getHostSettings().verboseInfoString("Host ready to operate", false));
-            System.out.println(this.toString());
-        }
+        this.hostSettings.verboseInfoLog("\n" + this.toString() , HostSettings.HOST_CALLER,false);
     }
 
     /**
@@ -83,60 +80,65 @@ public class Host implements Runnable, ChordCallback {
      *
      * @throws IOException
      */
-    public void leaveChordNetwork() throws IOException, ClassNotFoundException {
+    public void leaveChordNetwork() throws SocketManagerException {
 
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("leaving the chord network ...", false));
+        this.hostSettings.verboseInfoLog("leaving the chord network ..." , HostSettings.HOST_CALLER,false);
 
         if(this.chordEntryPoint == null)
         {
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("chord network not previously setted", false));
+            this.hostSettings.verboseInfoLog("no previously instantiated chord network found" , HostSettings.HOST_CALLER,false);
             return ;
         }
 
         this.chordEntryPoint.closeNetwork();
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("chord network leaved, sending host resources to other hosts", false));
 
+        this.hostSettings.verboseInfoLog("chord network leaved, sending the host resources to a shallop host ..." , HostSettings.HOST_CALLER,false);
 
         if(!this.hostSettings.hasShallopHost())
         {
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("shallop host not setted", false));
+            this.hostSettings.verboseInfoLog("shallop host not present, resources will be lost" , HostSettings.HOST_CALLER,false);
             return ;
         }
 
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("opening the shallop host socket ...", false));
-        Socket destinationHostSocket = new Socket(this.hostSettings.getShallopHostIP(), this.hostSettings.getHostPort());
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("shallop host socket opened: " + this.hostSettings.getShallopHostIP(), false));
+        String shallopHostString = this.hostSettings.getShallopHostIP() + " : " + this.hostSettings.getShallopHostPort() ;
 
-        ObjectOutputStream output = new ObjectOutputStream(destinationHostSocket.getOutputStream());
-        ObjectInputStream input = new ObjectInputStream(destinationHostSocket.getInputStream());
+        this.hostSettings.verboseInfoLog("trying to open a channel with the shallop host: " + shallopHostString + " ..." , HostSettings.HOST_CALLER,false);
+
+        //Socket destinationHostSocket = null;
+        SocketManager destinationHostSocket = null;
+
+        //destinationHostSocket = new Socket();
+        destinationHostSocket = new SocketManager(this.hostSettings.getShallopHostIP(),
+                                                  this.hostSettings.getShallopHostPort(),
+                                                  this.hostSettings.getConnectionTimeout_MS(),
+                                                  this.hostSettings.getConnectionRetries());
+
+        destinationHostSocket.connect();
+
+        this.hostSettings.verboseInfoLog("channel opened with the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
+
 
         for(Resource resource : this.resourcesManager.getResources())
         {
             RequestMessage request = new RequestMessage(this.hostSettings.getHostIP(), this.hostSettings.getHostPort(), resource, false, false);
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("created the Request Message for resource: " + resource.getResourceID(), false));
 
-            output.flush();
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("sending the resource to the destination host ...", false));
-            output.writeObject(request);
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("resource sended to the destination host", false));
+            this.hostSettings.verboseInfoLog("created the exchanging request message for the resource: " + resource.getResourceID() + " to be send to the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
+            this.hostSettings.verboseInfoLog("sending the resource: " + resource.getResourceID() + " to the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
 
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for the response ...", false));
-            ResponseMessage response = (ResponseMessage) input.readObject();
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("response arrived ...", false));
+            ResponseMessage response = (ResponseMessage) destinationHostSocket.post(request, true);
+
+            this.hostSettings.verboseInfoLog("response for the resource: " + resource.getResourceID() + " arrived from the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
 
             if(response.getRequestPerformedSuccessfully())
             {
-                if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("resource deposited successfully on destination host", false));
+                this.hostSettings.verboseInfoLog("resource: " + resource.getResourceID() + " deposited successfully on the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
             }
-            else
-            {
-                if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("resource NOT deposited on destination host, the resource will be lost", false));
+            else {
+                this.hostSettings.verboseInfoLog("resource: " + resource.getResourceID() + " NOT deposited on the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
             }
         }
 
-        output.close();
-        input.close();
-
+        destinationHostSocket.disconnect();
     }
 
     /*Setter methods*/
@@ -153,13 +155,13 @@ public class Host implements Runnable, ChordCallback {
      * @param hostHandlerThread
      */
     private void initHostHandlerThread(HostHandlerThread hostHandlerThread) {
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("instantiating a new host handler thread ....", false));
+        this.hostSettings.verboseInfoLog("instantiating a new host handler thread" , HostSettings.HOST_CALLER,false);
         this.hostHandlerThread = hostHandlerThread;
 
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("starting new host handler thread ....", false));
+        this.hostSettings.verboseInfoLog("starting the new instantiated host handler thread" , HostSettings.HOST_CALLER,false);
         this.hostHandlerThread.start();
 
-        if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("host handler thread started", false));
+        this.hostSettings.verboseInfoLog("host handler thread started" , HostSettings.HOST_CALLER,false);
     }
 
     /*
@@ -169,37 +171,34 @@ public class Host implements Runnable, ChordCallback {
     {
         Chord cnep = null;
 
-        if(this.getHostSettings().getVerboseOperatingMode())
-        {
-            if(cns.getJoinExistingChordNetwork())
-                System.out.println(this.getHostSettings().verboseInfoString("trying to join a chord network...", false));
-            else
-                System.out.println(this.getHostSettings().verboseInfoString("trying to create a chord network...", false));
-        }
-
-
         try
         {
             if(cns.getJoinExistingChordNetwork())
+            {
+                this.hostSettings.verboseInfoLog("trying to join an existing chord network ..." , HostSettings.HOST_CALLER,false);
                 cnep = ChordBuilder.joinChord(cns.getBootstrapServerAddress(), cns.getAssociatedPort(), this);
+            }
             else
+            {
+                this.hostSettings.verboseInfoLog("trying to create a chord network ..." , HostSettings.HOST_CALLER,false);
                 cnep = ChordBuilder.createChord(cns.getAssociatedPort(), cns.getNumberOfFingers(), cns.getNumberOfSuccessors(), cns.getChordModule(), this);
+            }
+
 
         } catch (IOException e)
         {
-            System.err.println(this.getHostSettings().verboseInfoString("impossible to join a chord network", false));
-            e.printStackTrace();
-            System.err.print(this.getHostSettings().verboseInfoString("shutting down the host", false ));
+            this.hostSettings.verboseInfoLog("impossible to join or create a chord network: \n" + e.getMessage() + "\nShutting Down the host.", HostSettings.HOST_CALLER,true);
             this.finalize();
             System.exit(1);
         }
 
-        if(this.getHostSettings().getVerboseOperatingMode())
+
+        if(cns.getJoinExistingChordNetwork())
         {
-            if(cns.getJoinExistingChordNetwork())
-                System.out.println(this.getHostSettings().verboseInfoString("joined a chord network", false));
-            else
-                System.out.println(this.getHostSettings().verboseInfoString("created a chord network", false));
+            this.hostSettings.verboseInfoLog("joined a chord network" , HostSettings.HOST_CALLER,false);
+        }
+        else {
+            this.hostSettings.verboseInfoLog("created a chord network" , HostSettings.HOST_CALLER,false);
         }
 
         this.chordEntryPoint = cnep;
@@ -213,42 +212,39 @@ public class Host implements Runnable, ChordCallback {
 
         try {
 
-            if(this.getHostSettings().getVerboseOperatingMode())
-                System.out.println(this.getHostSettings().verboseInfoString("starting the server socket ...", false));
+            this.hostSettings.verboseInfoLog("starting the server socket for the current host" , HostSettings.HOST_CALLER,false);
 
             server = new ServerSocket(this.getHostSettings().getHostPort().intValue());
 
-            if(this.getHostSettings().getVerboseOperatingMode())
-                System.out.println(this.getHostSettings().verboseInfoString("server socket started", false));
+            this.hostSettings.verboseInfoLog("server socket started" , HostSettings.HOST_CALLER,false);
 
         } catch (IOException e)
         {
-            System.err.println(this.getHostSettings().verboseInfoString("cannot instantiate a server socket", false));
-            e.printStackTrace();
-            System.err.println(this.getHostSettings().verboseInfoString("shutting down the host", false));
-            return ;
+            this.hostSettings.verboseInfoLog("cannot instantiate a server socket : \n" + e.getMessage() + "\nShutting down the current host\n" , HostSettings.HOST_CALLER,false);
+            this.finalize();
+            System.exit(1);
         }
 
         try
         {
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("instantiating the thread pool executor ...", false));
+            this.hostSettings.verboseInfoLog("instantiating an executor ..." , HostSettings.HOST_CALLER,false);
 
             /*We used the CachedThreadPool in order to have only as much thread as we
              *need , also according to the processing power of the machine of the host
              */
             executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
-            if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("thread pool executor instantiated", false));
+            this.hostSettings.verboseInfoLog("executor instantiated" , HostSettings.HOST_CALLER,false);
 
             while(!this.shutdownHost)
             {
                 while(!this.stopHost)
                 {
-                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("waiting for a client request ...", false));
+                    this.hostSettings.verboseInfoLog("waiting for a request ..." , HostSettings.HOST_CALLER,false);
 
                     Socket client = server.accept();
 
-                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client request detected, instantiating a client handler thread ...", false));
+                    this.hostSettings.verboseInfoLog("request detected , instantiating a client handler thread for managing it ..." , HostSettings.HOST_CALLER,false);
 
                     ClientHandlerThread cht = new ClientHandlerThread(  this.getHostSettings(),
                                                                         client,
@@ -256,33 +252,34 @@ public class Host implements Runnable, ChordCallback {
                                                                         this.chordEntryPoint,
                                                                         true);
 
-                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("client handler thread instantiated , trying to execute it ...", false));
+                    this.hostSettings.verboseInfoLog("client handler thread instantiated , trying to execute it ..." , HostSettings.HOST_CALLER,false);
 
                     executor.execute(cht);
 
-                    if(this.getHostSettings().getVerboseOperatingMode()) System.out.println(this.getHostSettings().verboseInfoString("executing client handler thread", false));
-
+                    this.hostSettings.verboseInfoLog("executing client handler thread" , HostSettings.HOST_CALLER,false);
                 }
 
             }
 
 
         } catch (IOException e) {
-            System.err.println(this.getHostSettings().verboseInfoString("unable to accet a client request", false));
-            e.printStackTrace();
-        }
-        finally
+            this.hostSettings.verboseInfoLog("unable to accept the request: \n" + e.getMessage() + "\n" , HostSettings.HOST_CALLER,true);
+        } catch (SocketManagerException e) {
+            this.hostSettings.verboseInfoLog("unable to handle the request: \n" + e.getMessage() + "\n", HostSettings.HOST_CALLER, true);
+        } finally
         {
+            this.hostSettings.verboseInfoLog("shutting down the executor ..." , HostSettings.HOST_CALLER,false);
             executor.shutdown();
+            this.hostSettings.verboseInfoLog("executor shutted down, trying to shutting down the ServerSocket ..." , HostSettings.HOST_CALLER,false);
 
             try
             {
                 server.close();
+                this.hostSettings.verboseInfoLog("closed the server socket" , HostSettings.HOST_CALLER,false);
             }
             catch (IOException e)
             {
-                System.err.println(this.getHostSettings().verboseInfoString("unable to close the server socket", false));
-                e.printStackTrace();
+                this.hostSettings.verboseInfoLog("unable to shutting down the server socket: \n" + e.getMessage() + "\n" , HostSettings.HOST_CALLER,true);
             }
 
             this.finalize();
@@ -290,17 +287,17 @@ public class Host implements Runnable, ChordCallback {
     }
 
     /**
-     * Method used for stopping momentaneusly the host
+     * Method used for stopping momentanously the host
      * (it could be restarted later)
      * @return Boolean value that represent if the host is in the stop state
      */
     public synchronized Boolean stopHost(Boolean verbose)
     {
-        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("stopping the host ....",false));
+        this.hostSettings.verboseInfoLog("stopping the current host (it could be restarted later) ..." , HostSettings.HOST_CALLER,false);
 
         this.stopHost = true;
 
-        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("host stopped", false));
+        this.hostSettings.verboseInfoLog("current host stopped" , HostSettings.HOST_CALLER,false);
 
         return this.getHostStopped();
     }
@@ -312,11 +309,11 @@ public class Host implements Runnable, ChordCallback {
      */
     public synchronized Boolean startHost(Boolean verbose)
     {
-        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("starting the host ....", false));
+        this.hostSettings.verboseInfoLog("restarting the current host ..." , HostSettings.HOST_CALLER,false);
 
         this.stopHost = false;
 
-        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("host started", false));
+        this.hostSettings.verboseInfoLog("current host started" , HostSettings.HOST_CALLER,false);
 
         return this.getHostStopped();
     }
@@ -328,11 +325,11 @@ public class Host implements Runnable, ChordCallback {
      */
     public synchronized Boolean shutdownHost(Boolean verbose)
     {
-        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("shutting down the host ....", false));
+        this.hostSettings.verboseInfoLog("shutting down the current host (it could't be restarted) ..." , HostSettings.HOST_CALLER,false);
 
         this.shutdownHost = true;
 
-        if(verbose) System.out.println(this.getHostSettings().verboseInfoString("host shutted down", false));
+        this.hostSettings.verboseInfoLog("current host shutted down" , HostSettings.HOST_CALLER,false);
 
         return this.getHostPoweredOff();
     }
@@ -341,10 +338,8 @@ public class Host implements Runnable, ChordCallback {
      * Method used for changing a resource placement
      */
     @Override
-    public void notifyResponsabilityChange() {
-        if(this.getHostSettings().getVerboseOperatingMode())
-            System.out.println(this.getHostSettings().verboseInfoString("changing a resource ....", false));
-
+    public void notifyResponsabilityChange()
+    {
         this.hostHandlerThread.notifyResponsabilityChange();
     }
 
@@ -355,12 +350,24 @@ public class Host implements Runnable, ChordCallback {
 
     @Override
     public String toString(){
-        String state = "\n======{ HOST }======\n";
+        String state = "\n============{ HOST }============\n";
 
-        state += "\nHost settings: " + this.getHostSettings().toString();
-        if(this.getHostStopped()) state += "\nHost stopped";
-        else state += "\nHost running";
-        if(this.getHostPoweredOff()) state += "\nHost shutted down";
+        state += this.getHostSettings().toString();
+
+        state += "\nHost state: " ;
+
+        if(this.getHostStopped()){
+            state += "<STOPPED>";
+        }
+        else{
+            state += "<RUNNING>";
+        }
+        if(this.getHostPoweredOff()){
+            state += "\nHost <SHUTTED DOWN>";
+        }
+
+
+        state += "\n\n================================\n";
 
         return state;
     }
@@ -369,19 +376,15 @@ public class Host implements Runnable, ChordCallback {
     @Override
     protected void finalize() {
 
-        if(this.getHostSettings().getVerboseOperatingMode())
-            System.out.println(this.getHostSettings().verboseInfoString("host handler thread ready to be stopped ... ", false));
+        this.hostSettings.verboseInfoLog("trying to close the HostHandlerThread ..." , HostSettings.HOST_CALLER,false);
 
         this.hostHandlerThread.stop();
 
-        if(this.getHostSettings().getVerboseOperatingMode())
-            System.out.println(this.getHostSettings().verboseInfoString("host handler thread stopped ", false));
+        this.hostSettings.verboseInfoLog("HostHandlerThread closed" , HostSettings.HOST_CALLER,false);
 
         try {
             this.leaveChordNetwork();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (SocketManagerException e) {
             e.printStackTrace();
         }
     }
