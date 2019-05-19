@@ -1,17 +1,12 @@
 package com.distributed.chordApp.cooperativemirroring.core.backend;
 
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
+import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordCallback;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 
 /**
  * Class used for instantiating HostHandler threads used for notify changes on the resources of a Host
@@ -89,23 +84,17 @@ public class HostHandlerThread extends Thread implements ChordCallback
                         false);
                 request.setHostDepositRequest(true);
 
+                this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_HANDLER_CALLER,false);
+
                 try {
-                    this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
-                    this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_HANDLER_CALLER,false);
-                    Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
+                    SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), this.hostSettings.getConnectionTimeout_MS(), this.hostSettings.getConnectionRetries());
+                    destinationSocket.connect();
 
-                    this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened" , HostSettings.HOST_HANDLER_CALLER,false);
-                    //Socket destinationSocket = new Socket();
-                    //destinationSocket.connect(new InetSocketAddress(destinationAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
-                    //destinationSocket.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+                    this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_HANDLER_CALLER,false);
 
+                    destinationSocket.post(request, this.requireAck);
 
-                    ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
-
-                    this.hostSettings.verboseInfoLog("output channel with the destination host: " + destinationAddress + " opened, sending the resource: " + resource.getResourceID() +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
-
-                    outChannel.writeObject(request);
-                    outChannel.flush();
 
                     this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
 
@@ -113,24 +102,16 @@ public class HostHandlerThread extends Thread implements ChordCallback
                     {
                         this.hostSettings.verboseInfoLog("waiting for the ACK of " + resource.getResourceID() +" from host: " + destinationAddress + " ..." , HostSettings.HOST_HANDLER_CALLER,false);
 
-                        ObjectInputStream inChannel = new ObjectInputStream(destinationSocket.getInputStream());
-
-                        ResponseMessage ackMessage = (ResponseMessage) inChannel.readObject();
+                        ResponseMessage ackMessage = (ResponseMessage) destinationSocket.get();
 
                         this.hostSettings.verboseInfoLog("ACK message for resource: " + resource.getResourceID() +" arrived from host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
-
-                        inChannel.close();
                     }
 
-                    outChannel.close();
-                    destinationSocket.close();
+                    destinationSocket.disconnect();
 
                     this.resourcesManager.removeResource(resource.getResourceID());
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                }catch (SocketManagerException e) {
+                    this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() , HostSettings.HOST_HANDLER_CALLER,true);
                 }
             }
             else
