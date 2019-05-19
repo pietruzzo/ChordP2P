@@ -1,6 +1,8 @@
 package com.distributed.chordApp.cooperativemirroring.app;
 
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
+import com.distributed.chordApp.cooperativemirroring.core.backend.SocketManager;
+import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
@@ -26,6 +28,7 @@ public class Client {
         this.setClientIP(clientIP);
         this.setClientPort(clientPort);
         this.setVerbose(verbose);
+
         this.clientConsole();
     }
 
@@ -43,6 +46,25 @@ public class Client {
         infoString += infoMessage;
 
         return infoString;
+    }
+
+    private void clientVerboseLog(String infoMessage,boolean error)
+    {
+        if(!this.verbose)
+        {
+            return ;
+        }
+
+        String infoString = this.clientInfoString(infoMessage);
+
+        if(error)
+        {
+            System.err.println(infoString);
+        }
+        else
+        {
+            System.out.println(infoString);
+        }
     }
 
     /*
@@ -71,7 +93,7 @@ public class Client {
             try {
                 choice = Integer.parseInt(reader.readLine());
             } catch (IOException e) {
-                System.err.println(this.clientInfoString("Invalid input choice type, retry"));
+                System.out.println(this.clientInfoString("Invalid input choice, retry"));
                 choice = -1;
                 goAhead = true;
             }
@@ -81,7 +103,6 @@ public class Client {
                 case -1:
                     break;
                 case 0:
-                    System.out.println(this.clientInfoString("Terminating the current session"));
                     goAhead = false ;
                     break;
                 case 1:
@@ -95,10 +116,8 @@ public class Client {
                     request = this.buildRequest(resourceID, true);
                     try {
                         response = this.sendRequest(serverIP, serverPort, request);
-                    } catch (IOException e) {
-                        System.out.println("\n[Server unreached ]");
-                    } catch (ClassNotFoundException e) {
-                        System.out.println("\nRequest not forwarded ");
+                    } catch (SocketManagerException e) {
+                        System.err.println(this.clientInfoString(e.getMessage()));
                     }
                     this.printResponse(request, response);
                     break;
@@ -114,10 +133,8 @@ public class Client {
                     request = this.buildRequest(resourceID, false);
                     try {
                         response = this.sendRequest(serverIP, serverPort, request);
-                    } catch (IOException e) {
-                        System.out.println("\n[Server unreached]");
-                    } catch (ClassNotFoundException e) {
-                        System.out.println("\nRequest not forwarded");
+                    } catch (SocketManagerException e) {
+                        System.err.println(this.clientInfoString(e.getMessage()));
                     }
                     this.printResponse(request, response);
                     break;
@@ -136,7 +153,8 @@ public class Client {
      */
     private RequestMessage buildRequest(String resourceID,Boolean depositResource)
     {
-        if(this.verbose) System.out.println(this.clientInfoString("creating the request ..."));
+        this.clientVerboseLog("creating the request ...", false);
+
         RequestMessage request = null;
         Resource resource = null;
 
@@ -163,7 +181,8 @@ public class Client {
             );
         }
 
-        if(this.verbose) System.out.println(this.clientInfoString("request created"));
+        this.clientVerboseLog("request created", false);
+
 
         return request;
     }
@@ -171,30 +190,28 @@ public class Client {
     /*
      * Method used for sending a request to a Server
      */
-    private ResponseMessage sendRequest(String serverIP, Integer serverPort, RequestMessage requestMessage) throws IOException, ClassNotFoundException
-    {
-        if(this.verbose) System.out.println(this.clientInfoString("creating a connection with the server ..."));
-        Socket server = new Socket();
-        server.connect(new InetSocketAddress(serverIP, serverPort), 5000);
-        server.setSoTimeout(5000);
+    private ResponseMessage sendRequest(String serverIP, Integer serverPort, RequestMessage requestMessage) throws SocketManagerException {
+        this.clientVerboseLog("trying to connect with the server: " + serverIP + " : " + serverPort +" ...", false);
+
+        SocketManager server = new SocketManager(serverIP, serverPort, 5000, 5);
+
+        server.connect();
+
+        this.clientVerboseLog("connection with the server: " + serverIP + " : " + serverPort +" established, sending a request ...", false);
+
         ResponseMessage response = null;
-        ObjectOutputStream outChannel = new ObjectOutputStream(server.getOutputStream());
-        ObjectInputStream inChannel = new ObjectInputStream(server.getInputStream());
-        if(this.verbose) System.out.println(this.clientInfoString("connection with the server created, sending the request ..."));
 
+        server.post(requestMessage, false);
 
-        outChannel.writeObject(requestMessage);
-        outChannel.flush();
+        this.clientVerboseLog("request send to server: " + serverIP + " : " + serverPort +" waiting for response ...", false);
 
-        if(this.verbose) System.out.println(this.clientInfoString("request sended , waiting for a response ..."));
+        response = (ResponseMessage)server.get();
 
-        response = (ResponseMessage) inChannel.readObject();
+        this.clientVerboseLog("response arrived from server: " + serverIP + " : " + serverPort +", closing the connection ...", false);
 
-        if(this.verbose) System.out.println(this.clientInfoString("response arrived"));
+        server.disconnect();
 
-        inChannel.close();
-        outChannel.close();
-        server.close();
+        this.clientVerboseLog("connection with the server: " + serverIP + " : " + serverPort +" closed", false);
 
         return response ;
     }
@@ -209,6 +226,7 @@ public class Client {
         state += "\nRequest = ";
 
         state += requestMessage.toString();
+
 
         System.out.println(state);
 
