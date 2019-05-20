@@ -14,7 +14,6 @@ public class SocketNode {
     private ObjectOutputStream out;
     private String nodeIP;
     private Thread socketThread;
-    private volatile boolean killthread = false;
     private SocketIncomingHandling socketCommCallback;
     private boolean incoming;
 
@@ -54,7 +53,6 @@ public class SocketNode {
 
     public void close() {
         try {
-            this.killthread = true;
             endpoint.close();
             socketThread.interrupt();
         } catch (IOException e) {
@@ -87,7 +85,7 @@ public class SocketNode {
 
         @Override
         public void run() {
-            while(!killthread) {
+
                 Object message = null;
                 try {
                     message = readSocket();
@@ -99,8 +97,6 @@ public class SocketNode {
                     System.out.println("Error in reading from socket, probably closed");
                     System.out.println("Closing socket " + nodeIP);
                 }
-
-            }
         }
     }
 }

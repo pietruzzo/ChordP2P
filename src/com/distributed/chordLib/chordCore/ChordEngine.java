@@ -5,7 +5,6 @@ import com.distributed.chordLib.ChordCallback;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
 import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static com.distributed.chordLib.chordCore.HashFunction.*;
@@ -13,7 +12,6 @@ import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 public class ChordEngine extends ChordClient {
 
-    private volatile boolean stopRoutine = false;
     /**
      * Contructor for chord Network
      * Initialize Chord FingerTable, communication Layer and open connection to bootstrapIP (or create a new Chord Network if bootstrap is null)
@@ -29,8 +27,8 @@ public class ChordEngine extends ChordClient {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
         stabilize();
         fixFingers();
-        Thread routine = new Thread(this::routineActions);
-        routine.start();
+        routineActions = new Thread(this::routineActions);
+        routineActions.start();
     }
 
     @Override
@@ -204,8 +202,8 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public void closeNetwork() {
-        stopRoutine = true;
-        comLayer.closeCommLayer();
+        this.routineActions.interrupt();
+        comLayer.closeCommLayer(fingerTable.getPredecessor(), fingerTable.getMyNode(), fingerTable.getSuccessor());
     }
 
     @Override
@@ -280,10 +278,9 @@ public class ChordEngine extends ChordClient {
      * Method that executes all routines actions every n milliseconds
      */
     private void routineActions(){
-        while (!stopRoutine) {
 
             try {
-                synchronized (this){
+            synchronized (this){
                 this.wait(ROUTINE_PERIOD);
                 }
             } catch (InterruptedException e) {
@@ -308,6 +305,5 @@ public class ChordEngine extends ChordClient {
             catch (NoSuccessorsExceptions e){
                 this.closeNetwork();
             }
-        }
     }
 }

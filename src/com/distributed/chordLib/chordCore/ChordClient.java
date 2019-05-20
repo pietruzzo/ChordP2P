@@ -20,13 +20,11 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
 
     //region Attributes
 
-
     FingerTable fingerTable;
     ChordCallback chordCallback;
     CommCallInterface comLayer;
     HashFunction hash;
-
-    ThreadPoolExecutor threadPool;
+    Thread routineActions;
 
     //endregion
 
