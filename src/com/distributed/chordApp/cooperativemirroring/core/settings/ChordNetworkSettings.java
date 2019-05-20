@@ -1,5 +1,11 @@
 package com.distributed.chordApp.cooperativemirroring.core.settings;
 
+import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.ChordNetworkSettingsException;
+import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.codes.ChordNetworkSettingsExceptionCode;
+import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
+import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
+import com.distributed.chordLib.Chord;
+
 import java.io.Serializable;
 
 /**
@@ -26,98 +32,36 @@ public class ChordNetworkSettings implements Serializable {
     //Size of the module od the chord
     private Integer chordModule = null;
 
-    public ChordNetworkSettings(Integer associatedHostPort){
-       this.setAssociatedHostPort(associatedHostPort);
+    private ChordNetworkSettings(Integer associatedHostPort,
+                                String bootstrapServerAddress,
+                                Boolean joinExistingChordNetwork,
+                                Integer numberOfFingers,
+                                Integer numberOfSuccessors,
+                                Integer chordModule,
+                                Boolean performBasicLookups
+                                )
+    {
+
+        this.setAssociatedHostPort(associatedHostPort);
+        this.setBootstrapServerAddress(bootstrapServerAddress);
+        this.setJoinExistingChordNetwork(joinExistingChordNetwork);
+        this.setNumberOfFingers(numberOfFingers);
+        this.setNumberOfSuccessors(numberOfSuccessors);
+        this.setChordModule(chordModule);
+        this.setPerformBasicLookups(performBasicLookups);
     }
 
     /*Setter methods*/
     private void setAssociatedHostPort(Integer associatedPort){ this.associatedPort = associatedPort; }
-
-    /**
-     * Method used to state if the Host will join or create a chord network
-     * @param joinExistingChordNetwork
-     * @return
-     */
-    public Boolean setJoinExistingChordNetwork(Boolean joinExistingChordNetwork){
-        if(this.changesLocked) return false;
-        this.joinExistingChordNetwork = joinExistingChordNetwork;
-
-        return true;
-    }
-
-    /**
-     * Method used for setting the bootstrap server address for the chord network
-     * @param bootstrapServerAddress
-     * @return
-     */
-    public Boolean setBootstrapServerAddress(String bootstrapServerAddress){
-        if(this.changesLocked) return false ;
-        this.bootstrapServerAddress = bootstrapServerAddress;
-
-        return true;
-    }
-
-    /**
-     * Method used for setting the number of fingers of each finger table
-     * @param numberOfFingers
-     * @return
-     */
-    public Boolean setNumberOfFingers(Integer numberOfFingers){
-        if(this.changesLocked) return false ;
-        this.numberOfFingers = numberOfFingers;
-
-        return true;
-    }
-
-    /**
-     * Method used for setting if the client handlers have to perform basic lookups
-     * @param performBasicLookups
-     * @return
-     */
-    public Boolean setPerformBasicLookups(Boolean performBasicLookups){
-        if(this.changesLocked) return false;
-        this.performBasicLookups = performBasicLookups;
-
-        return true;
-    }
-
-    /**
-     * Method used for setting the number of successors
-     * @param numberOfSuccessors
-     * @return
-     */
-    public Boolean setNumberOfSuccessors(Integer numberOfSuccessors){
-        if(this.changesLocked) return false;
-        this.numberOfSuccessors = numberOfSuccessors;
-
-        return true;
-    }
-
-    /**
-     * Method used for setting the module
-     * @param chordModule
-     * @return
-     */
-    public Boolean setChordModule(Integer chordModule){
-        if(this.changesLocked) return false ;
-        this.chordModule = chordModule;
-
-        return true;
-    }
-
-    /**
-     * Method used for locking the setting and not allowing any more changes
-     * to the chord settings
-     * @return
-     */
-    public Boolean lockChanges(){
-        this.changesLocked = true;
-        return changesLocked;
-    }
+    private void setJoinExistingChordNetwork(Boolean joinExistingChordNetwork){this.joinExistingChordNetwork = joinExistingChordNetwork;}
+    private void setBootstrapServerAddress(String bootstrapServerAddress){this.bootstrapServerAddress = bootstrapServerAddress;}
+    private void setNumberOfFingers(Integer numberOfFingers){this.numberOfFingers = numberOfFingers;}
+    private void setPerformBasicLookups(Boolean performBasicLookups){this.performBasicLookups = performBasicLookups;}
+    private void setNumberOfSuccessors(Integer numberOfSuccessors){this.numberOfSuccessors = numberOfSuccessors; }
+    private void setChordModule(Integer chordModule){this.chordModule = chordModule; }
 
     /*Getter methods*/
     public Integer getAssociatedPort(){ return this.associatedPort; }
-    public Boolean getChangesLocked(){ return this.changesLocked; }
     public Boolean getJoinExistingChordNetwork(){ return this.joinExistingChordNetwork; }
     public String  getBootstrapServerAddress(){ return this.bootstrapServerAddress; }
     public Integer getNumberOfFingers(){ return this.numberOfFingers; }
@@ -130,8 +74,6 @@ public class ChordNetworkSettings implements Serializable {
         String state = "\n======{ CHORD NETWORK SETTINGS }======\n";
 
         state += "\nChanges locked: ";
-        if(this.getChangesLocked()) state += "<true>\n";
-        else state += "<false>\n";
         state += "\nAssociated Host Port: " + this.getAssociatedPort();
         state += "\nJoin an existing chord network: ";
         if(this.getJoinExistingChordNetwork()) state += "<true>\n";
@@ -144,5 +86,174 @@ public class ChordNetworkSettings implements Serializable {
         else state += "\nPerform optimized lookups";
 
         return state;
+    }
+
+    public static class ChordNetworkSettingsBuilder
+    {
+        private Integer associatedPort = ChordSettingsLoader.getChordPort();
+        private String bootstrapServerAddress = ChordSettingsLoader.getBootstrapServerIP();
+        private Integer numberOfFingers = Chord.DEFAULT_NUM_FINGERS;
+        private Integer numberOfSuccessors = Chord.DEFAULT_NUM_SUCCESSORS;
+        private Integer chordModule = Chord.DEFAULT_CHORD_MODULE;
+        private Boolean performBasicLookup = false;
+        private Boolean joinExistingChordNetwork = ChordSettingsLoader.getJoinChordNetwork();
+
+        /**
+         * Method used for setting the Chord port for a chord network
+         * @param associatedPort
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setAssociatedPort(Integer associatedPort) throws ChordNetworkSettingsException
+        {
+            if(associatedPort.intValue() <= 0)
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_PORT.getCode());
+            }
+            else
+            {
+                this.associatedPort = associatedPort;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for setting the joining method for a chord network
+         * @param joinExistingChordNetwork
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setJoinExistingChordNetwork(Boolean joinExistingChordNetwork) throws ChordNetworkSettingsException
+        {
+            if(joinExistingChordNetwork == null)
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_NETWORK_JOINING_MODE.getCode());
+            }
+            else
+            {
+                this.joinExistingChordNetwork = joinExistingChordNetwork;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for setting the bootstrap server for a specific chord network
+         * @param bootstrapServerAddress
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setBootstrapServerAddress(String bootstrapServerAddress) throws ChordNetworkSettingsException
+        {
+            if(!SystemUtilities.isValidIP(bootstrapServerAddress))
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_BOOTSTRAP_SERVER_IP.getCode());
+            }
+            else
+            {
+                this.bootstrapServerAddress = bootstrapServerAddress;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for setting the number of fingers for a specific chord network
+         * @param numberOfFingers
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setNumberOfFingers(Integer numberOfFingers) throws ChordNetworkSettingsException
+        {
+            if(numberOfFingers <= 0)
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_NUMBER_OF_FINGERS.getCode());
+            }
+            else
+            {
+                this.numberOfFingers = numberOfFingers;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for setting the number of successors for a specific chord network
+         * @param numberOfSuccessors
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setNumberOfSuccessors(Integer numberOfSuccessors) throws ChordNetworkSettingsException
+        {
+            if(numberOfSuccessors <= 0)
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_NUMBER_OF_SUCCESSORS.getCode());
+            }
+            else
+            {
+                this.numberOfSuccessors = numberOfSuccessors;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for setting the module associated to a specific chord network
+         * @param chordModule
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setChordModule(Integer chordModule) throws ChordNetworkSettingsException
+        {
+            if(chordModule <= 0)
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_MODULE.getCode());
+            }
+            else
+            {
+                this.chordModule = chordModule;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for setting the Chord lookup method for a specific chord network
+         * @param performBasicLookup
+         * @return
+         * @throws ChordNetworkSettingsException
+         */
+        public ChordNetworkSettingsBuilder setPerformBasicLookup(Boolean performBasicLookup) throws ChordNetworkSettingsException
+        {
+            if(performBasicLookup == null)
+            {
+                throw new ChordNetworkSettingsException(ChordNetworkSettingsExceptionCode.INVALID_CHORD_LOOKUP_MODE.getCode());
+            }
+            else
+            {
+                this.performBasicLookup = performBasicLookup;
+            }
+
+            return this;
+        }
+
+        /**
+         * Method used for creating a ChordSettings instance based on the parameters setted so far
+         */
+        public ChordNetworkSettings build()
+        {
+            ChordNetworkSettings instance = null;
+
+            instance = new ChordNetworkSettings(this.associatedPort,
+                                                this.bootstrapServerAddress,
+                                                this.joinExistingChordNetwork,
+                                                this.numberOfFingers,
+                                                this.numberOfSuccessors,
+                                                this.chordModule,
+                                                this.performBasicLookup);
+
+            return instance ;
+        }
     }
 }

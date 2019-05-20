@@ -62,6 +62,21 @@ public class SystemUtilities {
     }
 
     /**
+     * Method used for decree if a certain IP is a valid IP for our application
+     * @param ip
+     * @return
+     */
+    public static synchronized Boolean isValidIP(String ip)
+    {
+
+        Pattern pt = Pattern.compile("192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}");
+        Matcher mt = pt.matcher(ip);
+        Boolean found = mt.find();
+
+        return found;
+    }
+
+    /**
      * Method used for automatically retriving the current host IP for the LAN
      * This method uses the Java method for retriving the IP address of the current machine
      * @return

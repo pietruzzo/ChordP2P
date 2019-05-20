@@ -1,17 +1,12 @@
 package com.distributed.chordApp.cooperativemirroring.core.backend;
 
 import com.distributed.chordApp.cooperativemirroring.core.Resource;
+import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordCallback;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 
 /**
  * Class used for instantiating HostHandler threads used for notify changes on the resources of a Host
@@ -54,27 +49,32 @@ public class HostHandlerThread extends Thread implements ChordCallback
     public synchronized void notifyResponsabilityChange()
     {
         Boolean thisHost = false ;
-        if(this.getHostSettings().getVerboseOperatingMode())
-            System.out.println(this.getHostSettings().verboseInfoString("notified of responsability changes, updating resources ....", false));
+
+        this.hostSettings.verboseInfoLog("notified of responsability changes, verify the current host resources's new ownership" , HostSettings.HOST_HANDLER_CALLER,false);
 
         for(Resource resource : this.resourcesManager.getResources())
         {
             String destinationAddress = null;
             thisHost = false ;
 
-            if(this.getHostSettings().getVerboseOperatingMode())
-                System.out.println(this.getHostSettings().verboseInfoString("verifying resource: " + resource.getResourceID() + " ...", false));
+            this.hostSettings.verboseInfoLog("verifying ownership of resource: " + resource.getResourceID() +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
 
-            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
-            else destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
+            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups())
+            {
+                destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
+            }
+            else{
+                destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
+            }
 
             if(destinationAddress.equals(this.getHostSettings().getHostIP()) || destinationAddress.equals("127.0.0.1") || destinationAddress.equals("127.0.1.1"))
+            {
                 thisHost = true;
+            }
 
             if(!thisHost)
             {
-                if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("need to exchange the resource with" + destinationAddress + " ....", false));
+                this.hostSettings.verboseInfoLog("need to exchange the resource: " + resource.getResourceID() +" with host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
 
                 RequestMessage request = new RequestMessage(
                         this.getHostSettings().getHostIP(),
@@ -83,59 +83,40 @@ public class HostHandlerThread extends Thread implements ChordCallback
                         this.requireAck,
                         false);
                 request.setHostDepositRequest(true);
+
+                this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_HANDLER_CALLER,false);
+
                 try {
-                    if(this.getHostSettings().getVerboseOperatingMode())
-                        System.out.println(this.getHostSettings().verboseInfoString("sending request to " + destinationAddress +" ....", false));
-                    Socket destinationSocket = new Socket(destinationAddress, this.getHostSettings().getHostPort());
-                    //Socket destinationSocket = new Socket();
-                    //destinationSocket.connect(new InetSocketAddress(destinationAddress, this.getHostSettings().getHostPort()), this.getHostSettings().getConnectionTimeout_MS());
-                    //destinationSocket.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
+                    SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), this.hostSettings.getConnectionTimeout_MS(), this.hostSettings.getConnectionRetries());
+                    destinationSocket.connect();
 
-                    if(this.getHostSettings().getVerboseOperatingMode())
-                        System.out.println(this.getHostSettings().verboseInfoString("opening output channel....", false));
+                    this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_HANDLER_CALLER,false);
+
+                    destinationSocket.post(request, this.requireAck);
 
 
-                    ObjectOutputStream outChannel = new ObjectOutputStream(destinationSocket.getOutputStream());
-
-                    if(this.getHostSettings().getVerboseOperatingMode())
-                        System.out.println(this.getHostSettings().verboseInfoString("output channel opened", false));
-
-                    outChannel.writeObject(request);
-                    outChannel.flush();
-
-                    if(this.getHostSettings().getVerboseOperatingMode())
-                        System.out.println(this.getHostSettings().verboseInfoString("request sended ....", false));
+                    this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
 
                     if(this.getRequireAck())
                     {
-                        if(this.getHostSettings().getVerboseOperatingMode())
-                            System.out.println(this.getHostSettings().verboseInfoString("waiting for a response ....", false));
+                        this.hostSettings.verboseInfoLog("waiting for the ACK of " + resource.getResourceID() +" from host: " + destinationAddress + " ..." , HostSettings.HOST_HANDLER_CALLER,false);
 
-                        ObjectInputStream inChannel = new ObjectInputStream(destinationSocket.getInputStream());
+                        ResponseMessage ackMessage = (ResponseMessage) destinationSocket.get();
 
-                        ResponseMessage ackMessage = (ResponseMessage) inChannel.readObject();
-
-                        if(this.getHostSettings().getVerboseOperatingMode())
-                            System.out.println(this.getHostSettings().verboseInfoString("response arrived", false));
-
-                        inChannel.close();
+                        this.hostSettings.verboseInfoLog("ACK message for resource: " + resource.getResourceID() +" arrived from host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
                     }
 
-                    outChannel.close();
-                    destinationSocket.close();
+                    destinationSocket.disconnect();
 
                     this.resourcesManager.removeResource(resource.getResourceID());
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                }catch (SocketManagerException e) {
+                    this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() , HostSettings.HOST_HANDLER_CALLER,true);
                 }
             }
             else
             {
-                if(this.getHostSettings().getVerboseOperatingMode())
-                    System.out.println(this.getHostSettings().verboseInfoString("the resource has to be stored on this host", false));
+                this.hostSettings.verboseInfoLog("the resource: " + resource.getResourceID() +" remains on this host" , HostSettings.HOST_HANDLER_CALLER,false);
             }
         }
 
