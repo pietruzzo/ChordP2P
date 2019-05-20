@@ -60,12 +60,21 @@ public interface CommCallInterface {
      */
     boolean isAlive(Node node);
 
+
     /**
      * Notify all nodes kept alive by lib
      * if nodes is empty or null, the kill all Communication
      * @param nodes node used by application
      */
     void closeChannel(@Nullable Node[] nodes);
+
+    /**
+     * Notify successors and predecessor of this node departure and close communication Layer exiting Chord network
+     * @param predecessor my predecessor
+     * @param me my node
+     * @param successor my successor
+     */
+    void closeCommLayer(Node predecessor, Node me, Node successor);
 
     /**
      * Close communication Layer

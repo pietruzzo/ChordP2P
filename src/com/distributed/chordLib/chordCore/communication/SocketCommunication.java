@@ -1,7 +1,6 @@
 package com.distributed.chordLib.chordCore.communication;
 
 import com.distributed.chordLib.chordCore.ChordClient;
-import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
 import com.distributed.chordLib.exceptions.CommunicationFailureException;
@@ -144,6 +143,24 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
                 }
             }
         }
+    }
+
+    @Override
+    public void closeCommLayer(Node predecessor, Node me, Node successor) {
+
+        //Build message
+        VoluntaryDepartureMessage message = new VoluntaryDepartureMessage(predecessor, me, successor);
+
+        //Get predecessor and successo sockets
+        SocketNode predecessorSocket = getSocketNode(predecessor.getIP());
+        SocketNode successorSocket = getSocketNode(predecessor.getIP());
+
+        //Send message on sockets
+        predecessorSocket.writeSocket(message);
+        successorSocket.writeSocket(message);
+
+        //Close communication Layer
+        this.closeCommLayer();
     }
 
     /**

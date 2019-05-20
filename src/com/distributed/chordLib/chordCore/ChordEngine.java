@@ -254,6 +254,24 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
+    public void handleVolountaryDeparture(Node exitingNode, Node predNode, Node succNode) {
+        Node myPred = fingerTable.getPredecessor();
+        Node mySucc = fingerTable.getSuccessor();
+
+        //Remove exiting node
+        fingerTable.removeFailedNode(exitingNode);
+
+        //Handle predecessor network exiting adding its predecessor as my predecessor
+        if (predNode != null && myPred.equals(exitingNode)){
+            this.notifyIncoming(predNode);
+        }
+        //Handle successor network exiting adding its successor to my successor list
+        else if (succNode != null && mySucc.equals(exitingNode)){
+            fingerTable.setSuccessor(succNode);
+        }
+    }
+
+    @Override
     public Hash getkey(String ip) {
         return hash.getSHA1(ip);
     }
@@ -284,6 +302,7 @@ public class ChordEngine extends ChordClient {
                 System.out.println("Routine action failed, retry in 2 seconds");
             } catch (TimeoutReachedException e) {
                 //Consider as failed node
+                System.out.println("Routine actions failed, removing not responding node");
                 fingerTable.removeFailedNode(new Node(e.getWaitingNode(), hash.getSHA1(e.getWaitingNode())));
             }
             catch (NoSuccessorsExceptions e){

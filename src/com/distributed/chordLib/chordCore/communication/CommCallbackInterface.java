@@ -6,6 +6,9 @@ import com.distributed.chordLib.chordCore.Node;
 
 import static com.distributed.chordLib.chordCore.HashFunction.*;
 
+/**
+ * Interface implemented by Logic layer to handle incoming requests from communication layer (remote nodes)
+ */
 public interface CommCallbackInterface {
 
     /**
@@ -41,6 +44,12 @@ public interface CommCallbackInterface {
      * @return my Predecessor
      */
     Node handlePredecessorRequest();
+
+    /**
+     * a node is notifing me its departure from the network
+     * and fix my predecessor and successor accordingly
+     */
+    void handleVolountaryDeparture(Node exitingNode, Node predNode, Node succNode);
 
     /**
      * Get hash value of ip

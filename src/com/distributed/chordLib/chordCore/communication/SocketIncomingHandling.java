@@ -13,7 +13,7 @@ public interface SocketIncomingHandling {
 
     /**
      * Notify an error in SocketReading
-     * end close SocketNode
+     * and close SocketNode
      * @param node
      */
     void handleUnexpectedClosure ( String node );
