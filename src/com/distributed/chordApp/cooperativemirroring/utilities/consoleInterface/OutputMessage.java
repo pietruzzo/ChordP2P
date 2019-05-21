@@ -4,11 +4,17 @@ import java.io.Serializable;
 
 public class OutputMessage implements Serializable {
 
+    /**
+     * Use '/' to separate lines
+     */
     String message;
-    boolean isError;
+    MessageOptions messageOptions;
 
-    public OutputMessage(String message, boolean isError){
+    public OutputMessage(String message, MessageOptions messageOptions){
         this.message = message;
-        this.isError = isError;
+        this.messageOptions = messageOptions;
     }
+
+    public enum MessageOptions { ISERROR, ISOPTION, ISMESSAGE}
+
 }
