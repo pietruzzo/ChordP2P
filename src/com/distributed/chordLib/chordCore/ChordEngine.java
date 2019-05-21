@@ -25,8 +25,6 @@ public class ChordEngine extends ChordClient {
      */
     public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, @Nullable Integer module, ChordCallback callback) {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
-        stabilize();
-        fixFingers();
         routineActions = new Thread(this::routineActions);
         routineActions.start();
     }
@@ -279,31 +277,33 @@ public class ChordEngine extends ChordClient {
      */
     private void routineActions(){
 
+        while(true) {
             try {
-            synchronized (this){
-                this.wait(ROUTINE_PERIOD);
-                }
-            } catch (InterruptedException e) {
-                System.out.println("Routine actions Stopped");
-            }
-            try {
-                System.out.println("Fix Fingers:---");
-                fixFingers();
                 System.out.println("Stabilize:---");
                 stabilize();
+                System.out.println("Fix Fingers:---");
+                fixFingers();
                 System.out.println("Check predecessor:---");
                 checkPredecessor();
                 System.out.println("End Routine:---");
                 fingerTable.printFingerTable();
-            } catch(CommunicationFailureException e){
+            } catch (CommunicationFailureException e) {
                 System.out.println("Routine action failed, retry in 2 seconds");
             } catch (TimeoutReachedException e) {
                 //Consider as failed node
                 System.out.println("Routine actions failed, removing not responding node");
                 fingerTable.removeFailedNode(new Node(e.getWaitingNode(), hash.getSHA1(e.getWaitingNode())));
-            }
-            catch (NoSuccessorsExceptions e){
+            } catch (NoSuccessorsExceptions e) {
                 this.closeNetwork();
             }
+
+            try {
+                synchronized (this) {
+                    this.wait(ROUTINE_PERIOD);
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Routine actions Stopped");
+            }
+        }
     }
 }
