@@ -4,7 +4,10 @@ import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.Ho
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.codes.HostSettingsExceptionCode;
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
 import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
+import com.distributed.chordApp.cooperativemirroring.utilities.consoleInterface.OutputMessage;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
@@ -19,6 +22,7 @@ public class HostSettings implements Serializable
     public static final String HOST_CALLER = "Host";
     public static final String HOST_HANDLER_CALLER = "HostHandler";
     public static final String CLIENT_HANDLER_CALLER = "ClientHandler";
+    public static final String SERVER_CALLER = "Server";
 
     //IP address associated to a specific host
     private String hostIP = null;
@@ -39,6 +43,9 @@ public class HostSettings implements Serializable
     //Port of the shallop host
     private Integer shallopHostPort = null;
 
+    //Reference to the out console
+    private ObjectOutputStream consoleOut = null;
+
     private HostSettings(String hostIP,
                          Integer hostPort,
                          ChordNetworkSettings chordNetworkSettings,
@@ -46,7 +53,8 @@ public class HostSettings implements Serializable
                          Integer connectionRetries,
                          String shallopHostIP,
                          Integer shallopHostPort,
-                         Boolean verboseOperatingMode
+                         Boolean verboseOperatingMode,
+                         ObjectOutputStream consoleOut
                         )
     {
         this.setHostIP(hostIP);
@@ -61,6 +69,8 @@ public class HostSettings implements Serializable
         this.setShallopHostPort(shallopHostPort);
 
         this.setVerboseOperatingMode(verboseOperatingMode);
+
+        this.setConsoleOut(consoleOut);
     }
 
     /*Setter methods*/
@@ -72,6 +82,7 @@ public class HostSettings implements Serializable
     private void setShallopHostIP(String shallopHostIP){ this.shallopHostIP = shallopHostIP; }
     private void setShallopHostPort(Integer shallopHostPort){this.shallopHostPort = shallopHostPort; }
     private void setConnectionRetries(Integer connectionRetries){this.connectionRetries = connectionRetries; }
+    private void setConsoleOut(ObjectOutputStream consoleOut){this.consoleOut = consoleOut;}
 
     /*Application methods*/
 
@@ -88,6 +99,9 @@ public class HostSettings implements Serializable
             return ;
         }
 
+        boolean enabledConsoleOut = (this.getConsoleOut() != null);
+        OutputMessage message = null;
+
         String vString = "[Host\\\\" + this.getHostIP() + ":" + this.getHostPort() ;
 
         vString += " :: " + caller + " > " ;
@@ -95,11 +109,36 @@ public class HostSettings implements Serializable
 
         if(error.booleanValue())
         {
-            System.err.println(vString);
+            if(!enabledConsoleOut)
+            {
+                System.err.println(vString);
+            }
+            else
+            {
+               message = new OutputMessage(vString, OutputMessage.MessageOptions.ISERROR);
+            }
+
         }
         else
         {
-            System.out.println(vString);
+            if(!enabledConsoleOut)
+            {
+                System.out.println(vString);
+            }
+            else
+            {
+                message = new OutputMessage(vString, OutputMessage.MessageOptions.ISMESSAGE);
+            }
+        }
+
+        if(enabledConsoleOut)
+        {
+            try {
+                this.consoleOut.flush();
+                this.consoleOut.writeObject(message);
+            } catch (IOException e) {
+                System.err.println(e.getMessage());
+            }
         }
     }
 
@@ -180,6 +219,7 @@ public class HostSettings implements Serializable
     public Integer getConnectionRetries(){return this.connectionRetries; }
     public String getShallopHostIP(){return  this.shallopHostIP; }
     public Integer getShallopHostPort(){return this.shallopHostPort;}
+    public ObjectOutputStream getConsoleOut(){return this.consoleOut;}
 
     @Override
     public String toString()
@@ -206,6 +246,15 @@ public class HostSettings implements Serializable
             state += "\n<silent operating mode>";
         }
 
+        if(this.consoleOut == null)
+        {
+            state += "\n<local printing>";
+        }
+        else
+        {
+            state += "\n<external shell printing>";
+        }
+
         state += "\n";
         //state += "\n=========================\n";
 
@@ -223,6 +272,7 @@ public class HostSettings implements Serializable
         private Integer shallopHostPort = ChordSettingsLoader.getApplicationServerPort();
         private Integer connectionRetries = 5;
         private Integer connectionTimeout_ms = 3000;
+        private ObjectOutputStream consoleOut = null;
 
         /**
          * Method used for setting the current Host IP
@@ -379,6 +429,18 @@ public class HostSettings implements Serializable
         }
 
         /**
+         * Method used for setting the output channel for the host's logs
+         * @param consoleOut
+         * @return
+         */
+        public HostSettingsBuilder setConsoleOut(ObjectOutputStream consoleOut)
+        {
+            this.consoleOut = consoleOut;
+
+            return this;
+        }
+
+        /**
          * Method used for setting the HostSettings
          * @return
          */
@@ -399,7 +461,8 @@ public class HostSettings implements Serializable
                                             this.connectionRetries,
                                             this.shallopHostIP,
                                             this.shallopHostPort,
-                                            this.verboseOperatingMode
+                                            this.verboseOperatingMode,
+                                            this.consoleOut
                                        );
 
             return instance;

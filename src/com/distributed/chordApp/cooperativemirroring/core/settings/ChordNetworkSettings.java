@@ -56,7 +56,7 @@ public class ChordNetworkSettings implements Serializable {
     private void setJoinExistingChordNetwork(Boolean joinExistingChordNetwork){this.joinExistingChordNetwork = joinExistingChordNetwork;}
     private void setBootstrapServerAddress(String bootstrapServerAddress){this.bootstrapServerAddress = bootstrapServerAddress;}
     private void setNumberOfFingers(Integer numberOfFingers){this.numberOfFingers = numberOfFingers;}
-    private void setPerformBasicLookups(Boolean performBasicLookups){this.performBasicLookups = performBasicLookups;}
+    public void setPerformBasicLookups(Boolean performBasicLookups){this.performBasicLookups = performBasicLookups;}
     private void setNumberOfSuccessors(Integer numberOfSuccessors){this.numberOfSuccessors = numberOfSuccessors; }
     private void setChordModule(Integer chordModule){this.chordModule = chordModule; }
 

@@ -1,6 +1,7 @@
 package com.distributed.chordApp.cooperativemirroring.app;
 
 import com.distributed.chordApp.cooperativemirroring.core.Host;
+import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.core.settings.ChordNetworkSettings;
 import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.ChordNetworkSettingsException;
@@ -8,7 +9,12 @@ import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.Ho
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
 import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
 import com.distributed.chordLib.Chord;
-import com.intellij.jarRepository.services.artifactory.Endpoint;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.AbstractMap;
+//import com.intellij.jarRepository.services.artifactory.Endpoint;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,6 +23,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 public class Server {
+    private static AbstractMap.SimpleEntry<Host, Thread> hostThreadPair = null;
+
     public static void main(String []args)
     {
         String serverIP = SystemUtilities.getThisMachineIP();
@@ -66,7 +74,8 @@ public class Server {
             outputConsole = new ProcessBuilder("com.distributed.chordApp.cooperativemirroring.utilities.consoleInterface.ExternalConsole", null).start();
             consoleChannel = new ObjectOutputStream((new Socket("127.0.0.1", 7755)).getOutputStream());
         } catch (IOException e) {
-            e.printStackTrace();
+            consoleChannel = null;
+            System.err.println(e.getMessage());
         }
 
         //Here we are setting the HostSetting for the current host
@@ -81,6 +90,7 @@ public class Server {
                     .setShallopHostPort(ChordSettingsLoader.getApplicationServerPort())
                     .setConnectionRetries(5)
                     .setConnectionTimeout_ms(3000)
+                    .setConsoleOut(consoleChannel)
                     .build();
         } catch (HostSettingException e)
         {
@@ -98,5 +108,65 @@ public class Server {
 
         host.enjoyChordNetwork();
 
+        hostThreadPair = new AbstractMap.SimpleEntry<>(host, t1);
+
+        serverConsole();
+
+
+
     }
+
+    private static String serverInfoString(String infoMessage)
+    {
+        String infoString = "[Server >";
+
+        infoString += infoMessage;
+
+        return infoString;
+    }
+
+
+    /*
+     * Method used for allowing the client to perform some operations on a server
+     */
+    private static void serverConsole()
+    {
+        Boolean goAhead = true ;
+        Integer choice = -1;
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+        do {
+            System.out.println("\n======{SERVER CONSOLE}======\n");
+            System.out.println("0)Shut Down Server");
+            System.out.print("[Choice> ");
+
+            try {
+                choice = Integer.parseInt(reader.readLine());
+            } catch (IOException e) {
+                System.out.println(serverInfoString("Invalid input choice, retry"));
+                choice = -1;
+                goAhead = true;
+            }
+
+            switch(choice)
+            {
+                case 0:
+                    goAhead = false ;
+                    hostThreadPair.getValue().interrupt();
+                    try {
+                        hostThreadPair.getKey().leaveChordNetwork();
+                    } catch (SocketManagerException e) {
+                        System.err.println(e.getMessage());
+                    }
+                    break;
+                default :
+                    break;
+            }
+
+        }while(goAhead);
+
+        System.out.println(serverInfoString("Exiting from the server, bye"));
+
+    }
+
 }

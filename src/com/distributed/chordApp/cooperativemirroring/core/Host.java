@@ -185,11 +185,10 @@ public class Host implements Runnable, ChordCallback
             }
 
 
-        } catch (IOException e)
+        } catch (Exception e)
         {
             this.hostSettings.verboseInfoLog("impossible to join or create a chord network: \n" + e.getMessage() + "\nShutting Down the host.", HostSettings.HOST_CALLER,true);
-            this.finalize();
-            System.exit(1);
+            //this.finalize();
         }
 
 
@@ -221,7 +220,7 @@ public class Host implements Runnable, ChordCallback
         } catch (IOException e)
         {
             this.hostSettings.verboseInfoLog("cannot instantiate a server socket : \n" + e.getMessage() + "\nShutting down the current host\n" , HostSettings.HOST_CALLER,false);
-            this.finalize();
+            //this.finalize();
             System.exit(1);
         }
 
