@@ -10,6 +10,12 @@ import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
 import com.distributed.chordLib.Chord;
 import com.intellij.jarRepository.services.artifactory.Endpoint;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+
 public class Server {
     public static void main(String []args)
     {
@@ -20,6 +26,9 @@ public class Server {
         String bootstrapServerIP = ChordSettingsLoader.getBootstrapServerIP();
 
         boolean joinAChordNetwork = false;
+
+        Process outputConsole;
+        ObjectOutputStream consoleChannel = null;
 
         /*
          * Here we are checking if we are the bootstrap server for te current application,
@@ -50,6 +59,14 @@ public class Server {
         } catch (ChordNetworkSettingsException e) {
             System.err.println("[Server> " + e + "\nShutting down the server.");
             System.exit(1);
+        }
+
+        //Open output console
+        try {
+            outputConsole = new ProcessBuilder("com.distributed.chordApp.cooperativemirroring.utilities.consoleInterface.ExternalConsole", null).start();
+            consoleChannel = new ObjectOutputStream((new Socket("127.0.0.1", 7755)).getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         //Here we are setting the HostSetting for the current host
