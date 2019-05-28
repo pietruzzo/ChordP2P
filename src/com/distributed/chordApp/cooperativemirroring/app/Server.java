@@ -36,8 +36,6 @@ public class Server {
 
         boolean joinAChordNetwork = false;
 
-        Process outputConsole;
-        ObjectOutputStream consoleChannel = null;
 
         /*
          * Here we are checking if we are the bootstrap server for te current application,

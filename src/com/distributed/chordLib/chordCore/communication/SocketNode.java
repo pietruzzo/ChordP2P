@@ -88,9 +88,11 @@ public class SocketNode {
 
                 Object message = null;
                 try {
-                    message = readSocket();
-                    System.out.println("Read message " + message.toString() + "[id: "+ ((Message) message).getId() + "]" + " from " + endpoint.getInetAddress().toString());
-                    socketCommCallback.handleNewMessage((Message)message, getThis() );
+                    while (true) {
+                        message = readSocket();
+                        System.out.println("Read message " + message.toString() + "[id: " + ((Message) message).getId() + "]" + " from " + endpoint.getInetAddress().toString());
+                        socketCommCallback.handleNewMessage((Message) message, getThis());
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                     socketCommCallback.handleUnexpectedClosure(nodeIP);
