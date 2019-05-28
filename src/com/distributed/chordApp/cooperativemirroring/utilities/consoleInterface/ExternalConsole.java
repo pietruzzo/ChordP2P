@@ -9,6 +9,7 @@ public class ExternalConsole {
 
     public static void main(String[] args) {
 
+
         String[] lastOptions = null;
         String[] lastMessage = null;
 

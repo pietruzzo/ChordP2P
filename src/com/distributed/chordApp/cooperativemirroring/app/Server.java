@@ -7,6 +7,7 @@ import com.distributed.chordApp.cooperativemirroring.core.settings.HostSettings;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.ChordNetworkSettingsException;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.HostSettingException;
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
+import com.distributed.chordApp.cooperativemirroring.utilities.LogShell;
 import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
 import com.distributed.chordLib.Chord;
 
@@ -69,15 +70,6 @@ public class Server {
             System.exit(1);
         }
 
-        //Open output console
-        try {
-            outputConsole = new ProcessBuilder("com.distributed.chordApp.cooperativemirroring.utilities.consoleInterface.ExternalConsole", null).start();
-            consoleChannel = new ObjectOutputStream((new Socket("127.0.0.1", 7755)).getOutputStream());
-        } catch (IOException e) {
-            consoleChannel = null;
-            System.err.println(e.getMessage());
-        }
-
         //Here we are setting the HostSetting for the current host
         HostSettings hs = null;
         try {
@@ -90,7 +82,7 @@ public class Server {
                     .setShallopHostPort(ChordSettingsLoader.getApplicationServerPort())
                     .setConnectionRetries(5)
                     .setConnectionTimeout_ms(3000)
-                    .setConsoleOut(consoleChannel)
+                    .setShell(new LogShell(Server.class.getName()))
                     .build();
         } catch (HostSettingException e)
         {

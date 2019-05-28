@@ -3,6 +3,7 @@ package com.distributed.chordApp.cooperativemirroring.core.settings;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.HostSettingException;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.codes.HostSettingsExceptionCode;
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
+import com.distributed.chordApp.cooperativemirroring.utilities.LogShell;
 import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
 import com.distributed.chordApp.cooperativemirroring.utilities.consoleInterface.OutputMessage;
 
@@ -44,7 +45,7 @@ public class HostSettings implements Serializable
     private Integer shallopHostPort = null;
 
     //Reference to the out console
-    private ObjectOutputStream consoleOut = null;
+    private LogShell shell = null;
 
     private HostSettings(String hostIP,
                          Integer hostPort,
@@ -54,7 +55,7 @@ public class HostSettings implements Serializable
                          String shallopHostIP,
                          Integer shallopHostPort,
                          Boolean verboseOperatingMode,
-                         ObjectOutputStream consoleOut
+                         LogShell shell
                         )
     {
         this.setHostIP(hostIP);
@@ -70,7 +71,7 @@ public class HostSettings implements Serializable
 
         this.setVerboseOperatingMode(verboseOperatingMode);
 
-        this.setConsoleOut(consoleOut);
+        this.setShell(shell);
     }
 
     /*Setter methods*/
@@ -82,7 +83,7 @@ public class HostSettings implements Serializable
     private void setShallopHostIP(String shallopHostIP){ this.shallopHostIP = shallopHostIP; }
     private void setShallopHostPort(Integer shallopHostPort){this.shallopHostPort = shallopHostPort; }
     private void setConnectionRetries(Integer connectionRetries){this.connectionRetries = connectionRetries; }
-    private void setConsoleOut(ObjectOutputStream consoleOut){this.consoleOut = consoleOut;}
+    private void setShell(LogShell shell){this.shell = shell;}
 
     /*Application methods*/
 
@@ -99,7 +100,7 @@ public class HostSettings implements Serializable
             return ;
         }
 
-        boolean enabledConsoleOut = (this.getConsoleOut() != null);
+        boolean enabledConsoleOut = (this.getShell() != null);
         OutputMessage message = null;
 
         String vString = "[Host\\\\" + this.getHostIP() + ":" + this.getHostPort() ;
@@ -113,10 +114,6 @@ public class HostSettings implements Serializable
             {
                 System.err.println(vString);
             }
-            else
-            {
-               message = new OutputMessage(vString, OutputMessage.MessageOptions.ISERROR);
-            }
 
         }
         else
@@ -125,20 +122,11 @@ public class HostSettings implements Serializable
             {
                 System.out.println(vString);
             }
-            else
-            {
-                message = new OutputMessage(vString, OutputMessage.MessageOptions.ISMESSAGE);
-            }
         }
 
         if(enabledConsoleOut)
         {
-            try {
-                this.consoleOut.flush();
-                this.consoleOut.writeObject(message);
-            } catch (IOException e) {
-                System.err.println(e.getMessage());
-            }
+            this.shell.updateText(vString);
         }
     }
 
@@ -219,7 +207,7 @@ public class HostSettings implements Serializable
     public Integer getConnectionRetries(){return this.connectionRetries; }
     public String getShallopHostIP(){return  this.shallopHostIP; }
     public Integer getShallopHostPort(){return this.shallopHostPort;}
-    public ObjectOutputStream getConsoleOut(){return this.consoleOut;}
+    public LogShell getShell(){return this.shell;}
 
     @Override
     public String toString()
@@ -246,7 +234,7 @@ public class HostSettings implements Serializable
             state += "\n<silent operating mode>";
         }
 
-        if(this.consoleOut == null)
+        if(this.shell == null)
         {
             state += "\n<local printing>";
         }
@@ -272,7 +260,7 @@ public class HostSettings implements Serializable
         private Integer shallopHostPort = ChordSettingsLoader.getApplicationServerPort();
         private Integer connectionRetries = 5;
         private Integer connectionTimeout_ms = 3000;
-        private ObjectOutputStream consoleOut = null;
+        private LogShell shell = null;
 
         /**
          * Method used for setting the current Host IP
@@ -430,12 +418,12 @@ public class HostSettings implements Serializable
 
         /**
          * Method used for setting the output channel for the host's logs
-         * @param consoleOut
+         * @param shell
          * @return
          */
-        public HostSettingsBuilder setConsoleOut(ObjectOutputStream consoleOut)
+        public HostSettingsBuilder setShell(LogShell shell)
         {
-            this.consoleOut = consoleOut;
+            this.shell = shell;
 
             return this;
         }
@@ -462,7 +450,7 @@ public class HostSettings implements Serializable
                                             this.shallopHostIP,
                                             this.shallopHostPort,
                                             this.verboseOperatingMode,
-                                            this.consoleOut
+                                            this.shell
                                        );
 
             return instance;

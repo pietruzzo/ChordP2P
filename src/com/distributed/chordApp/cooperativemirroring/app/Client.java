@@ -6,8 +6,10 @@ import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.Soc
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.core.backend.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
+import com.distributed.chordApp.cooperativemirroring.utilities.LogShell;
 import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
 
+import javax.swing.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -82,6 +84,7 @@ public class Client {
         String resourceID = null;
         RequestMessage request = null;
         ResponseMessage response = null;
+
 
         do {
             System.out.println("\n======{CLIENT\\\\" + this.getClientIP() + ":" + this.getClientPort() + " CONSOLE}======\n");
