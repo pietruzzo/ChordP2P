@@ -20,16 +20,13 @@ public class ResponseMessage implements Serializable {
     private Boolean requestPerformedSuccessfully = null;
     //Result of a retrieve request
     private Resource requestedResource = null;
-    //Flag used to state if we have to intend this as an ack message or a reply message
-    private Boolean ackMessage = null;
 
-    public ResponseMessage(String solverHostIP, Integer solverHostPort, RequestMessage originalRequest, Boolean requestPerformedSuccessfully, Boolean ackMessage, @Nullable Resource requestedResource){
+    public ResponseMessage(String solverHostIP, Integer solverHostPort, RequestMessage originalRequest, Boolean requestPerformedSuccessfully, @Nullable Resource requestedResource){
         this.setSolverHostIP(solverHostIP);
         this.setSolverHostPort(solverHostPort);
         this.setOriginalRequest(originalRequest);
         this.setRequestPerformedSuccessfully(requestPerformedSuccessfully);
         this.setRequestedResource(requestedResource);
-        this.setAckMessage(ackMessage);
     }
 
     /*Setter methods*/
@@ -38,7 +35,6 @@ public class ResponseMessage implements Serializable {
     private void setOriginalRequest(RequestMessage originalRequest){this.originalRequest = originalRequest; }
     private void setRequestPerformedSuccessfully(Boolean requestPerformedSuccessfully){this.requestPerformedSuccessfully = requestPerformedSuccessfully; }
     private void setRequestedResource(Resource requestedResource){this.requestedResource = requestedResource; }
-    private void setAckMessage(Boolean ackMessage){ this.ackMessage = ackMessage; }
 
     /*Getter methods*/
     public String getSolverHostIP(){ return this.solverHostIP; }
@@ -46,7 +42,6 @@ public class ResponseMessage implements Serializable {
     public RequestMessage getOriginalRequest(){ return this.originalRequest; }
     public Boolean getRequestPerformedSuccessfully(){ return this.requestPerformedSuccessfully; }
     public Resource getRequestedResource(){ return this.requestedResource; }
-    public Boolean getAckMessage(){return this.ackMessage; }
 
     @Override
     public String toString(){
@@ -57,8 +52,6 @@ public class ResponseMessage implements Serializable {
         state += "\nResource: " + this.getOriginalRequest().getResourceID();
         if(this.getOriginalRequest().getDepositResource()) state +="\n<Deposit request>";
         else state += "\n<Retrieve request>";
-        if(this.getAckMessage()) state += "\n<ACK requested>";
-        else state += "\n<ACK not required>";
         state += "\nSolver host IP: " + this.getSolverHostIP();
         state += "\nSolver host port: " + this.getSolverHostPort();
         if(this.getRequestPerformedSuccessfully()) state += "\n<Request performed successfully>";

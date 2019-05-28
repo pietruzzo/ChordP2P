@@ -22,18 +22,14 @@ public class HostHandlerThread extends Thread implements ChordCallback
     private Chord chordEntryPoint = null;
     //Reference to the resources manager of the current host
     private ResourcesManager resourcesManager = null;
-    //Boolean flag that states if the HostHandlerThread has to wait for ack in case of changes in the keyset
-    private Boolean requireAck = null;
 
     public HostHandlerThread(HostSettings hostSettings,
                              Chord chordEntryPoint,
-                             ResourcesManager resourcesManager,
-                             Boolean requireAck)
+                             ResourcesManager resourcesManager)
     {
         this.setHostSettings(hostSettings);
         this.setChordEntryPoint(chordEntryPoint);
         this.setResourcesManager(resourcesManager);
-        this.setRequireAck(requireAck);
 
     }
 
@@ -41,7 +37,6 @@ public class HostHandlerThread extends Thread implements ChordCallback
     private void setHostSettings(HostSettings hostSettings){this.hostSettings = hostSettings; }
     private void setChordEntryPoint(Chord chordEntryPoint){this.chordEntryPoint = chordEntryPoint;}
     private void setResourcesManager(ResourcesManager resourcesManager){this.resourcesManager = resourcesManager; }
-    private void setRequireAck(Boolean requireAck){this.requireAck = requireAck; }
 
     /*Application methods*/
 
@@ -52,36 +47,30 @@ public class HostHandlerThread extends Thread implements ChordCallback
 
         this.hostSettings.verboseInfoLog("notified of responsability changes, verify the current host resources's new ownership" , HostSettings.HOST_HANDLER_CALLER,false);
 
-        for(Resource resource : this.resourcesManager.getResources())
-        {
+        for(Resource resource : this.resourcesManager.getResources()) {
             String destinationAddress = null;
             thisHost = false ;
 
             this.hostSettings.verboseInfoLog("verifying ownership of resource: " + resource.getResourceID() +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
 
-            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups())
-            {
+            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) {
                 destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
             }
             else{
                 destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
             }
 
-            if(destinationAddress.equals(this.getHostSettings().getHostIP()) || destinationAddress.equals("127.0.0.1") || destinationAddress.equals("127.0.1.1"))
-            {
+            if(destinationAddress.equals(this.getHostSettings().getHostIP()) || destinationAddress.equals("127.0.0.1") || destinationAddress.equals("127.0.1.1")) {
                 thisHost = true;
             }
 
-            if(!thisHost)
-            {
+            if(!thisHost) {
                 this.hostSettings.verboseInfoLog("need to exchange the resource: " + resource.getResourceID() +" with host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
 
                 RequestMessage request = new RequestMessage(
                         this.getHostSettings().getHostIP(),
                         this.getHostSettings().getHostPort(),
-                        resource,
-                        this.requireAck,
-                        false);
+                        resource);
                 request.setHostDepositRequest(true);
 
                 this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_HANDLER_CALLER,false);
@@ -93,25 +82,22 @@ public class HostHandlerThread extends Thread implements ChordCallback
 
                     this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_HANDLER_CALLER,false);
 
-                    destinationSocket.post(request, this.requireAck);
+                    destinationSocket.post(request);
 
+                    this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress + " waiting for response ...", HostSettings.HOST_HANDLER_CALLER,false);
 
-                    this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
+                    ResponseMessage responseMessage = (ResponseMessage) destinationSocket.get();
 
-                    if(this.getRequireAck())
-                    {
-                        this.hostSettings.verboseInfoLog("waiting for the ACK of " + resource.getResourceID() +" from host: " + destinationAddress + " ..." , HostSettings.HOST_HANDLER_CALLER,false);
-
-                        ResponseMessage ackMessage = (ResponseMessage) destinationSocket.get();
-
-                        this.hostSettings.verboseInfoLog("ACK message for resource: " + resource.getResourceID() +" arrived from host: " + destinationAddress , HostSettings.HOST_HANDLER_CALLER,false);
-                    }
+                    this.hostSettings.verboseInfoLog("response for resource: " + resource.getResourceID() + " arrived from host: " + destinationAddress  + " disconnecting from destination host ...", HostSettings.HOST_HANDLER_CALLER,false);
 
                     destinationSocket.disconnect();
 
+                    this.hostSettings.verboseInfoLog("disconnected from host: " + destinationAddress, HostSettings.HOST_HANDLER_CALLER,false);
+
                     this.resourcesManager.removeResource(resource.getResourceID());
+
                 }catch (SocketManagerException e) {
-                    this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() , HostSettings.HOST_HANDLER_CALLER,true);
+                    this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() + "\n keeping the resource on this host" , HostSettings.HOST_HANDLER_CALLER,true);
                 }
             }
             else
@@ -129,15 +115,12 @@ public class HostHandlerThread extends Thread implements ChordCallback
     public HostSettings getHostSettings(){return this.hostSettings; }
     public Chord getChordEntryPoint(){ return this.chordEntryPoint; }
     public ResourcesManager getResourcesManager(){return this.resourcesManager; }
-    public Boolean getRequireAck(){return this.requireAck; }
 
     @Override
     public String toString(){
         String state = "\n======{HOST HANDLER THREAD}======\n";
 
         state += "\nAssociated host settings: " + this.getHostSettings().toString();
-        if(this.getRequireAck()) state += "\nACK required";
-        else state += "\nACK not required";
 
         return state;
     }

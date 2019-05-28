@@ -73,6 +73,15 @@ public class SystemUtilities {
         Matcher mt = pt.matcher(ip);
         Boolean found = mt.find();
 
+        if(!found){
+            if(ip.equals("127.0.0.1") || (ip.equals("127.0.1.1")) || (ip.equals("localhost"))){
+                found = true;
+            }
+            else{
+                found = false;
+            }
+        }
+
         return found;
     }
 

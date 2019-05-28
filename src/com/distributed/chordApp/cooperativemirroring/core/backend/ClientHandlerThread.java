@@ -26,16 +26,13 @@ public class ClientHandlerThread implements Runnable
     private ResourcesManager resourcesManager = null;
     //Socket associated to the client
     private SocketManager client = null;
-    //Used for state if the cliend handler request ack in case of request message forewarding
-    private Boolean requireACK = null;
 
-    public ClientHandlerThread(HostSettings hostSettings, Socket client,ResourcesManager resourcesManager, Chord chordEntryPoint, Boolean requireACK) throws SocketManagerException {
+    public ClientHandlerThread(HostSettings hostSettings, Socket client,ResourcesManager resourcesManager, Chord chordEntryPoint) throws SocketManagerException {
 
         this.setHostSettings(hostSettings);
         this.setClient(client);
         this.setResourcesManager(resourcesManager);
         this.setChordEntryPoint(chordEntryPoint);
-        this.setRequireACK(requireACK);
     }
 
     /*Setter methods*/
@@ -47,7 +44,6 @@ public class ClientHandlerThread implements Runnable
     }
     private void setChordEntryPoint(Chord chordEntryPoint){this.chordEntryPoint = chordEntryPoint; }
     private void setResourcesManager(ResourcesManager resourcesManager){ this.resourcesManager = resourcesManager; }
-    private void setRequireACK(Boolean requireACK){this.requireACK = requireACK; }
 
     /*Application methods*/
 
@@ -122,10 +118,9 @@ public class ClientHandlerThread implements Runnable
     /**
      * Method used for creating a forewarding request message
      * @param originalRequest
-     * @param ackRequested
      * @return
      */
-    private RequestMessage buildForewardRequestMessage(RequestMessage originalRequest,Boolean ackRequested)
+    private RequestMessage buildForewardRequestMessage(RequestMessage originalRequest)
     {
         RequestMessage newRequest = null;
 
@@ -135,19 +130,15 @@ public class ClientHandlerThread implements Runnable
         {
             newRequest = new RequestMessage(originalRequest.getOriginalSenderIP(),
                                             originalRequest.getOriginalSenderPort(),
-                                            originalRequest.getResource(),
-                                            ackRequested,
-                                            true
+                                            originalRequest.getResource()
                                             );
         }
         else
         {
             newRequest = new RequestMessage(originalRequest.getOriginalSenderIP(),
                                             originalRequest.getOriginalSenderPort(),
-                                            originalRequest.getResourceID(),
-                                            ackRequested,
-                                            true
-            );
+                                            originalRequest.getResourceID()
+                                            );
 
         }
 
@@ -169,16 +160,14 @@ public class ClientHandlerThread implements Runnable
 
          this.hostSettings.verboseInfoLog("building a response message ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-         if(requestMessage.getDepositResource())
-         {
+         if(requestMessage.getDepositResource()) {
              result = this.depositResourceLocally(requestMessage.getResource());
          }
          else
          {
              requestedResource = this.retrieveResourceLocally(requestMessage.getResourceID());
 
-             if(requestedResource == null)
-             {
+             if(requestedResource == null) {
                  result = false;
              }
              else{
@@ -190,38 +179,12 @@ public class ClientHandlerThread implements Runnable
                                                 this.getHostSettings().getHostPort(),
                                                 requestMessage,
                                                 result,
-                                      false,
                                                 requestedResource);
 
          this.hostSettings.verboseInfoLog("response message: \n" + responseMessage.toString(), HostSettings.CLIENT_HANDLER_CALLER,false);
 
 
          return responseMessage;
-
-     }
-
-    /**
-     * Method used for building an ack response message
-     * @param responseMessage
-     * @return
-     */
-     private ResponseMessage buildAckMessage(ResponseMessage responseMessage)
-     {
-         ResponseMessage ackMessage = null;
-
-         this.hostSettings.verboseInfoLog("building an ACK message ...", HostSettings.CLIENT_HANDLER_CALLER,false);
-
-         ackMessage = new ResponseMessage(responseMessage.getSolverHostIP(),
-                                          responseMessage.getSolverHostPort(),
-                                          responseMessage.getOriginalRequest(),
-                                          responseMessage.getRequestPerformedSuccessfully(),
-                                            true,
-                                           null);
-
-         this.hostSettings.verboseInfoLog("ACK message: \n" + ackMessage.toString(), HostSettings.CLIENT_HANDLER_CALLER,false);
-
-         return ackMessage;
-
 
      }
 
@@ -235,7 +198,6 @@ public class ClientHandlerThread implements Runnable
         //Nel caso in cui io debba inoltrare la richiesta
         RequestMessage forewardedRequestMessage = null;
         ResponseMessage responseMessage = null;
-        ResponseMessage ackMessage = null;
 
         Boolean thisHost = false;
 
@@ -248,33 +210,29 @@ public class ClientHandlerThread implements Runnable
             this.hostSettings.verboseInfoLog("request arrived", HostSettings.CLIENT_HANDLER_CALLER,false);
 
             //IP address of te resource keeper
-            String resourceKeeperIP ;
+            String resourceKeeperIP = null;
 
             //Case of direct deposit request (lookup don't needed)
-            if(requestMessage.getHostDepositRequest())
-            {
+            if(requestMessage.getHostDepositRequest()) {
                 resourceKeeperIP = this.getHostSettings().getHostIP();
             }
             //In case we have to perfrom the canonical lookup
-            else
-            {
+            else {
                 resourceKeeperIP = this.resourceLookup(requestMessage.getResourceID());
             }
 
-            if((resourceKeeperIP.equals("127.0.0.1")) || (resourceKeeperIP.equals("127.0.1.1")) || (resourceKeeperIP.equals(this.getHostSettings().getHostIP())))
-            {
+            //Cheking for ip address associated to the current host
+            if((resourceKeeperIP.equals("127.0.0.1")) || (resourceKeeperIP.equals("127.0.1.1")) || (resourceKeeperIP.equals(this.getHostSettings().getHostIP()))) {
                 thisHost = true;
             }
 
-            if (thisHost)
-            {
-
-                this.hostSettings.verboseInfoLog("thre request is directed to this host ...", HostSettings.CLIENT_HANDLER_CALLER,false);
+            if (thisHost) {
+                this.hostSettings.verboseInfoLog("the request is directed to this host ...", HostSettings.CLIENT_HANDLER_CALLER,false);
                 responseMessage = this.buildResponseMessage(requestMessage);
             }
             else {
                 this.hostSettings.verboseInfoLog("the request is directed to another host: " + resourceKeeperIP + " , forwarding the request", HostSettings.CLIENT_HANDLER_CALLER,false);
-                forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage, this.getRequireACK());
+                forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage);
             }
 
             if (!thisHost) {
@@ -283,79 +241,20 @@ public class ClientHandlerThread implements Runnable
 
                 this.hostSettings.verboseInfoLog("trying to open a channel with host: " + nextHostAddress + " ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-                //Socket nextHost = new Socket(nextHostAddress, this.getHostSettings().getHostPort());
                 SocketManager nextHost = new SocketManager(nextHostAddress, this.hostSettings.getHostPort(), this.hostSettings.getConnectionTimeout_MS(), this.hostSettings.getConnectionRetries());
                 nextHost.connect();
 
                 this.hostSettings.verboseInfoLog("opened a connection with the host: " + nextHostAddress , HostSettings.CLIENT_HANDLER_CALLER,false);
                 this.hostSettings.verboseInfoLog("forwarding the request to: " + nextHostAddress, HostSettings.CLIENT_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("waiting for the response from host: " + nextHostAddress + "...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-                nextHost.post(forewardedRequestMessage, false);
+                responseMessage = (ResponseMessage)nextHost.post(forewardedRequestMessage);
 
-                this.hostSettings.verboseInfoLog("request forwarded to host: " + nextHostAddress, HostSettings.CLIENT_HANDLER_CALLER,false);
-
-                if (this.getRequireACK())
-                {
-                    this.hostSettings.verboseInfoLog("waiting for the ACK from host: " + nextHostAddress, HostSettings.CLIENT_HANDLER_CALLER,false);
-
-                    ackMessage = (ResponseMessage) nextHost.get();
-
-                    this.hostSettings.verboseInfoLog("ACK message arrived from host: " + nextHostAddress + " closing the connection with such host ....", HostSettings.CLIENT_HANDLER_CALLER,false);
-                }
-
-                this.hostSettings.verboseInfoLog("closing connection with host: " + nextHostAddress + " ...", HostSettings.CLIENT_HANDLER_CALLER,false);
-
-                nextHost.disconnect();
-
-                this.hostSettings.verboseInfoLog("connection with host: " + nextHostAddress + " closed", HostSettings.CLIENT_HANDLER_CALLER,false);
-
+                this.hostSettings.verboseInfoLog("response arrived from host: " + nextHostAddress + "sending back it to the client ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
             }
 
-            if (thisHost)
-            {
-
-
-                if (!requestMessage.getForewarded())
-                {
-
-                    this.hostSettings.verboseInfoLog("request directed to this host, sending back the response ...", HostSettings.CLIENT_HANDLER_CALLER,false);
-
-                    this.client.post(responseMessage, false);
-                }
-                //Caso in cui la richiesta sia stata inoltrata da un'altro host
-                /*else {
-                    if(this.getHostSettings().getVerboseOperatingMode())
-                        System.out.println(this.getHostSettings().verboseInfoString("forwarded request, creating a channel with the client ... " , true));
-                    //Socket destinationHost = new Socket(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort());
-                    Socket destinationHost = new Socket(requestMessage.getOriginalSenderIP(), requestMessage.getOriginalSenderPort());
-                    //destinationHost.connect();
-                    //destinationHost.setSoTimeout(this.getHostSettings().getConnectionTimeout_MS());
-
-                    if(this.getHostSettings().getVerboseOperatingMode())
-                        System.out.println(this.getHostSettings().verboseInfoString("client channel created, sending the response ..." , true));
-
-                    ObjectOutputStream destinationChannel = new ObjectOutputStream(destinationHost.getOutputStream());
-
-                    destinationChannel.flush();
-                    destinationChannel.writeObject(responseMessage);
-
-                    destinationChannel.close();
-                    destinationHost.close();
-                }*/
-
-                if ((requestMessage.getForewarded()) && (requestMessage.getAckRequested()))
-                {
-
-                    this.hostSettings.verboseInfoLog("sending the ACK to the previous host ...", HostSettings.CLIENT_HANDLER_CALLER,false);
-
-                    ackMessage = this.buildAckMessage(responseMessage);
-
-                    this.client.post(responseMessage, false);
-
-                    this.hostSettings.verboseInfoLog("ACK send, connection with the previous host closed", HostSettings.CLIENT_HANDLER_CALLER,false);
-                }
-            }
+            this.client.post(responseMessage);
 
             try {
                 this.hostSettings.verboseInfoLog("closing the connection with the client socket ... ", HostSettings.CLIENT_HANDLER_CALLER,false);
@@ -365,21 +264,18 @@ public class ClientHandlerThread implements Runnable
                 this.hostSettings.verboseInfoLog("unable to close client socket: \n" + e.getMessage(), HostSettings.CLIENT_HANDLER_CALLER,true);
             }
         } catch (SocketManagerException e) {
-            this.hostSettings.verboseInfoLog("exception rised: " + e.getMessage(), HostSettings.CLIENT_HANDLER_CALLER,false);
+            this.hostSettings.verboseInfoLog("exception rise: " + e.getMessage(), HostSettings.CLIENT_HANDLER_CALLER,false);
         }
     }
 
         /*Getter methods*/
     public HostSettings getHostSettings(){return this.hostSettings; }
-    public Boolean getRequireACK(){return this.requireACK; }
 
     @Override
     public String toString(){
         String state = "\n======{ CLIENT HANDLER THREAD }======\n";
 
         state += "\nAssociated host settings: " + this.getHostSettings().toString();
-        if(this.getRequireACK()) state += "\nACK required";
-        else state += "\nACK not required";
 
         return state;
     }

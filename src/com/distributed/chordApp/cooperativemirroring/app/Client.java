@@ -41,30 +41,35 @@ public class Client {
 
     /*Application methods*/
 
-    private String clientInfoString(String infoMessage)
-    {
-        String infoString = "[Client\\\\" + this.getClientIP() + ":" + this.getClientPort() + ">";
+    /**
+     * Method used for representing a log strng associated to a client
+     * @param infoMessage
+     * @return
+     */
+    private String clientInfoString(String infoMessage) {
+        String infoString = "[Client\\\\" + this.getClientIP() + "::" + this.getClientPort() + ">";
 
         infoString += infoMessage;
 
         return infoString;
     }
 
-    private void clientVerboseLog(String infoMessage,boolean error)
-    {
-        if(!this.verbose)
-        {
+    /**
+     * Method used for printing log messages associated to a client
+     * @param infoMessage
+     * @param error
+     */
+    private void clientVerboseLog(String infoMessage,boolean error) {
+        if(!this.verbose) {
             return ;
         }
 
         String infoString = this.clientInfoString(infoMessage);
 
-        if(error)
-        {
+        if(error) {
             System.err.println(infoString);
         }
-        else
-        {
+        else {
             System.out.println(infoString);
         }
     }
@@ -72,8 +77,7 @@ public class Client {
     /*
      * Method used for allowing the client to perform some operations on a server
      */
-    private void clientConsole()
-    {
+    private void clientConsole() {
         Boolean goAhead = true ;
         Integer choice = -1;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -154,8 +158,7 @@ public class Client {
     /*
      * Method used for building a new request for the server
      */
-    private RequestMessage buildRequest(String resourceID,Boolean depositResource)
-    {
+    private RequestMessage buildRequest(String resourceID,Boolean depositResource) {
         this.clientVerboseLog("creating the request ...", false);
 
         RequestMessage request = null;
@@ -168,20 +171,14 @@ public class Client {
             request = new RequestMessage(
                     this.getClientIP(),
                     this.getClientPort(),
-                    resource,
-                    false,
-                    false
-            );
+                    resource);
         }
         else
         {
             request = new RequestMessage(
                     this.getClientIP(),
                     this.getClientPort(),
-                    resourceID,
-                    false,
-                    false
-            );
+                    resourceID);
         }
 
         this.clientVerboseLog("request created", false);
@@ -204,7 +201,7 @@ public class Client {
 
         ResponseMessage response = null;
 
-        server.post(requestMessage, false);
+        server.post(requestMessage);
 
         this.clientVerboseLog("request send to server: " + serverIP + " : " + serverPort +" waiting for response ...", false);
 

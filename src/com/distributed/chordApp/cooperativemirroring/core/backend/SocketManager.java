@@ -2,7 +2,6 @@ package com.distributed.chordApp.cooperativemirroring.core.backend;
 
 import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.core.backend.exceptions.codes.SocketManagerExceptionCode;
-import com.distributed.chordApp.cooperativemirroring.core.backend.messages.AckMessage;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -212,24 +211,20 @@ public class SocketManager
     /**
      * Method used for exchanging messages with the destination host
      * @param message
-     * @param waitACK
      * @return
      */
-    public Serializable post(Serializable message,Boolean waitACK) throws SocketManagerException {
+    public Serializable post(Serializable message) throws SocketManagerException {
         Serializable response = null;
 
-        if(this.destinationSocket == null)
-        {
+        if(this.destinationSocket == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_NOT_ESTABLISHED.getCode());
         }
 
-        if(this.outStream == null)
-        {
+        if(this.outStream == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.OUTPUT_STREAM_NOT_OPENED_YET.getCode());
         }
 
-        if(this.inStream == null)
-        {
+        if(this.inStream == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.INPUT_STREAM_NOT_OPENED_YET.getCode());
         }
 
@@ -245,16 +240,13 @@ public class SocketManager
             throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_WRITE_MESSAGE_ON_OUTPUT_STREAM.getCode());
         }
 
-        if(waitACK)
-        {
-            try {
-                response = (Serializable) inStream.readObject();
-            } catch (IOException e) {
+        try {
+            response = (Serializable) inStream.readObject();
+        } catch (IOException e) {
                 throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_READ_OBJECT_FROM_INPUT_STREAM.getCode() + ":\n" + e.getMessage());
-            } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
                 throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_READ_OBJECT_FROM_INPUT_STREAM.getCode() + ":\n" + e.getMessage());
 
-            }
         }
 
         return response;

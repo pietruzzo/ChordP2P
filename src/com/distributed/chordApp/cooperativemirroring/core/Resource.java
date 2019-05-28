@@ -28,4 +28,6 @@ public class Resource implements Serializable {
 
         return state;
     }
+
+
 }

@@ -17,17 +17,10 @@ import java.io.InputStreamReader;
 import java.util.AbstractMap;
 //import com.intellij.jarRepository.services.artifactory.Endpoint;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-
 public class Server {
     private static AbstractMap.SimpleEntry<Host, Thread> hostThreadPair = null;
 
-    public static void main(String []args)
-    {
+    public static void main(String []args) throws IOException {
         String serverIP = SystemUtilities.getThisMachineIP();
         Integer serverPort = ChordSettingsLoader.getApplicationServerPort();
 
@@ -35,7 +28,6 @@ public class Server {
         String bootstrapServerIP = ChordSettingsLoader.getBootstrapServerIP();
 
         boolean joinAChordNetwork = false;
-
 
         /*
          * Here we are checking if we are the bootstrap server for te current application,
@@ -80,29 +72,29 @@ public class Server {
                     .setShallopHostPort(ChordSettingsLoader.getApplicationServerPort())
                     .setConnectionRetries(5)
                     .setConnectionTimeout_ms(3000)
-                    .setShell(new LogShell(Server.class.getName()))
+                    .setShell(new LogShell(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, false))
                     .build();
         } catch (HostSettingException e)
         {
             System.err.println("[Server> " + e + "\nShutting down the server.");
             System.exit(1);
         }
-
-        Thread t1;
-
         Host host = new Host(hs, null);
 
-        t1 = new Thread(host);
-
+        Thread t1 = new Thread(host);
         t1.start();
 
-        host.enjoyChordNetwork();
+        try {
+            host.enjoyChordNetwork();
+        } catch (IOException e) {
+            host.shutdownHost();
+            t1.interrupt();
+            System.exit(1);
+        }
 
         hostThreadPair = new AbstractMap.SimpleEntry<>(host, t1);
 
-        serverConsole();
-
-
+      //  serverConsole();
 
     }
 
@@ -124,7 +116,6 @@ public class Server {
         Boolean goAhead = true ;
         Integer choice = -1;
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
         do {
             System.out.println("\n======{SERVER CONSOLE}======\n");
             System.out.println("0)Shut Down Server");

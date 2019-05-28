@@ -1,14 +1,13 @@
 package com.distributed.chordApp.cooperativemirroring.core.settings;
 
+import com.distributed.chordApp.cooperativemirroring.core.Host;
+import com.distributed.chordApp.cooperativemirroring.core.backend.ClientHandlerThread;
+import com.distributed.chordApp.cooperativemirroring.core.backend.HostHandlerThread;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.HostSettingException;
 import com.distributed.chordApp.cooperativemirroring.core.settings.exceptions.codes.HostSettingsExceptionCode;
 import com.distributed.chordApp.cooperativemirroring.utilities.ChordSettingsLoader;
 import com.distributed.chordApp.cooperativemirroring.utilities.LogShell;
 import com.distributed.chordApp.cooperativemirroring.utilities.SystemUtilities;
-import com.distributed.chordApp.cooperativemirroring.utilities.consoleInterface.OutputMessage;
-
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
@@ -20,10 +19,9 @@ import java.io.Serializable;
 public class HostSettings implements Serializable
 {
     //Possible values for the verboseInfoLog
-    public static final String HOST_CALLER = "Host";
-    public static final String HOST_HANDLER_CALLER = "HostHandler";
-    public static final String CLIENT_HANDLER_CALLER = "ClientHandler";
-    public static final String SERVER_CALLER = "Server";
+    public static final String HOST_CALLER = Host.class.getSimpleName();
+    public static final String HOST_HANDLER_CALLER = HostHandlerThread.class.getSimpleName();
+    public static final String CLIENT_HANDLER_CALLER = ClientHandlerThread.class.getSimpleName();
 
     //IP address associated to a specific host
     private String hostIP = null;
@@ -101,7 +99,6 @@ public class HostSettings implements Serializable
         }
 
         boolean enabledConsoleOut = (this.getShell() != null);
-        OutputMessage message = null;
 
         String vString = "[Host\\\\" + this.getHostIP() + ":" + this.getHostPort() ;
 
