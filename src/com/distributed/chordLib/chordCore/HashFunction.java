@@ -124,19 +124,18 @@ public class HashFunction {
             this.digest = new boolean[length];
             for (int i = 0; i < digest.length; i++) {
                 int byteIndex = digest.length - i - 1;
-                int value = digest[byteIndex]; //Read byte as integer
-                String rep = Integer.toBinaryString(value); //Convert integer to binary string
-                for (int j = 0; j < rep.length(); j++) {
-                    int bitIndex = rep.length() - j -1;
-                    int c = rep.charAt(bitIndex); //get char
-                    if (byteIndex * 8 + bitIndex < length) { //not overtake length
-                        if (c == '1') this.digest[byteIndex * 8 + bitIndex] = true;
-                        if (c == '0') this.digest[byteIndex * 8 + bitIndex] = false;
-                    }
-                    else break; //if exceeds length, stop for cycle
+
+                boolean[] currByte = byteToBooleans(digest[byteIndex]);
+                for (int j = 0; j < currByte.length; j++) {
+                    int bitIndex = this.digest.length - j -1;
+
+                    if (i*8 + j > length) return;
+                    else this.digest[byteIndex * 8 + j] = currByte[j];
                 }
             }
+
         }
+
 
         public Hash(boolean[] newDigest) {
             this.digest = newDigest;
@@ -188,6 +187,23 @@ public class HashFunction {
                 else res = res + "0";
             }
             return res;
+        }
+
+        /**
+         * Convert a byte to array of bits (length of array is 8)
+         * @param e
+         * @return
+         */
+        private boolean[] byteToBooleans (byte e) {
+
+            boolean[] result = new boolean[8];
+
+            String s = String.format("%8s", Integer.toBinaryString((e & 0xFF))).replace(' ', '0');
+
+            for (int i = 0; i < result.length; i++) {
+                if (s.charAt(i) == '1') result[i] = true;
+            }
+            return result;
         }
     }
 
