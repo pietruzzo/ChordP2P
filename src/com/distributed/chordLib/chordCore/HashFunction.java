@@ -129,8 +129,8 @@ public class HashFunction {
                 for (int j = 0; j < currByte.length; j++) {
                     int bitIndex = this.digest.length - j -1;
 
-                    if (i*8 + j > length) return;
-                    else this.digest[byteIndex * 8 + j] = currByte[j];
+                    if ((i+i)*8 + j > length) return;
+                    else this.digest[length- (i+1) * 8 + j] = currByte[j];
                 }
             }
 
