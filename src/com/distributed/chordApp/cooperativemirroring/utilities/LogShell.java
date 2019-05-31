@@ -13,7 +13,7 @@ public class LogShell extends JFrame {
     private boolean autohide = false;
     //String used for keeping track of all the logs produced so far
     private String logHistory = "";
-
+    //Button used for cleaning or showing the log history
     private JToggleButton logAutohideButton = null;
 
     public LogShell(String title,boolean autohide){
@@ -40,7 +40,7 @@ public class LogShell extends JFrame {
         this.logAutohideButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                switchAutohide();
+                switchAutoHide();
             }
         });
 
@@ -61,7 +61,7 @@ public class LogShell extends JFrame {
     /**
      * Method used for enable/disable the the autohide mode for the log shell
      */
-    public void switchAutohide(){
+    public void switchAutoHide(){
 
         this.autohide = !this.autohide;
 

@@ -13,6 +13,7 @@ public class ChordSettingsLoader {
     public static final String APPLICATION_CLIENT_PORT_TAG = "ApplicationClientPort";
     public static final String CHORD_PORT_TAG = "ChordPort";
     public static final String JOIN_CHORD_NETWORK_TAG = "JoinChordNetwork";
+    public static final String ENABLE_LOG_SHELL_GUI_TAG = "EnableLogShellGUI";
 
     /**
      * Method used for retriving the bootstrap server IP of the application
@@ -54,6 +55,16 @@ public class ChordSettingsLoader {
         String tmp = XMLParser.getXMLElement(HIDDEN_SETTINGS_FILE, CHORD_PORT_TAG, 0);
 
         return Integer.parseInt(tmp);
+    }
+
+    /**
+     * Method used for retriving if we have to use the log shell gui or not on the server side
+     * @return
+     */
+    public static synchronized Boolean getEnableLogShellGUI(){
+        String tmp = XMLParser.getXMLElement(HIDDEN_SETTINGS_FILE, ENABLE_LOG_SHELL_GUI_TAG, 0);
+
+        return Boolean.parseBoolean(tmp);
     }
 
 

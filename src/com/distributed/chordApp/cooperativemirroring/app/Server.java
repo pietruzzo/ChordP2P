@@ -33,13 +33,11 @@ public class Server {
          * Here we are checking if we are the bootstrap server for te current application,
          * in such case we don't have to to join a chord network but rather to create ane
          */
-        if(serverIP.equals(bootstrapServerIP))
-        {
+        if(serverIP.equals(bootstrapServerIP)) {
             joinAChordNetwork = false;
         }
         //Otherwise it depends on the settings but , probably we have to join an existing chord network
-        else
-        {
+        else {
             joinAChordNetwork = true;
         }
 
@@ -63,6 +61,13 @@ public class Server {
         //Here we are setting the HostSetting for the current host
         HostSettings hs = null;
         try {
+
+            LogShell logShellGUI = null;
+
+            if(ChordSettingsLoader.getEnableLogShellGUI()){
+                logShellGUI = new LogShell(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, false);
+            }
+
             hs = new HostSettings.HostSettingsBuilder()
                     .setHostIP(serverIP)
                     .setHostPort(serverPort)
@@ -72,7 +77,7 @@ public class Server {
                     .setShallopHostPort(ChordSettingsLoader.getApplicationServerPort())
                     .setConnectionRetries(5)
                     .setConnectionTimeout_ms(3000)
-                    .setShell(new LogShell(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, false))
+                    .setShell(logShellGUI)
                     .build();
         } catch (HostSettingException e)
         {
@@ -85,7 +90,7 @@ public class Server {
         t1.start();
 
         try {
-            host.enjoyChordNetwork();
+            host.joinChordNetwork();
         } catch (IOException e) {
             host.shutdownHost();
             t1.interrupt();

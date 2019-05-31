@@ -54,13 +54,16 @@ public class Host implements Runnable, ChordCallback
     /**
      * Method used for enjoying a chord network
      */
-    public void enjoyChordNetwork() throws IOException {
+    public void joinChordNetwork() throws IOException {
+
         this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
 
         this.initHostHandlerThread(new HostHandlerThread(
                 this.getHostSettings(),
                 this.chordEntryPoint,
                 this.resourcesManager));
+
+
     }
 
     /**
@@ -73,8 +76,7 @@ public class Host implements Runnable, ChordCallback
 
         this.hostSettings.verboseInfoLog("leaving the chord network ..." , HostSettings.HOST_CALLER,false);
 
-        if(this.chordEntryPoint == null)
-        {
+        if(this.chordEntryPoint == null) {
             this.hostSettings.verboseInfoLog("no previously instantiated chord network found" , HostSettings.HOST_CALLER,false);
             return ;
         }
@@ -83,8 +85,7 @@ public class Host implements Runnable, ChordCallback
 
         this.hostSettings.verboseInfoLog("chord network leaved, sending the host resources to a shallop host ..." , HostSettings.HOST_CALLER,false);
 
-        if(!this.hostSettings.hasShallopHost())
-        {
+        if(!this.hostSettings.hasShallopHost()) {
             this.hostSettings.verboseInfoLog("shallop host not present, resources will be lost" , HostSettings.HOST_CALLER,false);
             return ;
         }
@@ -200,6 +201,8 @@ public class Host implements Runnable, ChordCallback
             executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
 
             this.hostSettings.verboseInfoLog("executor instantiated" , HostSettings.HOST_CALLER,false);
+
+
             this.hostSettings.verboseInfoLog("waiting for a request ..." , HostSettings.HOST_CALLER,false);
 
             Socket client = this.serverSocket.accept();
