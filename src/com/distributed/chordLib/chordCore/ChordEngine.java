@@ -103,18 +103,14 @@ public class ChordEngine extends ChordClient {
 
         //Get first not failed successor that it's not me
         while (!s.equals(myN) && !comLayer.isAlive(s)) {
-            if (!s.equals(myN)) {
-                fingerTable.removeFailedNode(s);
-            }
+            fingerTable.removeFailedNode(s);
             s = fingerTable.getSuccessor();
         }
 
             if (!s.equals(myN)) {
                 Node x = comLayer.findPredecessor(s);
                 if (x != null) { //If my successor knows a predecessor
-                    if (hash.areOrdered(myN.getkey(), x.getkey(), s.getkey())) {
                         fingerTable.setSuccessor(x);
-                    }
                 }
                 notify(fingerTable.getSuccessor());
 

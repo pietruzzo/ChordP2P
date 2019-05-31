@@ -56,7 +56,7 @@ public class FingerTable {
         return predecessor;
     }
 
-    public void setPredecessor(Node predecessor) {
+    public synchronized void setPredecessor(Node predecessor) {
         this.predecessor = predecessor;
     }
 
@@ -65,7 +65,7 @@ public class FingerTable {
      *
      * @param successor
      */
-    public void setSuccessor(Node successor) {
+    public synchronized void setSuccessor(Node successor) {
 
         System.out.println("Set Successor "+ successor.getIP());
 
@@ -104,7 +104,7 @@ public class FingerTable {
         return fingers[position];
     }
 
-    public void setFinger(Node node, int position) {
+    public synchronized void setFinger(Node node, int position) {
         System.out.println("Set finger table");
         printFingerTable();
         fingers[position] = node;
@@ -124,7 +124,7 @@ public class FingerTable {
      * Remove failed node from finger Table and Successor List
      * @param node
      */
-    public void removeFailedNode(Node node) {
+    public synchronized void removeFailedNode(Node node) {
         for (Node s: successors) {
             if (s.equals(node)) successors.remove(s);
         }
