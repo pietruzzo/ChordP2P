@@ -204,24 +204,25 @@ public class Host implements Runnable, ChordCallback
 
             this.hostSettings.verboseInfoLog("executor instantiated" , HostSettings.HOST_CALLER,false);
 
+            while(true){
 
-            this.hostSettings.verboseInfoLog("waiting for a request ..." , HostSettings.HOST_CALLER,false);
+                this.hostSettings.verboseInfoLog("waiting for a request ..." , HostSettings.HOST_CALLER,false);
 
-            Socket client = this.serverSocket.accept();
+                Socket client = this.serverSocket.accept();
 
-            this.hostSettings.verboseInfoLog("request detected , instantiating a client handler thread for managing it ..." , HostSettings.HOST_CALLER,false);
+                this.hostSettings.verboseInfoLog("request detected , instantiating a client handler thread for managing it ..." , HostSettings.HOST_CALLER,false);
 
-            ClientHandlerThread cht = new ClientHandlerThread(  this.getHostSettings(),
-                                                                client,
-                                                                this.resourcesManager,
-                                                                this.chordEntryPoint);
+                ClientHandlerThread cht = new ClientHandlerThread(  this.getHostSettings(),
+                        client,
+                        this.resourcesManager,
+                        this.chordEntryPoint);
 
-            this.hostSettings.verboseInfoLog("client handler thread instantiated , trying to execute it ..." , HostSettings.HOST_CALLER,false);
+                this.hostSettings.verboseInfoLog("client handler thread instantiated , trying to execute it ..." , HostSettings.HOST_CALLER,false);
 
-            executor.execute(cht);
+                executor.execute(cht);
 
-            this.hostSettings.verboseInfoLog("executing client handler thread" , HostSettings.HOST_CALLER,false);
-
+                this.hostSettings.verboseInfoLog("executing client handler thread" , HostSettings.HOST_CALLER,false);
+            }
 
         } catch (IOException e) {
             this.hostSettings.verboseInfoLog("unable to accept the request: \n" + e.getMessage() + "\n" , HostSettings.HOST_CALLER,true);

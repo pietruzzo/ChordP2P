@@ -62,47 +62,25 @@ public class SocketManager
      * Method used for opening a connection with the destination
      * @throws SocketManagerException
      */
-    private void openConnection() throws SocketManagerException
-    {
-        Socket socket = null;
+    private void openConnection() throws SocketManagerException {
+        Socket socket = new Socket();
         String exceptionMessage = null;
         boolean connectionEstablished = true;
 
-        if(this.destinationSocket != null)
-        {
+        if(this.destinationSocket != null) {
             throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_ALREADY_ESTABLISHED.getCode());
         }
 
-        //Here we try more than one time to establish a connection
-        for(int i = this.connectionRetries; i > 0; i--)
-        {
-            socket = new Socket();
+        try {
+            socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));
+            connectionEstablished = true;
+
+        } catch (IOException e) {
+            exceptionMessage = SocketManagerExceptionCode.CONNECTION_BAD_PARAMETERS.getCode();
             connectionEstablished = false;
-
-            try {
-                socket.setSoTimeout(this.connectionTimeout_ms);
-
-            } catch (SocketException e) {
-                exceptionMessage = SocketManagerExceptionCode.CONNECTION_INVALID_TIMEOUT.getCode();
-            }
-
-            try {
-                socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));
-                connectionEstablished = true;
-
-            } catch (IOException e) {
-                exceptionMessage = SocketManagerExceptionCode.CONNECTION_BAD_PARAMETERS.getCode();
-                connectionEstablished = false;
-            }
-
-            if(connectionEstablished)
-            {
-                i = 0;
-            }
         }
 
-        if(!connectionEstablished)
-        {
+        if(!connectionEstablished) {
             String message = SocketManagerExceptionCode.CONNECTION_MAXIMUM_RETRIES_REACHED + "\n" ;
 
             message += SocketManagerExceptionCode.CONNECTION_TIMEOUT_REACHED + "\n";
@@ -110,8 +88,7 @@ public class SocketManager
 
             throw new SocketManagerException(message);
         }
-        else
-        {
+        else {
             this.setDestinationSocket(socket);
         }
     }
@@ -122,30 +99,20 @@ public class SocketManager
      */
     private void openOutputStream() throws SocketManagerException {
         if(this.destinationSocket == null)
-        {
-            throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_NOT_ESTABLISHED.getCode());
+        { throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_NOT_ESTABLISHED.getCode());
         }
 
         ObjectOutputStream oos = null;
         boolean oosEstablished = false;
 
-        for(int i = this.connectionRetries; i > 0 ; i--)
-        {
-            try {
-                oos = new ObjectOutputStream(this.destinationSocket.getOutputStream());
-                oosEstablished = true;
-            } catch (IOException e) {
-                oosEstablished = false;
-            }
-
-            if(oosEstablished)
-            {
-                i = 0;
-            }
+        try {
+            oos = new ObjectOutputStream(this.destinationSocket.getOutputStream());
+            oosEstablished = true;
+        } catch (IOException e) {
+            oosEstablished = false;
         }
 
-        if(!oosEstablished)
-        {
+        if(!oosEstablished) {
             throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_OPEN_OUTPUT_STREAM.getCode());
         }
 
