@@ -1,6 +1,5 @@
 package com.distributed.chordLib.chordCore;
 
-import com.google.common.collect.Lists;
 import java.io.Serializable;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -64,7 +63,7 @@ public class HashFunction {
             else binaryNum.add(false);
             num = Math.floorDiv(num, 2);
         }
-        binaryNum = Lists.reverse(binaryNum);
+        Collections.reverse(binaryNum);
 
         //Sum bit a bit with rest
         int rest = 0, first = 0, second = 0;
@@ -94,7 +93,7 @@ public class HashFunction {
             result = result.subList(0, m);
         }
 
-        result = Lists.reverse(result);
+        Collections.reverse(result);
 
 
 
