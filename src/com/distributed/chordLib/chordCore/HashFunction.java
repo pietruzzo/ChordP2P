@@ -64,12 +64,13 @@ public class HashFunction {
      * @return new hash
      */
     public Hash moduloSum(Hash hash, long num){
+        long old = num;
         boolean[] digest = hash.getDigest();
-        List<Boolean> result = new ArrayList<>();
+        boolean[] result;
         List<Boolean> binaryNum = new ArrayList<>();
 
         //Tranform int into binary rep
-        while (num == 0){
+        while (num != 0){
             int bit = Math.floorMod(num, 2);
             if (bit == 1) binaryNum.add(true);
             else binaryNum.add(false);
@@ -78,46 +79,44 @@ public class HashFunction {
         Collections.reverse(binaryNum);
 
         //Sum bit a bit with rest
-        int rest = 0, first = 0, second = 0;
+        Boolean rest = false;
+        Boolean first = false, second = false;
+
         int size = Math.max(binaryNum.size(), digest.length);
-        for (int i = 1; i <= size; i++) {
-            if (size-i < digest.length)  first = 1;
-            else first = 0;
-            if (size-i < binaryNum.size()) second = 1;
-            else second = 0;
 
-            //bit sum logic
-            int localSum = rest + first + second;
-            if (localSum > 0){
-                rest = localSum - 1;
-                result.add(true);
-            } else if (localSum == 0){
-                result.add(false);
+        result = new boolean[Math.min(size +1, m)];
+
+        for (int i = 0; i < result.length; i++) {
+            int res_index = result.length - 1 - i;
+            int digest_ind = digest.length - 1 - i;
+            int bynaryNum_ind = binaryNum.size() - 1 - i;
+
+            first = false;
+            second = false;
+
+            if (digest_ind >= 0) first = digest[digest_ind];
+            if (bynaryNum_ind >= 0) second = binaryNum.get(bynaryNum_ind);
+
+            if (first && second && rest){
+                rest = true;
+                result[res_index] = true;
+            } else if (first && second && !rest || first && !second && rest || !first && second && rest ){
+                rest = true;
+                result[res_index] = false;
+            } else if (first || second || rest){
+                rest = false;
+                result[res_index] = true;
+            } else {
+                rest = false;
+                result[res_index] = false;
             }
+
+
         }
-        while (rest != 0){
-            result.add(true);
-            rest = rest - 1;
-        }
-
-        //TIf result exceedes ring, MODULO
-        if (result.size() > m) {
-            result = result.subList(0, m);
-        }
-
-        Collections.reverse(result);
-
-
-
-        //Boolean -> boolean
-        boolean newDigest[] = new boolean[result.size()];
-        for (int i = 0; i < result.size(); i++) {
-            newDigest[i] = result.get(i).booleanValue();
-        }
-
 
         //return
-        return new Hash(newDigest);
+        System.out.println("somma: "+ hash.toString() + " + " + old + " is " + new Hash(result).toString());
+        return new Hash(result);
     }
 
     public int getM() {
