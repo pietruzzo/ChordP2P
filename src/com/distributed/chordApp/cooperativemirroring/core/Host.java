@@ -115,7 +115,9 @@ public class Host implements Runnable, ChordCallback
             this.hostSettings.verboseInfoLog("created the exchanging request message for the resource: " + resource.getResourceID() + " to be send to the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
             this.hostSettings.verboseInfoLog("sending the resource: " + resource.getResourceID() + " to the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
 
-            ResponseMessage response = (ResponseMessage) destinationHostSocket.post(request);
+            destinationHostSocket.post(request);
+
+            ResponseMessage response = (ResponseMessage) destinationHostSocket.get();
 
             this.hostSettings.verboseInfoLog("response for the resource: " + resource.getResourceID() + " arrived from the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
 

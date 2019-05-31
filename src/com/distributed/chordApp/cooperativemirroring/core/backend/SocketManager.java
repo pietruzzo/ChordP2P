@@ -213,8 +213,8 @@ public class SocketManager
      * @param message
      * @return
      */
-    public Serializable post(Serializable message) throws SocketManagerException {
-        Serializable response = null;
+    public Boolean post(Serializable message) throws SocketManagerException {
+        Boolean send = false;
 
         if(this.destinationSocket == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_NOT_ESTABLISHED.getCode());
@@ -240,16 +240,9 @@ public class SocketManager
             throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_WRITE_MESSAGE_ON_OUTPUT_STREAM.getCode());
         }
 
-        try {
-            response = (Serializable) inStream.readObject();
-        } catch (IOException e) {
-                throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_READ_OBJECT_FROM_INPUT_STREAM.getCode() + ":\n" + e.getMessage());
-        } catch (ClassNotFoundException e) {
-                throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_READ_OBJECT_FROM_INPUT_STREAM.getCode() + ":\n" + e.getMessage());
+        send = true;
 
-        }
-
-        return response;
+        return send;
     }
 
     /**
@@ -259,13 +252,11 @@ public class SocketManager
     public Serializable get() throws SocketManagerException {
         Serializable request = null;
 
-        if(this.destinationSocket == null)
-        {
+        if(this.destinationSocket == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_NOT_ESTABLISHED.getCode());
         }
 
-        if(this.inStream == null)
-        {
+        if(this.inStream == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.INPUT_STREAM_NOT_OPENED_YET.getCode());
         }
 

@@ -248,7 +248,9 @@ public class ClientHandlerThread implements Runnable
                 this.hostSettings.verboseInfoLog("forwarding the request to: " + nextHostAddress, HostSettings.CLIENT_HANDLER_CALLER,false);
                 this.hostSettings.verboseInfoLog("waiting for the response from host: " + nextHostAddress + "...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-                responseMessage = (ResponseMessage)nextHost.post(forewardedRequestMessage);
+               nextHost.post(forewardedRequestMessage);
+
+               responseMessage = (ResponseMessage) nextHost.get();
 
                 this.hostSettings.verboseInfoLog("response arrived from host: " + nextHostAddress + "sending back it to the client ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
