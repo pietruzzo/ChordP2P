@@ -31,7 +31,12 @@ public class HashFunction {
     public Hash getSHA1(String inputString){
         byte[] digest = md.digest(inputString.getBytes());
         Hash h = new Hash(digest, m);
-        System.out.println("Hash for " + inputString + " is: " + h.toString());
+
+        String debug ="";
+        for (byte b: digest) {
+            debug = debug + b + " ";
+        }
+        System.out.println("Hash for " + inputString + " is: " + debug + " : " + h.toString());
         return h;
     }
 
@@ -42,8 +47,15 @@ public class HashFunction {
      */
     public boolean areOrdered(Hash hash1, Hash hash2, Hash hash3){
 
-        if (hash2.compareTo(hash1) == 1 && (hash3.compareTo(hash2) == 1 || hash1.compareTo(hash3) == 1)) return true;
-        if (hash1.compareTo(hash3) == 1 && hash3.compareTo(hash2) == 1) return true;
+        if (hash2.compareTo(hash1) == 1 && (hash3.compareTo(hash2) == 1 || hash1.compareTo(hash3) == 1)) {
+            System.out.println(hash1.toString() + ", " + hash2.toString() + ", " + hash3.toString() + " are ordered");
+            return true;
+        }
+        if (hash1.compareTo(hash3) == 1 && hash3.compareTo(hash2) == 1) {
+            System.out.println(hash1.toString() + ", " + hash2.toString() + ", " + hash3.toString() + " are ordered");
+            return true;
+        }
+        System.out.println(hash1.toString() + ", " + hash2.toString() + ", " + hash3.toString() + " not ordered");
         return false;
     }
 
@@ -125,11 +137,11 @@ public class HashFunction {
                 int byteIndex = digest.length - i - 1;
 
                 boolean[] currByte = byteToBooleans(digest[byteIndex]);
-                for (int j = 0; j < currByte.length; j++) {
-                    int bitIndex = this.digest.length - j -1;
+                for (int j = 0; j < 8; j++) {
+                    int bitIndex = length - j -1; //not accounting Byte
 
-                    if ((i+i)*8 + j > length) return;
-                    else this.digest[length- (i+1) * 8 + j] = currByte[j];
+                    if (bitIndex - i*8 < 0) return;
+                    else this.digest[bitIndex - i * 8] = currByte[7 - j];
                 }
             }
 
