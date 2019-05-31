@@ -12,8 +12,8 @@ import java.net.InetAddress;
  */
 public interface Chord {
 
-    int DEFAULT_NUM_FINGERS = 4;
-    int DEFAULT_NUM_SUCCESSORS = 4;
+    int DEFAULT_NUM_FINGERS = 19;
+    int DEFAULT_NUM_SUCCESSORS = 2;
     String DEFAULT_SERVER_IP = "127.0.0.1";
     int DEFAULT_SERVER_PORT = 1678;
     boolean USE_PUBLIC_IP = false;

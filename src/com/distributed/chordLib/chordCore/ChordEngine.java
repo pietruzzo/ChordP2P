@@ -86,7 +86,7 @@ public class ChordEngine extends ChordClient {
 
     @Override
     protected Node closestPrecedingNode(Hash hashed_key) {
-        //Get preceding finger
+        //Get preceding finger -> don't return myNode
         for (int i = fingerTable.getNumFingers() - 1; i >= 0; i--) {
             if (fingerTable.getFinger(i) != null && hash.areOrdered(fingerTable.getMyNode().getkey(), fingerTable.getFinger(i).getkey(), hashed_key))
                 return fingerTable.getFinger(i);
@@ -109,7 +109,9 @@ public class ChordEngine extends ChordClient {
 
             if (!s.equals(myN)) {
                 Node x = comLayer.findPredecessor(s);
+
                 if (x != null) { //If my successor knows a predecessor
+                        System.out.println("OBTAINED PREDECESSOR: " + x.getIP());
                         fingerTable.setSuccessor(x);
                 }
                 notify(fingerTable.getSuccessor());
@@ -121,7 +123,9 @@ public class ChordEngine extends ChordClient {
                     fingerTable.setSuccessor(succ);
 
                     //Stop if number of nodes in network are less than Num of Successors
-                    if (succ.equals(myN)) break;
+                    if (succ.equals(myN)) {
+                        break;
+                    }
                 }
             }
     }
@@ -297,7 +301,9 @@ public class ChordEngine extends ChordClient {
                 synchronized (this) {
                     this.wait(ROUTINE_PERIOD);
                 }
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
                 System.out.println("Routine actions Stopped");
             }
         }

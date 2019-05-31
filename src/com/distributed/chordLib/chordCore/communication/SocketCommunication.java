@@ -247,10 +247,12 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     private void waitResponse(Message requestMessage, SocketNode receiver){
         if (receiver == null) throw new NullPointerException("Receiver SocketNode is NULL");
         ComputationState current = new ComputationState(Thread.currentThread());
-        //Send message on socket
-        receiver.writeSocket(requestMessage);
-        //save this thread in waitingThreads
-        this.waitingThreads.put(requestMessage.getId(), current);
+        synchronized (this){
+            //Send message on socket
+            receiver.writeSocket(requestMessage);
+            //save this thread in waitingThreads
+            this.waitingThreads.put(requestMessage.getId(), current);
+        }
         //suspend current thread
         try {
             current.waitResponse();
@@ -325,10 +327,9 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
      * @param responseMessage
      * @param reqID if null, use responseMessage' id
      */
-    private void awake (Message responseMessage, @Nullable Integer reqID){
+    private synchronized void awake (Message responseMessage, @Nullable Integer reqID){
         if (reqID == null) reqID = responseMessage.getId();
         waitingThreads.get(reqID).registerResponse(responseMessage);
-
     }
 
     /**
@@ -337,7 +338,9 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
      */
     private ResponseMessage getResponseinWaiting(int id){
         Message message = waitingThreads.get(id).getResponse();
-        waitingThreads.remove(id);
+        synchronized (this) {
+            waitingThreads.remove(id);
+        }
         return (ResponseMessage) message;
     }
 

@@ -72,11 +72,15 @@ public class FingerTable {
         if (!this.successors.contains(successor))
             this.successors.add(successor);
 
-        successors.sort((o1, o2) -> {
-            if (hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return 1;
-            else if (o1.equals(this.getMyNode())) return 1; //Put MyNode always on tail
-            else if (o1.equals(o2)) return 0;
-            else return -1;
+        successors.sort(new Comparator<Node>() {
+            @Override
+            public int compare(Node o1, Node o2) {
+                if (o1.equals(getMyNode())) return 1; //Put MyNode always on tail
+                else if (o2.equals(getMyNode())) return -1; //Put MyNode always on tail
+                else if (hash.areOrdered(myNode.getkey(), o1.getkey(), o2.getkey())) return -1;
+                else if (o1.equals(o2)) return 0;
+                else return 1;
+            }
         });
         for (int i = 1; i < successors.size(); i++) {
             if (successors.get(i - 1).equals(successors.get(i))) {
@@ -125,12 +129,23 @@ public class FingerTable {
      * @param node
      */
     public synchronized void removeFailedNode(Node node) {
+
+        //Remove from successor list
+        List<Node> tobeRemoved = new ArrayList<>();
         for (Node s: successors) {
-            if (s.equals(node)) successors.remove(s);
+            if (s.equals(node)) tobeRemoved.add(s);
         }
+        for (Node s: tobeRemoved
+             ) {
+            successors.remove(s);
+        }
+
+        //Remove from fingers
         for (int i = 0; i < fingers.length; i++) {
             if (fingers[i] != null && fingers[i].equals(node)) fingers[i] = null;
         }
+
+        //Remove failed predecessor
         if (this.predecessor != null && this.predecessor.equals(node)){
             this.predecessor = null;
         }

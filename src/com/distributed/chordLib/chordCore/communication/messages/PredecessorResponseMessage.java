@@ -18,5 +18,6 @@ public class PredecessorResponseMessage extends Message implements Serializable,
      */
     public PredecessorResponseMessage(Integer id, Node predecessor) {
         super(id);
+        this.node = predecessor;
     }
 }
