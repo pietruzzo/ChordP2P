@@ -13,6 +13,7 @@ public class ChordSettingsLoader {
     public static final String APPLICATION_CLIENT_PORT_TAG = "ApplicationClientPort";
     public static final String CHORD_PORT_TAG = "ChordPort";
     public static final String JOIN_CHORD_NETWORK_TAG = "JoinChordNetwork";
+    public static final String VERBOSE_OPERATING_MODE_TAG = "VerboseOperatingMode";
     public static final String ENABLE_LOG_SHELL_GUI_TAG = "EnableLogShellGUI";
 
     /**
@@ -63,6 +64,16 @@ public class ChordSettingsLoader {
      */
     public static synchronized Boolean getEnableLogShellGUI(){
         String tmp = XMLParser.getXMLElement(HIDDEN_SETTINGS_FILE, ENABLE_LOG_SHELL_GUI_TAG, 0);
+
+        return Boolean.parseBoolean(tmp);
+    }
+
+    /**
+     * Method used for retriving if we have to use the verbose operating mode server side
+     * @return
+     */
+    public static synchronized Boolean getVerboseOperatingMode(){
+        String tmp = XMLParser.getXMLElement(HIDDEN_SETTINGS_FILE, VERBOSE_OPERATING_MODE_TAG, 0);
 
         return Boolean.parseBoolean(tmp);
     }

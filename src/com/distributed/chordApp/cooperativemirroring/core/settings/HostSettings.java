@@ -53,9 +53,7 @@ public class HostSettings implements Serializable
                          String shallopHostIP,
                          Integer shallopHostPort,
                          Boolean verboseOperatingMode,
-                         LogShell shell
-                        )
-    {
+                         LogShell shell) {
         this.setHostIP(hostIP);
         this.setHostPort(hostPort);
 
@@ -447,8 +445,7 @@ public class HostSettings implements Serializable
                                             this.shallopHostIP,
                                             this.shallopHostPort,
                                             this.verboseOperatingMode,
-                                            this.shell
-                                       );
+                                            this.shell);
 
             return instance;
         }

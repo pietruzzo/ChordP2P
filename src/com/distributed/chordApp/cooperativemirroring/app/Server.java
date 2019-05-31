@@ -64,7 +64,7 @@ public class Server {
 
             LogShell logShellGUI = null;
 
-            if(ChordSettingsLoader.getEnableLogShellGUI()){
+            if(ChordSettingsLoader.getVerboseOperatingMode() && ChordSettingsLoader.getEnableLogShellGUI()){
                 logShellGUI = new LogShell(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, false);
             }
 
@@ -72,7 +72,7 @@ public class Server {
                     .setHostIP(serverIP)
                     .setHostPort(serverPort)
                     .setChordNetworkSetting(chs)
-                    .setVerboseOperatingMode(true)
+                    .setVerboseOperatingMode(ChordSettingsLoader.getVerboseOperatingMode())
                     .setShallopHostIP(ChordSettingsLoader.getBootstrapServerIP())
                     .setShallopHostPort(ChordSettingsLoader.getApplicationServerPort())
                     .setConnectionRetries(5)
