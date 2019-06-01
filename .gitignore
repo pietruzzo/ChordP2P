@@ -5,3 +5,5 @@ ChordP2P.iml
 .idea\
 META-INF\
 META-INF\
+out\
+out/
