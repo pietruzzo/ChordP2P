@@ -92,14 +92,19 @@ public class Server {
         try {
             host.joinChordNetwork();
         } catch (IOException e) {
-            host.shutdownHost();
             t1.interrupt();
             System.exit(1);
         }
 
         hostThreadPair = new AbstractMap.SimpleEntry<>(host, t1);
 
-      //  serverConsole();
+        try {
+            host.shutdownHost();
+        } catch (SocketManagerException e) {
+            e.printStackTrace();
+        }
+
+        //  serverConsole();
 
     }
 

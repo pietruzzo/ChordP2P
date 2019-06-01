@@ -3,4 +3,6 @@
     <ApplicationClientPort>7777</ApplicationClientPort>
     <ChordPort>7654</ChordPort>
     <JoinChordNetwork>true</JoinChordNetwork>
+    <VerboseOperatingMode>true</VerboseOperatingMode>
+    <EnableLogShellGUI>true</EnableLogShellGUI>
 </HiddenSettings>

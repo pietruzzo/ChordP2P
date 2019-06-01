@@ -130,8 +130,7 @@ public class HostSettings implements Serializable
      * @param newShallopHostIP
      * @param newShallopHostPort
      */
-    public void changeShallopHost(String newShallopHostIP,Integer newShallopHostPort) throws HostSettingException
-    {
+    public void changeShallopHost(String newShallopHostIP,Integer newShallopHostPort) throws HostSettingException {
         if(!SystemUtilities.isValidIP(newShallopHostIP))
         {
             throw new HostSettingException(HostSettingsExceptionCode.INVALID_SHALLOP_HOST_IP.getCode());
@@ -150,8 +149,7 @@ public class HostSettings implements Serializable
      * Method used for changing the connection timeout of the current host
      * @param connectionTimeout_ms
      */
-    public void changeConnectionTimeout_ms(Integer connectionTimeout_ms) throws HostSettingException
-    {
+    public void changeConnectionTimeout_ms(Integer connectionTimeout_ms) throws HostSettingException {
         if(connectionTimeout_ms.intValue() < 0)
         {
             throw new HostSettingException(HostSettingsExceptionCode.INVALID_CONNECTION_TIMEOUT_MS.getCode());
@@ -164,10 +162,8 @@ public class HostSettings implements Serializable
      * Method used for changing the connection retries of the current host
      * @param connectionRetries
      */
-    public void changeConnectionRetries(Integer connectionRetries) throws HostSettingException
-    {
-        if(connectionRetries.intValue() < 0)
-        {
+    public void changeConnectionRetries(Integer connectionRetries) throws HostSettingException {
+        if(connectionRetries.intValue() < 0) {
             throw new HostSettingException(HostSettingsExceptionCode.INVALID_CONNECTION_RETRIES.getCode());
         }
 
@@ -180,17 +176,29 @@ public class HostSettings implements Serializable
      *
      * @return
      */
-    public Boolean hasShallopHost()
-    {
+    public Boolean hasShallopHost() {
         boolean result = false ;
 
-        if(!this.hostIP.equals(this.shallopHostIP))
-        {
+        if(!this.hostIP.equals(this.shallopHostIP)) {
             result = true;
         }
 
 
         return result;
+    }
+
+    /**
+     * Method used to stop the verbose info log for the current host
+     */
+    public void mute(){
+        this.verboseOperatingMode = false;
+    }
+
+    /**
+     * Method used for enabling the verbose operating mode for the current host
+     */
+    public void talkative(){
+        this.verboseOperatingMode = true;
     }
 
     /*Getter methods*/

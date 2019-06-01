@@ -43,6 +43,9 @@ public class Host implements Runnable, ChordCallback
     private HostHandlerThread hostHandlerThread = null;
     //Reference to the server socket of the current host
     private ServerSocket serverSocket = null;
+    private boolean stopHost = false;
+
+    private boolean shutdownHost = false;
 
     public Host(HostSettings hostSettings, @Nullable HashSet<Resource> resources) {
         this.setHostSettings(hostSettings);
@@ -97,7 +100,6 @@ public class Host implements Runnable, ChordCallback
         //Socket destinationHostSocket = null;
         SocketManager destinationHostSocket = null;
 
-        //destinationHostSocket = new Socket();
         destinationHostSocket = new SocketManager(this.hostSettings.getShallopHostIP(),
                                                   this.hostSettings.getShallopHostPort(),
                                                   this.hostSettings.getConnectionTimeout_MS(),
@@ -204,25 +206,31 @@ public class Host implements Runnable, ChordCallback
 
             this.hostSettings.verboseInfoLog("executor instantiated" , HostSettings.HOST_CALLER,false);
 
-            while(true){
+            while(!this.shutdownHost)
+            {
+                while((!this.stopHost) && (!this.shutdownHost))
+                {
 
-                this.hostSettings.verboseInfoLog("waiting for a request ..." , HostSettings.HOST_CALLER,false);
+                    this.hostSettings.verboseInfoLog("waiting for a request ..." , HostSettings.HOST_CALLER,false);
 
-                Socket client = this.serverSocket.accept();
+                    Socket client = this.serverSocket.accept();
 
-                this.hostSettings.verboseInfoLog("request detected , instantiating a client handler thread for managing it ..." , HostSettings.HOST_CALLER,false);
+                    this.hostSettings.verboseInfoLog("request detected , instantiating a client handler thread for managing it ..." , HostSettings.HOST_CALLER,false);
 
-                ClientHandlerThread cht = new ClientHandlerThread(  this.getHostSettings(),
-                        client,
-                        this.resourcesManager,
-                        this.chordEntryPoint);
+                    ClientHandlerThread cht = new ClientHandlerThread(  this.getHostSettings(),
+                            client,
+                            this.resourcesManager,
+                            this.chordEntryPoint);
 
-                this.hostSettings.verboseInfoLog("client handler thread instantiated , trying to execute it ..." , HostSettings.HOST_CALLER,false);
+                    this.hostSettings.verboseInfoLog("client handler thread instantiated , trying to execute it ..." , HostSettings.HOST_CALLER,false);
 
-                executor.execute(cht);
+                    executor.execute(cht);
 
-                this.hostSettings.verboseInfoLog("executing client handler thread" , HostSettings.HOST_CALLER,false);
+                    this.hostSettings.verboseInfoLog("executing client handler thread" , HostSettings.HOST_CALLER,false);
+                }
             }
+
+
 
         } catch (IOException e) {
             this.hostSettings.verboseInfoLog("unable to accept the request: \n" + e.getMessage() + "\n" , HostSettings.HOST_CALLER,true);
@@ -253,10 +261,30 @@ public class Host implements Runnable, ChordCallback
      * (it cannot be restarted anyhow)
      * @return
      */
-    public synchronized void shutdownHost() throws IOException {
+    public synchronized void shutdownHost() throws IOException, SocketManagerException {
         this.hostSettings.verboseInfoLog("shutting down the current host (it could't be restarted) ..." , HostSettings.HOST_CALLER,false);
 
-        this.serverSocket.close();
+        //Opening a socket with the current host
+        String fakeClientIP = this.hostSettings.getHostIP();
+        Integer fakeClientPort = this.hostSettings.getHostPort();
+
+        this.shutdownHost = true;
+        this.stopHost = true;
+
+        this.hostSettings.mute();
+
+        //Sendinding a false request to the server in order to not block it
+        SocketManager socket = new SocketManager(fakeClientIP, fakeClientPort, this.hostSettings.getConnectionTimeout_MS(), this.hostSettings.getConnectionRetries());
+        socket.connect();
+        RequestMessage closingRequest = new RequestMessage(fakeClientIP, fakeClientPort, Integer.toString(Integer.MIN_VALUE));
+        socket.post(closingRequest);
+        //ResponseMessage closingResponse = (ResponseMessage)
+        socket.get();
+        socket.disconnect();
+
+        this.hostSettings.talkative();
+
+        this.finalize();
 
         this.hostSettings.verboseInfoLog("current host shutted down" , HostSettings.HOST_CALLER,false);
     }
@@ -292,9 +320,17 @@ public class Host implements Runnable, ChordCallback
         this.hostHandlerThread.interrupt();
 
         try {
+            this.serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
             this.leaveChordNetwork();
         } catch (SocketManagerException e) {
             e.printStackTrace();
         }
+
+
     }
 }
