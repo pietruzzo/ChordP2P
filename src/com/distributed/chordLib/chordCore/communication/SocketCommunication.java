@@ -32,7 +32,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     //ChordClient calls from network
     CommCallbackInterface callback;
     //Pool of workers for messageHandling
-    ThreadPoolExecutor workers;
+    //ThreadPoolExecutor workers;
     //ServerSocket for incoming connections
     ServerSocket serverSocket;
 
@@ -47,7 +47,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         this.callback = callback;
         this.socketNodes = new HashMap<>();
         this.waitingThreads = new HashMap<>();
-        this.workers = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_MAX_POOL_SIZE, REQUEST_TIMEOUT, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(30));
+        //this.workers = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_MAX_POOL_SIZE, REQUEST_TIMEOUT, TimeUnit.MICROSECONDS, new ArrayBlockingQueue<>(30));
         handleNewIncomingConnections();
 
     }

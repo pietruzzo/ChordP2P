@@ -9,10 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 
 public class FingerTable {
@@ -49,6 +46,14 @@ public class FingerTable {
     public Node getSuccessor() {
         if (successors.isEmpty()) throw new NoSuccessorsExceptions();
         return successors.get(0);
+    }
+
+    /**
+     * Get a clone of successor list
+     * @return
+     */
+    public List<Node> getAllSuccessors(){
+        return this.successors.subList(0, this.successors.size());
     }
 
 

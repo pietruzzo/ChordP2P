@@ -7,6 +7,8 @@ import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import com.distributed.chordLib.exceptions.TimeoutReachedException;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 
@@ -98,36 +100,48 @@ public class ChordEngine extends ChordClient {
     @Override
     protected void stabilize() {
         Node myN = fingerTable.getMyNode();
-        Node s = fingerTable.getSuccessor();
+        Node succ; //Current successor
+        Node sPred; //Predecessor of successor
 
 
-        //Get first not failed successor that it's not me
-        while (!s.equals(myN) && !comLayer.isAlive(s)) {
-            fingerTable.removeFailedNode(s);
-            s = fingerTable.getSuccessor();
+        //Remove all failed successors that aren't me
+        List<Node> successors = fingerTable.getAllSuccessors();
+        for (Node n: successors) {
+            if (!n.equals(myN) && !comLayer.isAlive(n)){
+                fingerTable.removeFailedNode(n);
+            }
         }
 
-            if (!s.equals(myN)) {
-                Node x = comLayer.findPredecessor(s);
+        //Get first not failed successor
+        succ = fingerTable.getSuccessor();
 
-                if (x != null) { //If my successor knows a predecessor
-                        System.out.println("OBTAINED PREDECESSOR: " + x.getIP());
-                        fingerTable.setSuccessor(x);
-                }
-                notify(fingerTable.getSuccessor());
+        //Don't perform stabilization if I'm lonely in network
+        if (succ.equals(myN)) return;
 
-                Node succ = fingerTable.getSuccessor();
-                for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
-                    succ = findSuccessor(hash.moduloSum(succ.getkey(), 1));
+        //region: Stabilization operations
 
-                    fingerTable.setSuccessor(succ);
+        //Ask successor for his predecessor and eventually add it to my successors
+        sPred = comLayer.findPredecessor(succ);
 
-                    //Stop if number of nodes in network are less than Num of Successors
-                    if (succ.equals(myN)) {
-                        break;
-                    }
-                }
+        if (sPred != null) { //If my successor knows a predecessor
+            System.out.println("Predecessor obtained from successor: " + sPred.getIP());
+            fingerTable.setSuccessor(sPred);
+        }
+        notify(fingerTable.getSuccessor()); //Notify successor
+
+
+        //Add all successors to complete successor list
+        for (int i = 0; i < fingerTable.getNumSuccessors(); i++) {
+            succ = findSuccessor(hash.moduloSum(succ.getkey(), 1));
+
+            fingerTable.setSuccessor(succ);
+
+            //Stop if number of nodes in network are less than Num of Successors
+            if (succ.equals(myN)) {
+                break;
             }
+        }
+        //endregion
     }
 
     @Override
