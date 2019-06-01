@@ -25,6 +25,7 @@ public abstract class ChordClient implements com.distributed.chordLib.Chord, Com
     CommCallInterface comLayer;
     HashFunction hash;
     Thread routineActions;
+    Boolean doRoutines;
 
     //endregion
 

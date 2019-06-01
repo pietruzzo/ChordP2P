@@ -3,6 +3,7 @@ package com.distributed.chordLib.chordCore.communication;
 import com.distributed.chordLib.chordCore.ChordClient;
 import com.distributed.chordLib.chordCore.HashFunction;
 import com.distributed.chordLib.chordCore.Node;
+import org.jetbrains.annotations.Nullable;
 
 import static com.distributed.chordLib.chordCore.HashFunction.*;
 
@@ -49,7 +50,7 @@ public interface CommCallbackInterface {
      * a node is notifing me its departure from the network
      * and fix my predecessor and successor accordingly
      */
-    void handleVolountaryDeparture(Node exitingNode, Node predNode, Node succNode);
+    void handleVolountaryDeparture(Node exitingNode, @Nullable Node predNode, @Nullable Node succNode);
 
     /**
      * Get hash value of ip

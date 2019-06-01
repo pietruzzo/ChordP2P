@@ -70,11 +70,12 @@ public interface CommCallInterface {
 
     /**
      * Notify successors and predecessor of this node departure and close communication Layer exiting Chord network
+     * Only contact nodes that are not null
      * @param predecessor my predecessor
      * @param me my node
      * @param successor my successor
      */
-    void closeCommLayer(Node predecessor, Node me, Node successor);
+    void closeCommLayer(@Nullable Node predecessor, Node me, @Nullable Node successor);
 
     /**
      * Close communication Layer

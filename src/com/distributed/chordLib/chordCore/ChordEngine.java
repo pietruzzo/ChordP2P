@@ -28,6 +28,7 @@ public class ChordEngine extends ChordClient {
     public ChordEngine(@Nullable Integer numFingers, @Nullable Integer numSuccessors, @Nullable String bootstrapAddr, int port, @Nullable Integer module, ChordCallback callback) {
         super(numFingers, numSuccessors, bootstrapAddr, port, module, callback);
         routineActions = new Thread(this::routineActions);
+        doRoutines = true;
         routineActions.start();
     }
 
@@ -214,7 +215,7 @@ public class ChordEngine extends ChordClient {
 
     @Override
     public void closeNetwork() {
-        this.routineActions.interrupt();
+        this.doRoutines = false;
         comLayer.closeCommLayer(fingerTable.getPredecessor(), fingerTable.getMyNode(), fingerTable.getSuccessor());
     }
 
@@ -264,7 +265,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public void handleVolountaryDeparture(Node exitingNode, Node predNode, Node succNode) {
+    public void handleVolountaryDeparture(Node exitingNode, @Nullable Node predNode, @Nullable Node succNode) {
         Node myPred = fingerTable.getPredecessor();
         Node mySucc = fingerTable.getSuccessor();
 
@@ -291,7 +292,7 @@ public class ChordEngine extends ChordClient {
      */
     private void routineActions(){
 
-        while(true) {
+        while(doRoutines) {
             try {
                 System.out.println("Stabilize:---");
                 stabilize();
@@ -312,14 +313,17 @@ public class ChordEngine extends ChordClient {
             }
 
             try {
-                synchronized (this) {
-                    this.wait(ROUTINE_PERIOD);
+                if (doRoutines) {
+                    synchronized (this) {
+                        this.wait(ROUTINE_PERIOD);
+                    }
                 }
             } catch (Exception e) {
                 System.out.println(e.getMessage());
                 e.printStackTrace();
-                System.out.println("Routine actions Stopped");
+                System.out.println("Routine actions failed, retry...");
             }
         }
+        System.out.println("Exited Routine Actions");
     }
 }

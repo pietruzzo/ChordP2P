@@ -146,18 +146,21 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     }
 
     @Override
-    public void closeCommLayer(Node predecessor, Node me, Node successor) {
+    public void closeCommLayer(@Nullable Node predecessor, Node me, @Nullable Node successor) {
 
         //Build message
         VoluntaryDepartureMessage message = new VoluntaryDepartureMessage(predecessor, me, successor);
 
-        //Get predecessor and successo sockets
-        SocketNode predecessorSocket = getSocketNode(predecessor.getIP());
-        SocketNode successorSocket = getSocketNode(predecessor.getIP());
-
-        //Send message on sockets
-        predecessorSocket.writeSocket(message);
-        successorSocket.writeSocket(message);
+        //Contact Predecessor
+        if (predecessor != null) {
+            SocketNode predecessorSocket = getSocketNode(predecessor.getIP());
+            predecessorSocket.writeSocket(message);
+        }
+        //Contact successor
+        if (successor != null && !successor.equals(me)) {
+            SocketNode successorSocket = getSocketNode(predecessor.getIP());
+            successorSocket.writeSocket(message);
+        }
 
         //Close communication Layer
         this.closeCommLayer();
@@ -231,8 +234,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
                     SocketNode newSocketNode = new SocketNode(ip, newConnection, callback, true);
                     socketNodes.put(ip, newSocketNode);
                 } catch (IOException e) {
-                    System.err.println("Unable to accept new incoming connection");
-                    e.printStackTrace();
+                    System.err.println("Closing Server Socket - Unable to accept new incoming connections");
                     closeServerSocket = true;
                 }
             }
@@ -300,6 +302,10 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         questioner.writeSocket(resMessage);
     }
 
+    private void handleVoluntaryDepartureMessage(VoluntaryDepartureMessage message, SocketNode questioner){
+        callback.handleVolountaryDeparture(message.getLeaving(), message.getPredecessor(), message.getSuccessor());
+    }
+
     private void handleUnrecognizedMessage(Object unrecognized, SocketNode node){
         System.err.println("Unrecognized message of type " + unrecognized.getClass().toString());
     }
@@ -314,6 +320,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         else if (message instanceof NotifySuccessorMessage) handleNotifyMessage((NotifySuccessorMessage) message, questioner);
         else if (message instanceof PingRequestMessage) handlePingMessage((PingRequestMessage) message, questioner);
         else if (message instanceof PredecessorRequestMessage) handlePredecessorMessage((PredecessorRequestMessage) message, questioner);
+        else if (message instanceof VoluntaryDepartureMessage) handleVoluntaryDepartureMessage((VoluntaryDepartureMessage) message, questioner);
         else if (message instanceof ResponseMessage) awake(message, null);
         else handleUnrecognizedMessage(message, questioner);
 
