@@ -12,19 +12,22 @@ import java.net.InetAddress;
  */
 public interface Chord {
 
+    //region: ChordLib parameters
+
     int DEFAULT_NUM_FINGERS = 19;
     int DEFAULT_NUM_SUCCESSORS = 2;
     String DEFAULT_SERVER_IP = "127.0.0.1";
     int DEFAULT_SERVER_PORT = 1678;
     boolean USE_PUBLIC_IP = false;
-    int DEFAULT_RETRY = 5;
+    int DEFAULT_RETRY = 5; //number of retrial lookup in case of failures (it can mask transient failures)
     int DEFAULT_CHORD_MODULE = 20; //Expressed in bit length
     int ROUTINE_PERIOD = 20000;
+
+    //endregion
 
     /**
      * Lookup for key in chord network
      * @return IP address of node responsible for key
-     * @ApiNote Synchronous Call
      * @throws CommunicationFailureException for socket failures
      * @throws TimeoutReachedException timeout in request handling reached
      * @throws NoSuccessorsExceptions there is no living successor (Ring is unstable, actual ChordNode is Killed)
@@ -34,7 +37,6 @@ public interface Chord {
     /**
      * BasicLookup for key in chord network
      * @return IP address of node responsible for key
-     * @ApiNote Synchronous Call
      * @throws CommunicationFailureException for socket failures
      * @throws TimeoutReachedException timeout in request handling reached
      * @throws NoSuccessorsExceptions there is no living successor (Ring is unstable, actual ChordNode is Killed)
@@ -42,7 +44,7 @@ public interface Chord {
     String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException, NoSuccessorsExceptions;
 
     /**
-     * Close network
+     * Close ChordLib notifying it to the network
      */
     void closeNetwork();
 

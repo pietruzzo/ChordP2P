@@ -11,7 +11,9 @@ import java.io.InputStreamReader;
 import java.net.*;
 import java.util.*;
 
-
+/**
+ * Datastructures to store and handling all informations about Nodes
+ */
 public class FingerTable {
 
     private Node[] fingers;
@@ -94,7 +96,6 @@ public class FingerTable {
         }
         successors = successors.subList(0, Math.min(numSuccessors, successors.size()));
 
-        printFingerTable();
     }
 
 
@@ -115,7 +116,6 @@ public class FingerTable {
 
     public synchronized void setFinger(Node node, int position) {
         System.out.println("Set finger table");
-        printFingerTable();
         fingers[position] = node;
     }
 
@@ -182,6 +182,10 @@ public class FingerTable {
         System.out.println("__________________");
     }
 
+    /**
+     * Method invoked to get my public IP using amazonaws
+     * @return my public ip
+     */
     private String getmyPublicIPAddress() throws IOException {
         URL whatismyip = new URL("http://checkip.amazonaws.com");
         BufferedReader in = new BufferedReader(new InputStreamReader(

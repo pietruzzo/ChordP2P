@@ -16,15 +16,43 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.distributed.chordLib.chordCore.HashFunction.*;
 
+/**
+ * Abstract class that defines all core logic methods and attributes
+ * it implements user interface to library
+ * and callback from communication layer
+ */
 public abstract class ChordClient implements com.distributed.chordLib.Chord, CommCallbackInterface {
 
     //region Attributes
 
+    /**
+     * Datastructure for all network nodes known by current node
+     */
     FingerTable fingerTable;
+
+    /**
+     * Callback provided by library (see documentation)
+     */
     ChordCallback chordCallback;
+
+    /**
+     * Entry point for the communication layer component
+     */
     CommCallInterface comLayer;
+
+    /**
+     * Instance of the hash function used to calculate and operate on hashes
+     */
     HashFunction hash;
+
+    /**
+     * Thread that perform routine actions every ROUTINE_PERIOD (see Chord interface)
+     */
     Thread routineActions;
+
+    /**
+     * if false, routine actions will end
+     */
     Boolean doRoutines;
 
     //endregion
