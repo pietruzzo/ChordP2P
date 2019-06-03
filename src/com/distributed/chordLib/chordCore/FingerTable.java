@@ -55,7 +55,11 @@ public class FingerTable {
      * @return
      */
     public List<Node> getAllSuccessors(){
-        return this.successors.subList(0, this.successors.size());
+
+        List<Node> result = new ArrayList<>();
+        result.addAll(this.successors);
+        return result;
+
     }
 
 
