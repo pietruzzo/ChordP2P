@@ -2,8 +2,10 @@ package com.distributed.chordApp.cooperativemirroring.client.view;
 
 import com.distributed.chordApp.cooperativemirroring.client.controller.ClientController;
 import com.distributed.chordApp.cooperativemirroring.client.utilities.ClientSettings;
+import com.distributed.chordApp.cooperativemirroring.common.Resource;
 import com.distributed.chordApp.cooperativemirroring.common.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.common.messages.ResponseMessage;
+import com.distributed.chordApp.cooperativemirroring.common.utilities.SystemUtilities;
 import com.distributed.chordApp.cooperativemirroring.common.utilities.exceptions.SocketManagerException;
 
 import javax.swing.*;
@@ -121,6 +123,15 @@ public class ClientGUI extends JFrame {
 
                 String resource = JOptionPane.showInputDialog(null, "Insert the new resource value: ", "Deposit Resource", JOptionPane.INFORMATION_MESSAGE);
 
+                if(resource == null)
+                    return;
+
+                if(!SystemUtilities.isValidResourceID(resource)){
+                    updateLog(settings.clientInfoString("invalid resource"));
+                    updateNotification("invalid resource", true);
+                    return;
+                }
+
                 updateLog(settings.clientInfoString("building a new request ..."));
                 RequestMessage requestMessage = controller.buildRequest(resource, true);
                 updateLog(settings.clientInfoString("request built: " + requestMessage.conciseToString()));
@@ -154,6 +165,17 @@ public class ClientGUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 String resource = JOptionPane.showInputDialog(null, "Insert resource ID: ", "Retrieve Resource", JOptionPane.INFORMATION_MESSAGE);
+
+                if(resource == null) {
+                    return;
+                }
+
+                if(!SystemUtilities.isValidResourceID(resource)){
+                    updateLog(settings.clientInfoString("invalid resource ID"));
+                    updateNotification("invalid resource id", true);
+                    return ;
+                }
+
 
                 updateLog(settings.clientInfoString("building a new request ..."));
                 RequestMessage requestMessage = controller.buildRequest(resource, false);

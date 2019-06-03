@@ -15,6 +15,7 @@ public class ChordSettingsLoader {
     public static final String JOIN_CHORD_NETWORK_TAG = "JoinChordNetwork";
     public static final String VERBOSE_OPERATING_MODE_TAG = "VerboseOperatingMode";
     public static final String ENABLE_LOG_SHELL_GUI_TAG = "EnableLogShellGUI";
+    public static final String SHALLOP_HOST_IP_TAG = "ShallopHostIP";
 
     /**
      * Method used for retriving the bootstrap server IP of the application
@@ -78,6 +79,14 @@ public class ChordSettingsLoader {
         return Boolean.parseBoolean(tmp);
     }
 
+    /**
+     * Method used for retriving the shallop host IP for the current host
+     * @return
+     */
+    public static synchronized String getShallopHostIP(){
+        return XMLParser.getXMLElement(CHORD_SETTINGS_FILE, SHALLOP_HOST_IP_TAG, 0);
+
+    }
 
 
     /**

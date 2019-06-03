@@ -7,7 +7,6 @@ import com.distributed.chordApp.cooperativemirroring.common.messages.RequestMess
 import com.distributed.chordApp.cooperativemirroring.common.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.server.core.settings.ChordNetworkSettings;
 import com.distributed.chordApp.cooperativemirroring.server.core.managers.ClientHandlerThread;
-import com.distributed.chordApp.cooperativemirroring.server.core.managers.HostHandlerThread;
 import com.distributed.chordApp.cooperativemirroring.server.core.managers.ResourcesManager;
 import com.distributed.chordApp.cooperativemirroring.server.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
@@ -40,8 +39,6 @@ public class Host implements Runnable, ChordCallback
     private Chord chordEntryPoint = null;
     //Manger of the resources of the current host
     private ResourcesManager resourcesManager = null;
-    //Handler for changes in the keyset
-    private HostHandlerThread hostHandlerThread = null;
     //Reference to the server socket of the current host
     private ServerSocket serverSocket = null;
     //Boolean flag used to state if we have to shut down the current server
@@ -60,11 +57,6 @@ public class Host implements Runnable, ChordCallback
     public void joinChordNetwork() throws IOException {
 
         this.initChordEntryPoint(this.getHostSettings().getChordNetworkSettings());
-
-        this.initHostHandlerThread(new HostHandlerThread(
-                this.getHostSettings(),
-                this.chordEntryPoint,
-                this.resourcesManager));
     }
 
     /**
@@ -141,20 +133,6 @@ public class Host implements Runnable, ChordCallback
     }
 
     /*Application settings*/
-
-    /**
-     * Method used for instantianting the Handler for the chord callbacks
-     * @param hostHandlerThread
-     */
-    private void initHostHandlerThread(HostHandlerThread hostHandlerThread) {
-        this.hostSettings.verboseInfoLog("instantiating a new host handler thread" , HostSettings.HOST_CALLER,false);
-        this.hostHandlerThread = hostHandlerThread;
-
-        this.hostSettings.verboseInfoLog("starting the new instantiated host handler thread" , HostSettings.HOST_CALLER,false);
-        this.hostHandlerThread.start();
-
-        this.hostSettings.verboseInfoLog("host handler thread started" , HostSettings.HOST_CALLER,false);
-    }
 
     /*
      * Method used for joining or creating a Chord network (depending on the settings of the ChordNetworkSettings passed as parameters)
@@ -278,13 +256,75 @@ public class Host implements Runnable, ChordCallback
         this.snakeOut();
     }
 
-    /**
-     * Method used for changing a resource placement
-     */
     @Override
-    public void notifyResponsabilityChange()
-    {
-        this.hostHandlerThread.notifyResponsabilityChange();
+    public void notifyResponsabilityChange() {
+        Boolean thisHost = false ;
+
+        this.hostSettings.verboseInfoLog("notified of responsability changes: verify the current host resources's ownership" , HostSettings.HOST_CALLER,false);
+
+        if(this.resourcesManager.getResources().isEmpty()){
+            this.hostSettings.verboseInfoLog("no resource stored on the current host" , HostSettings.HOST_CALLER,false);
+        }
+
+        for(Resource resource : this.resourcesManager.getResources()) {
+            String destinationAddress = null;
+            thisHost = false ;
+
+            this.hostSettings.verboseInfoLog("verifying ownership of resource: " + resource.getResourceID() +" ..." , HostSettings.HOST_CALLER,false);
+
+            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) {
+                destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
+            }
+            else{
+                destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
+            }
+
+            if(destinationAddress.equals(this.getHostSettings().getHostIP()) || destinationAddress.equals("127.0.0.1") || destinationAddress.equals("127.0.1.1")) {
+                thisHost = true;
+            }
+
+            if(!thisHost) {
+                this.hostSettings.verboseInfoLog("need to exchange the resource: " + resource.getResourceID() +" with host: " + destinationAddress , HostSettings.HOST_CALLER,false);
+
+                RequestMessage request = new RequestMessage(
+                        this.getHostSettings().getHostIP(),
+                        this.getHostSettings().getHostPort(),
+                        resource);
+                request.setHostDepositRequest(true);
+
+                this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_CALLER,false);
+                this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_CALLER,false);
+
+                try {
+                    SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES);
+                    destinationSocket.connect();
+
+                    this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_CALLER,false);
+
+                    destinationSocket.post(request);
+
+                    this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress + " waiting for response ...", HostSettings.HOST_CALLER,false);
+
+                    ResponseMessage responseMessage = (ResponseMessage) destinationSocket.get();
+
+                    this.hostSettings.verboseInfoLog("response for resource: " + resource.getResourceID() + " arrived from host: " + destinationAddress  + " disconnecting from destination host ...", HostSettings.HOST_CALLER,false);
+
+                    destinationSocket.disconnect();
+
+                    this.hostSettings.verboseInfoLog("disconnected from host: " + destinationAddress, HostSettings.HOST_CALLER,false);
+
+                    this.resourcesManager.removeResource(resource.getResourceID());
+
+                }catch (SocketManagerException e) {
+                    this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() + "\n keeping the resource on this host" , HostSettings.HOST_CALLER,true);
+                }
+            }
+            else
+            {
+                this.hostSettings.verboseInfoLog("the resource: " + resource.getResourceID() +" remains on this host" , HostSettings.HOST_CALLER,false);
+            }
+        }
+
     }
 
     /*Getter methods*/
@@ -311,7 +351,7 @@ public class Host implements Runnable, ChordCallback
     @SuppressWarnings("deprecation")
     protected void finalize() {
 
-        this.hostHandlerThread.interrupt();
+        //this.hostHandlerThread.interrupt();
 
         try {
             this.leaveChordNetwork();

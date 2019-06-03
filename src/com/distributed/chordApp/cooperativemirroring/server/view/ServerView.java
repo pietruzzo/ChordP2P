@@ -33,7 +33,7 @@ public class ServerView extends JFrame {
         this.initConsolePanel();
 
         this.setTitle("Log Shell - " + title);
-        this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(800, 600);
         this.setMinimumSize(new Dimension(400, 300));
         this.setLocationRelativeTo(null);

@@ -4,6 +4,7 @@ import com.distributed.chordApp.cooperativemirroring.client.controller.ClientCon
 import com.distributed.chordApp.cooperativemirroring.client.utilities.ClientSettings;
 import com.distributed.chordApp.cooperativemirroring.common.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.common.messages.ResponseMessage;
+import com.distributed.chordApp.cooperativemirroring.common.utilities.SystemUtilities;
 import com.distributed.chordApp.cooperativemirroring.common.utilities.exceptions.SocketManagerException;
 
 import java.io.BufferedReader;
@@ -70,6 +71,12 @@ public class ClientTUI {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    if(!SystemUtilities.isValidResourceID(resourceID)){
+                        System.err.println(settings.clientInfoString("invalid resource id"));
+                        break;
+                    }
+
                     request = controller.buildRequest(resourceID, true);
                     try {
                         response = null;
@@ -88,6 +95,12 @@ public class ClientTUI {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    if(!SystemUtilities.isValidResourceID(resourceID)){
+                        System.err.println(settings.clientInfoString("invalid resource id"));
+                        break;
+                    }
+
                     request = controller.buildRequest(resourceID, false);
                     try {
                         response = this.controller.sendRequest(request);

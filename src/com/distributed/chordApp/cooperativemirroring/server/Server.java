@@ -21,7 +21,7 @@ import java.util.AbstractMap;
 public class Server {
     private static AbstractMap.SimpleEntry<Host, Thread> hostThreadPair = null;
 
-    public static void main(String []args) throws IOException {
+    public static void main(String []args)  {
         String serverIP = SystemUtilities.getThisMachineIP();
         Integer serverPort = ChordSettingsLoader.getApplicationServerPort();
 
@@ -75,7 +75,7 @@ public class Server {
                     .setHostPort(serverPort)
                     .setChordNetworkSetting(chs)
                     .setVerboseOperatingMode(ChordSettingsLoader.getVerboseOperatingMode())
-                    .setShallopHostIP(ChordSettingsLoader.getBootstrapServerIP())
+                    .setShallopHostIP(ChordSettingsLoader.getShallopHostIP())
                     .setShallopHostPort(ChordSettingsLoader.getApplicationServerPort())
                     .setShell(textArea)
                     .build();
@@ -90,31 +90,35 @@ public class Server {
 
         try {
             host.joinChordNetwork();
+
+            hostThreadPair = new AbstractMap.SimpleEntry<>(host, t1);
+
+            if(ChordSettingsLoader.getVerboseOperatingMode() && ChordSettingsLoader.getEnableLogShellGUI()){
+                 new ServerView(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, host, textArea);
+            }
+            else{
+                serverConsole();
+            }
+
+            try {
+                t1.join();
+
+                if(ChordSettingsLoader.getVerboseOperatingMode() && ChordSettingsLoader.getEnableLogShellGUI()){
+                    logShellGUI.updateText("Server closed");
+                    logShellGUI.updateMessage("Server closed", true);
+                    //logShellGUI.finalize();
+                }else{
+                    System.out.println("\nServer closed");
+                    System.exit(0);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         } catch (IOException e) {
             System.err.println("\nUnable to open connection");
             t1.interrupt();
             System.exit(1);
-        }
-
-        hostThreadPair = new AbstractMap.SimpleEntry<>(host, t1);
-
-        if(ChordSettingsLoader.getVerboseOperatingMode() && ChordSettingsLoader.getEnableLogShellGUI()){
-          logShellGUI = new ServerView(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, host, textArea);
-        }
-        else{
-            serverConsole();
-        }
-
-        try {
-            t1.join();
-
-            if(ChordSettingsLoader.getVerboseOperatingMode() && ChordSettingsLoader.getEnableLogShellGUI()){
-                logShellGUI.finalize();
-            }else{
-                System.exit(0);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
 
     }

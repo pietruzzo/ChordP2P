@@ -1,5 +1,7 @@
 package com.distributed.chordApp.cooperativemirroring.common.utilities;
 
+import com.distributed.chordApp.cooperativemirroring.common.Resource;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;
@@ -97,6 +99,33 @@ public class SystemUtilities {
 
         return found;
     }
+
+    /**
+     * Method used for testing if the ID associated to the resource is a valid one or not
+     * @param id
+     * @return
+     */
+    public static boolean isValidResourceID(String id){
+        if((id == null) || (id.isEmpty()) || (id.isBlank())){
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Method used for checking is a passed resource is a valid one or not.
+     * @param resource
+     * @return
+     */
+    public static boolean isValidResource(Resource resource){
+        if(resource == null){
+            return false;
+        }
+
+        return true;
+    }
+
 
     /**
      * Method used for automatically retriving the current host IP for the LAN

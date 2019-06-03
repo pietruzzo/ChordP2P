@@ -73,6 +73,7 @@ public class SocketManager {
         }
 
         try {
+            socket.setSoTimeout(this.connectionTimeout_ms);
             socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));
             connectionEstablished = true;
 
@@ -167,8 +168,7 @@ public class SocketManager {
      */
     public void connect() throws SocketManagerException
     {
-        if(this.destinationSocket == null)
-        {
+        if(this.destinationSocket == null) {
             this.openConnection();
         }
 
