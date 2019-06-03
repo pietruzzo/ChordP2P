@@ -183,7 +183,7 @@ public class ChordEngine extends ChordClient {
             throw new NoSuccessorsExceptions();
         }
 
-        for (int i = 0; i < Chord.DEFAULT_RETRY; i++) { //Retry lookup Chord.DEFAULT_RETRY times
+        for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
             try {
                 response = this.findSuccessor(hashedKey).getIP();
             } catch (TimeoutReachedException | CommunicationFailureException e){
