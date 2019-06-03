@@ -20,7 +20,7 @@ import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 public class SocketCommunication implements CommCallInterface, SocketIncomingHandling {
 
-    public static final int REQUEST_TIMEOUT = 30000;
+    public static final int REQUEST_TIMEOUT = 10000;
     private static final int CORE_POOL_SIZE = 2;
     private static final int CORE_MAX_POOL_SIZE = 20;
     private final int socketPort;

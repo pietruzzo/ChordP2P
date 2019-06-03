@@ -107,9 +107,9 @@ public class ChordEngine extends ChordClient {
 
         //Remove all failed successors that aren't me
         List<Node> successors = fingerTable.getAllSuccessors();
-        for (Node n: successors) {
-            if (!n.equals(myN) && !comLayer.isAlive(n)){
-                fingerTable.removeFailedNode(n);
+        for (int j = 0; j < successors.size(); j++) {
+            if (!successors.get(j).equals(myN) && !comLayer.isAlive(successors.get(j))){
+                fingerTable.removeFailedNode(successors.get(j));
             }
         }
 
@@ -244,7 +244,7 @@ public class ChordEngine extends ChordClient {
     @Override
     public void notifyIncoming(Node predecessor) {
 
-        if (!fingerTable.successoIsFull()){
+        if (!fingerTable.successoIsFull() && fingerTable.getAllSuccessors().contains(fingerTable.getMyNode())){
             //Add node to successor list
             fingerTable.setSuccessor(predecessor);
         }
