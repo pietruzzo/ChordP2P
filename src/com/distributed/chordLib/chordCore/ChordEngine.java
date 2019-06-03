@@ -217,6 +217,11 @@ public class ChordEngine extends ChordClient {
     public void closeNetwork() {
         this.doRoutines = false;
         comLayer.closeCommLayer(fingerTable.getPredecessor(), fingerTable.getMyNode(), fingerTable.getSuccessor());
+        try {
+            this.wait(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -316,7 +321,17 @@ public class ChordEngine extends ChordClient {
                 } catch (NoSuccessorsExceptions e1){
                     closeNetwork();
                 }
-            } catch (NoSuccessorsExceptions e) {
+            } catch (CommunicationFailureException e){
+                Node failed = new Node(e.getN(), hash.getSHA1(e.getN()));
+                //Consider as failed node
+                System.out.println("Routine actions failed, removing not responding node");
+                try {
+                    fingerTable.removeFailedNode(failed);
+                } catch (NoSuccessorsExceptions e1){
+                    closeNetwork();
+                }
+            }
+            catch (NoSuccessorsExceptions e) {
                 this.closeNetwork();
             }
             catch (Exception e) {

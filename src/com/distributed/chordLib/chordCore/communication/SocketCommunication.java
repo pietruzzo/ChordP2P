@@ -209,7 +209,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
                 return newSocketNode;
             } catch (IOException e) {
                 System.err.println("Unable to open connection to " + nodeIP +": " + socketPort);
-                throw new CommunicationFailureException();
+                throw new CommunicationFailureException(nodeIP);
             }
         }
     }
@@ -385,7 +385,7 @@ class ComputationState {
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                throw new CommunicationFailureException();
+                throw new CommunicationFailureException(null);
             }
         }
         return response;
