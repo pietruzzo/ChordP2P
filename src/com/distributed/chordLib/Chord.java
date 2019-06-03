@@ -15,7 +15,7 @@ public interface Chord {
     //region: ChordLib parameters
 
     int DEFAULT_NUM_FINGERS = 19;
-    int DEFAULT_NUM_SUCCESSORS = 2;
+    int DEFAULT_NUM_SUCCESSORS = 1;
     String DEFAULT_SERVER_IP = "127.0.0.1";
     int DEFAULT_SERVER_PORT = 1678;
     boolean USE_PUBLIC_IP = false;

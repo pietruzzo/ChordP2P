@@ -99,6 +99,30 @@ public class FingerTable {
     }
 
 
+    /**
+     * Substitute a node into fingertable with another one
+     */
+    public synchronized void substitute (Node previous, Node next) {
+
+        //For successors
+        for (int i = 0; i < this.successors.size(); i++) {
+            if (successors.get(i) != null && previous.equals(successors.get(i))){
+                successors.set(i, next);
+            }
+        }
+
+        //For fingers
+        for (int i = 0; i < this.fingers.length; i++) {
+            if (fingers[i]!= null && previous.equals(fingers[i])){
+                fingers[i] = next;
+            }
+        }
+
+        if (previous.equals(predecessor)){
+            this.predecessor = next;
+        }
+    }
+
     public Node getMyNode() {
         return myNode;
     }

@@ -283,16 +283,13 @@ public class ChordEngine extends ChordClient {
         Node myPred = fingerTable.getPredecessor();
         Node mySucc = fingerTable.getSuccessor();
 
-        //Remove exiting node
-        fingerTable.removeFailedNode(exitingNode);
-
         //Handle predecessor network exiting adding its predecessor as my predecessor
         if (predNode != null && myPred.equals(exitingNode)){
             this.notifyIncoming(predNode);
         }
         //Handle successor network exiting adding its successor to my successor list
         else if (succNode != null && mySucc.equals(exitingNode)){
-            fingerTable.setSuccessor(succNode);
+            fingerTable.substitute(mySucc, succNode);
         }
     }
 
