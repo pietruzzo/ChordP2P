@@ -214,13 +214,13 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public void closeNetwork() {
+    public synchronized void closeNetwork() {
         this.doRoutines = false;
         comLayer.closeCommLayer(fingerTable.getPredecessor(), fingerTable.getMyNode(), fingerTable.getSuccessor());
         try {
-            synchronized (this) {
+
                 this.wait(2000);
-            }
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
