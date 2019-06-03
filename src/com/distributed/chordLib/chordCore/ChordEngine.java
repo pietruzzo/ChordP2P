@@ -257,7 +257,14 @@ public class ChordEngine extends ChordClient {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        chordCallback.notifyResponsabilityChange();
+                        synchronized (new Object()) {
+                            try {
+                                wait(Chord.ROUTINE_PERIOD);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            chordCallback.notifyResponsabilityChange();
+                        }
                     }
                 }).start();
 
