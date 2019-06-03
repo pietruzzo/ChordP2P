@@ -1,3 +1,4 @@
 Manifest-Version: 1.0
-Main-Class: com.distributed.chordApp.cooperativemirroring.app.Server
+Main-Class: com.distributed.chordApp.cooperativemirroring.server.Serve
+ r
 

@@ -302,23 +302,24 @@ public class ChordEngine extends ChordClient {
                 checkPredecessor();
                 System.out.println("End Routine:---");
                 fingerTable.printFingerTable();
-            } catch (CommunicationFailureException e) {
-                System.out.println("Routine action failed, retry in 2 seconds");
-            } catch (TimeoutReachedException e) {
-                //Consider as failed node
-                System.out.println("Routine actions failed, removing not responding node");
-                fingerTable.removeFailedNode(new Node(e.getWaitingNode(), hash.getSHA1(e.getWaitingNode())));
-            } catch (NoSuccessorsExceptions e) {
-                this.closeNetwork();
-            }
 
-            try {
                 if (doRoutines) {
                     synchronized (this) {
                         this.wait(ROUTINE_PERIOD);
                     }
                 }
-            } catch (Exception e) {
+            } catch (TimeoutReachedException e) {
+                //Consider as failed node
+                System.out.println("Routine actions failed, removing not responding node");
+                try {
+                    fingerTable.removeFailedNode(new Node(e.getWaitingNode(), hash.getSHA1(e.getWaitingNode())));
+                } catch (NoSuccessorsExceptions e1){
+                    closeNetwork();
+                }
+            } catch (NoSuccessorsExceptions e) {
+                this.closeNetwork();
+            }
+            catch (Exception e) {
                 System.out.println(e.getMessage());
                 e.printStackTrace();
                 System.out.println("Routine actions failed, retry...");
