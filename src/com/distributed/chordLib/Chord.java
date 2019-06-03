@@ -22,6 +22,7 @@ public interface Chord {
     int DEFAULT_RETRY = 5; //number of retrial lookup in case of failures (it can mask transient failures)
     int DEFAULT_CHORD_MODULE = 20; //Expressed in bit length
     int ROUTINE_PERIOD = 20000;
+    int MESSAGE_PASSING_TIMEOUT = 10000;
 
     //endregion
 

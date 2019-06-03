@@ -174,10 +174,16 @@ public class ChordEngine extends ChordClient {
 
 
     @Override
-    public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException {
+    public String lookupKey(String key) throws CommunicationFailureException, TimeoutReachedException, NoSuccessorsExceptions {
         Hash hashedKey = hash.getSHA1(key); //Get hash of the key for lookup
         String response = null;
-        for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
+
+        //Throws Exception if network is closed
+        if (!doRoutines) {
+            throw new NoSuccessorsExceptions();
+        }
+
+        for (int i = 0; i < Chord.DEFAULT_RETRY; i++) { //Retry lookup Chord.DEFAULT_RETRY times
             try {
                 response = this.findSuccessor(hashedKey).getIP();
             } catch (TimeoutReachedException | CommunicationFailureException e){
@@ -199,9 +205,15 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException {
+    public String lookupKeyBasic(String key) throws CommunicationFailureException, TimeoutReachedException, NoSuccessorsExceptions {
         Hash hashedKey = hash.getSHA1(key); //Get hash of the key for lookup
         String response = null;
+
+        //Throws Exception if network is closed
+        if (!doRoutines) {
+            throw new NoSuccessorsExceptions();
+        }
+
         for (int i = 0; i < Chord.DEFAULT_RETRY-1; i++) { //Retry lookup Chord.DEFAULT_RETRY times
             try {
                 response = this.findSuccessorB(hashedKey).getIP();
@@ -292,7 +304,6 @@ public class ChordEngine extends ChordClient {
         //Handle successor network exiting adding its successor to my successor list
         else if (succNode != null && mySucc.equals(exitingNode)){
             fingerTable.substitute(mySucc, succNode);
-
         }
     }
 

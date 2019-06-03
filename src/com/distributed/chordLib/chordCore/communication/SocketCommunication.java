@@ -1,5 +1,6 @@
 package com.distributed.chordLib.chordCore.communication;
 
+import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.chordCore.ChordClient;
 import com.distributed.chordLib.chordCore.Node;
 import com.distributed.chordLib.chordCore.communication.messages.*;
@@ -20,9 +21,7 @@ import static com.distributed.chordLib.chordCore.HashFunction.*;
 
 public class SocketCommunication implements CommCallInterface, SocketIncomingHandling {
 
-    public static final int REQUEST_TIMEOUT = 10000;
-    private static final int CORE_POOL_SIZE = 2;
-    private static final int CORE_MAX_POOL_SIZE = 20;
+    public static final int REQUEST_TIMEOUT = Chord.MESSAGE_PASSING_TIMEOUT;
     private final int socketPort;
 
     //List of client established connections
