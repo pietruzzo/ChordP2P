@@ -306,14 +306,16 @@ public class ChordEngine extends ChordClient {
         //Evita che un notify incoming intervenga a metà
         synchronized (this) {
             try {
-                wait(500);
+                wait(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             if (fingerTable.getAllSuccessors().isEmpty()) {
-                new Thread(() -> closeNetwork()).start();
+                    this.doRoutines = false;
+                    comLayer.closeCommLayer();
+
+                }
             }
-        }
     }
 
     /**
