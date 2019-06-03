@@ -85,12 +85,10 @@ public class ClientHandlerThread implements Runnable
 
         result = this.resourcesManager.depositResource(resource);
 
-        if(result)
-        {
+        if(result) {
             this.hostSettings.verboseInfoLog("resource: " + resource.getResourceID() + " successfully deposited on the current host", HostSettings.CLIENT_HANDLER_CALLER,false);
         }
-        else
-        {
+        else {
             this.hostSettings.verboseInfoLog("unable to deposit resource: " + resource.getResourceID() + " on the current host ", HostSettings.CLIENT_HANDLER_CALLER,true);
         }
 

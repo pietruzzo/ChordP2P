@@ -6,6 +6,7 @@ import com.distributed.chordApp.cooperativemirroring.server.core.Host;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 
 public class ServerView extends JFrame {
     private Host host = null;
@@ -112,9 +113,9 @@ public class ServerView extends JFrame {
                 if(choice == 0){
                     try {
                         host.shutdownHost();
-                    } catch (SocketManagerException e) {
+                    } catch (IOException e) {
                         updateText(e.getMessage());
-                        updateMessage("Unable to shut-down host", true);
+                        updateMessage("Unable to shut-down host : " + e.getMessage(), true);
                     }
                 }
             }

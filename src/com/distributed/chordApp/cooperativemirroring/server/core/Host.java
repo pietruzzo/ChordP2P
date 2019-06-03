@@ -76,6 +76,11 @@ public class Host implements Runnable, ChordCallback
 
         this.chordEntryPoint.closeNetwork();
 
+        if(this.resourcesManager.getResources().isEmpty()){
+            this.hostSettings.verboseInfoLog("chord network leaved" , HostSettings.HOST_CALLER,false);
+            return ;
+        }
+
         this.hostSettings.verboseInfoLog("chord network leaved, sending the host resources to a shallop host ..." , HostSettings.HOST_CALLER,false);
 
         if(!this.hostSettings.hasShallopHost()) {
@@ -113,8 +118,7 @@ public class Host implements Runnable, ChordCallback
 
             this.hostSettings.verboseInfoLog("response for the resource: " + resource.getResourceID() + " arrived from the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
 
-            if(response.getRequestPerformedSuccessfully())
-            {
+            if(response.getRequestPerformedSuccessfully()) {
                 this.hostSettings.verboseInfoLog("resource: " + resource.getResourceID() + " deposited successfully on the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
             }
             else {
@@ -227,33 +231,19 @@ public class Host implements Runnable, ChordCallback
     }
 
     /**
-     * Method used for exiting the blocking condition of the server socket
-     */
-    private synchronized void snakeOut() throws SocketManagerException {
-        this.hostSettings.mute();
-        //Sendinding a false request to the server in order to not block it
-        SocketManager socket = new SocketManager(this.hostSettings.getHostIP(), this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES);
-        socket.connect();
-        RequestMessage closingRequest = new RequestMessage(this.hostSettings.getHostIP(), this.hostSettings.getHostPort(), Integer.toString(Integer.MIN_VALUE));
-        socket.post(closingRequest);
-        socket.get();
-        socket.disconnect();
-        this.hostSettings.talkative();
-    }
-
-    /**
      * Method used for permanently shutting down a host
      * (it cannot be restarted anyhow)
      * @return
      */
-    public synchronized void shutdownHost() throws SocketManagerException {
+    public synchronized void shutdownHost() throws IOException {
         if(this.hostShuttedDown){
             return ;
         }
 
         this.hostSettings.verboseInfoLog("shutting down the current host (it can't be restarted) ..." , HostSettings.HOST_CALLER,false);
         this.hostShuttedDown = true;
-        this.snakeOut();
+
+        this.serverSocket.close();
     }
 
     @Override
@@ -307,7 +297,9 @@ public class Host implements Runnable, ChordCallback
 
                     ResponseMessage responseMessage = (ResponseMessage) destinationSocket.get();
 
-                    this.hostSettings.verboseInfoLog("response for resource: " + resource.getResourceID() + " arrived from host: " + destinationAddress  + " disconnecting from destination host ...", HostSettings.HOST_CALLER,false);
+                    this.hostSettings.verboseInfoLog("response for resource: " + resource.getResourceID() + " arrived from host: " + destinationAddress  ,HostSettings.HOST_CALLER, false);
+                    this.hostSettings.verboseInfoLog("response: " + responseMessage.conciseToString(), HostSettings.HOST_CALLER, false);
+                    this.hostSettings.verboseInfoLog("disconnecting from destination host ...", HostSettings.HOST_CALLER,false);
 
                     destinationSocket.disconnect();
 
@@ -349,9 +341,7 @@ public class Host implements Runnable, ChordCallback
 
     @Override
     @SuppressWarnings("deprecation")
-    protected void finalize() {
-
-        //this.hostHandlerThread.interrupt();
+    public void finalize() { ;
 
         try {
             this.leaveChordNetwork();

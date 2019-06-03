@@ -73,22 +73,18 @@ public class SocketManager {
         }
 
         try {
-            socket.setSoTimeout(this.connectionTimeout_ms);
+            //socket.setSoTimeout(this.connectionTimeout_ms);
             socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));
             connectionEstablished = true;
 
         } catch (IOException e) {
-            exceptionMessage = SocketManagerExceptionCode.CONNECTION_BAD_PARAMETERS.getCode();
+            exceptionMessage = e.getMessage();
             connectionEstablished = false;
         }
 
         if(!connectionEstablished) {
-            String message = SocketManagerExceptionCode.CONNECTION_MAXIMUM_RETRIES_REACHED + "\n" ;
 
-            message += SocketManagerExceptionCode.CONNECTION_TIMEOUT_REACHED + "\n";
-            message += exceptionMessage;
-
-            throw new SocketManagerException(message);
+            throw new SocketManagerException(exceptionMessage);
         }
         else {
             this.setDestinationSocket(socket);
@@ -105,17 +101,11 @@ public class SocketManager {
         }
 
         ObjectOutputStream oos = null;
-        boolean oosEstablished = false;
 
         try {
             oos = new ObjectOutputStream(this.destinationSocket.getOutputStream());
-            oosEstablished = true;
         } catch (IOException e) {
-            oosEstablished = false;
-        }
-
-        if(!oosEstablished) {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_OPEN_OUTPUT_STREAM.getCode());
+            throw new SocketManagerException(e.getMessage());
         }
 
         this.setOutStream(oos);
@@ -126,38 +116,22 @@ public class SocketManager {
      */
     private void openInputStream() throws SocketManagerException {
 
-        if(this.destinationSocket == null)
-        {
+        if(this.destinationSocket == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_NOT_ESTABLISHED.getCode());
         }
 
-        if(this.outStream == null)
-        {
+        if(this.outStream == null) {
             throw new SocketManagerException(SocketManagerExceptionCode.OUTPUT_STREAM_NOT_OPENED_YET.getCode());
         }
 
         ObjectInputStream ois = null;
-        boolean oisEstablished = false;
 
-        for(int i = this.connectionRetries; i > 0; i--)
-        {
-            try {
-                ois = new ObjectInputStream(this.destinationSocket.getInputStream());
-                oisEstablished = true;
-            } catch (IOException e) {
-               oisEstablished = false;
-            }
-
-            if(oisEstablished)
-            {
-                i = 0;
-            }
+        try {
+            ois = new ObjectInputStream(this.destinationSocket.getInputStream());
+        } catch (IOException e) {
+            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_OPEN_INPUT_STREAM.getCode() + " : " + e.getMessage());
         }
 
-        if(!oisEstablished)
-        {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_OPEN_INPUT_STREAM.getCode());
-        }
 
         this.setInStream(ois);
     }
@@ -199,13 +173,13 @@ public class SocketManager {
         try {
             this.outStream.flush();
         } catch (IOException e) {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_FLUSH_OUTPUT_STREAM.getCode());
+            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_FLUSH_OUTPUT_STREAM.getCode() + " : " + e.getMessage());
         }
 
         try {
             this.outStream.writeObject(message);
         } catch (IOException e) {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_WRITE_MESSAGE_ON_OUTPUT_STREAM.getCode());
+            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_WRITE_MESSAGE_ON_OUTPUT_STREAM.getCode() + " : " + e.getMessage());
         }
 
         send = true;
@@ -231,7 +205,7 @@ public class SocketManager {
         try {
             request = (Serializable) this.inStream.readObject();
         } catch (IOException | ClassNotFoundException e ) {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_READ_OBJECT_FROM_INPUT_STREAM.getCode());
+            throw new SocketManagerException( e.getMessage() + e.getStackTrace() );
         }
 
         return request;
@@ -241,8 +215,7 @@ public class SocketManager {
      * Method used for closing an open socket connection
      * @throws SocketManagerException
      */
-    public void disconnect() throws SocketManagerException
-    {
+    public void disconnect() throws SocketManagerException {
         if(this.destinationSocket == null)
         {
             return ;
@@ -252,21 +225,21 @@ public class SocketManager {
             this.outStream.close();
             this.setOutStream(null);
         } catch (IOException e) {
-           throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_CLOSE_OUTPUT_STREAM.getCode());
+           throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_CLOSE_OUTPUT_STREAM.getCode() + " : " + e.getMessage());
         }
 
         try {
             this.inStream.close();
             this.setInStream(null);
         } catch (IOException e) {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_CLOSE_INPUT_STREAM.getCode());
+            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_CLOSE_INPUT_STREAM.getCode() + " : " + e.getMessage());
         }
 
         try {
             this.destinationSocket.close();
             this.setDestinationSocket(null);
         } catch (IOException e) {
-            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_CLOSE_CONNECTION.getCode());
+            throw new SocketManagerException(SocketManagerExceptionCode.UNABLE_TO_CLOSE_CONNECTION.getCode() + " : " +e.getMessage());
         }
 
     }

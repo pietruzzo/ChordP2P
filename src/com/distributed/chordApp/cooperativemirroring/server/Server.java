@@ -10,6 +10,7 @@ import com.distributed.chordApp.cooperativemirroring.server.utilities.ChordSetti
 import com.distributed.chordApp.cooperativemirroring.server.view.ServerView;
 import com.distributed.chordApp.cooperativemirroring.common.utilities.SystemUtilities;
 import com.distributed.chordLib.Chord;
+import com.distributed.chordLib.exceptions.CommunicationFailureException;
 
 import javax.swing.*;
 import java.io.BufferedReader;
@@ -94,7 +95,7 @@ public class Server {
             hostThreadPair = new AbstractMap.SimpleEntry<>(host, t1);
 
             if(ChordSettingsLoader.getVerboseOperatingMode() && ChordSettingsLoader.getEnableLogShellGUI()){
-                 new ServerView(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, host, textArea);
+                 logShellGUI = new ServerView(Server.class.getSimpleName() + " @" + serverIP + ":" + serverPort, host, textArea);
             }
             else{
                 serverConsole();
@@ -115,9 +116,7 @@ public class Server {
                 e.printStackTrace();
             }
 
-        } catch (IOException e) {
-            System.err.println("\nUnable to open connection");
-            t1.interrupt();
+        } catch (IOException | CommunicationFailureException e) {
             System.exit(1);
         }
 
@@ -160,7 +159,7 @@ public class Server {
                     goAhead = false ;
                     try {
                         hostThreadPair.getKey().shutdownHost();
-                    } catch (SocketManagerException e) {
+                    } catch (IOException e) {
                         System.err.println("\nUnable to close the server : " + e.getMessage());
                     }
 
