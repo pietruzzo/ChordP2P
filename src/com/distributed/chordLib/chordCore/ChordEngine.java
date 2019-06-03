@@ -99,7 +99,7 @@ public class ChordEngine extends ChordClient {
 
 
     @Override
-    protected synchronized void stabilize() {
+    protected void stabilize() {
         Node myN = fingerTable.getMyNode();
         Node succ; //Current successor
         Node sPred; //Predecessor of successor
@@ -109,7 +109,9 @@ public class ChordEngine extends ChordClient {
         List<Node> successors = fingerTable.getAllSuccessors();
         for (int j = 0; j < successors.size(); j++) {
             if (!successors.get(j).equals(myN) && !comLayer.isAlive(successors.get(j))){
-                fingerTable.removeFailedNode(successors.get(j));
+                synchronized (this) {
+                    fingerTable.removeFailedNode(successors.get(j));
+                }
             }
         }
 
@@ -242,7 +244,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public void notifyIncoming(Node predecessor) {
+    public synchronized void notifyIncoming(Node predecessor) {
 
         if (!fingerTable.successoIsFull() || fingerTable.getAllSuccessors().contains(fingerTable.getMyNode())){
             //Add node to successor list
@@ -279,7 +281,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public synchronized void handleVolountaryDeparture(Node exitingNode, @Nullable Node predNode, @Nullable Node succNode) {
+    public void handleVolountaryDeparture(Node exitingNode, @Nullable Node predNode, @Nullable Node succNode) {
         Node myPred = fingerTable.getPredecessor();
         Node mySucc = fingerTable.getSuccessor();
 
@@ -290,12 +292,28 @@ public class ChordEngine extends ChordClient {
         //Handle successor network exiting adding its successor to my successor list
         else if (succNode != null && mySucc.equals(exitingNode)){
             fingerTable.substitute(mySucc, succNode);
+
         }
     }
 
     @Override
     public Hash getkey(String ip) {
         return hash.getSHA1(ip);
+    }
+
+    private void handleNoMoreSuccessors(){
+
+        //Evita che un notify incoming intervenga a metà
+        synchronized (this) {
+            try {
+                wait(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (fingerTable.getAllSuccessors().isEmpty()) {
+                new Thread(() -> closeNetwork()).start();
+            }
+        }
     }
 
     /**
@@ -325,7 +343,7 @@ public class ChordEngine extends ChordClient {
                 try {
                     fingerTable.removeFailedNode(new Node(e.getWaitingNode(), hash.getSHA1(e.getWaitingNode())));
                 } catch (NoSuccessorsExceptions e1){
-                    closeNetwork();
+                    handleNoMoreSuccessors();
                 }
             } catch (CommunicationFailureException e){
                 if(e.getN()!= null) {
@@ -335,12 +353,12 @@ public class ChordEngine extends ChordClient {
                     try {
                         fingerTable.removeFailedNode(failed);
                     } catch (NoSuccessorsExceptions e1) {
-                        closeNetwork();
+                        handleNoMoreSuccessors();
                     }
                 }
             }
             catch (NoSuccessorsExceptions e) {
-                this.closeNetwork();
+                handleNoMoreSuccessors();
             }
             catch (Exception e) {
                 System.out.println(e.getMessage());
