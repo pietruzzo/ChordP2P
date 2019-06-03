@@ -99,7 +99,7 @@ public class ChordEngine extends ChordClient {
 
 
     @Override
-    protected void stabilize() {
+    protected synchronized void stabilize() {
         Node myN = fingerTable.getMyNode();
         Node succ; //Current successor
         Node sPred; //Predecessor of successor
@@ -244,7 +244,7 @@ public class ChordEngine extends ChordClient {
     @Override
     public void notifyIncoming(Node predecessor) {
 
-        if (!fingerTable.successoIsFull() && fingerTable.getAllSuccessors().contains(fingerTable.getMyNode())){
+        if (!fingerTable.successoIsFull() || fingerTable.getAllSuccessors().contains(fingerTable.getMyNode())){
             //Add node to successor list
             fingerTable.setSuccessor(predecessor);
         }
@@ -279,7 +279,7 @@ public class ChordEngine extends ChordClient {
     }
 
     @Override
-    public void handleVolountaryDeparture(Node exitingNode, @Nullable Node predNode, @Nullable Node succNode) {
+    public synchronized void handleVolountaryDeparture(Node exitingNode, @Nullable Node predNode, @Nullable Node succNode) {
         Node myPred = fingerTable.getPredecessor();
         Node mySucc = fingerTable.getSuccessor();
 
