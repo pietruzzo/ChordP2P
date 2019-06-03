@@ -1,3 +1,4 @@
 <ChordSettings>
     <BootstrapServer>192.168.43.59</BootstrapServer>
+    <ShallopHostIP>192.168.43.59</ShallopHostIP>
 </ChordSettings>

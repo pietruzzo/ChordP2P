@@ -187,9 +187,11 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
     }
 
     @Override
-    public void handleUnexpectedClosure(String node) {
+    public synchronized void handleUnexpectedClosure(String node) {
         //Close SocketNode and remove any references
-        socketNodes.get(node).close();
+        if(socketNodes.get(node) != null){
+            socketNodes.get(node).close();
+        }
         socketNodes.remove(node);
     }
 

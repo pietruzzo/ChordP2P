@@ -16,12 +16,14 @@ public class SocketNode {
     private Thread socketThread;
     private SocketIncomingHandling socketCommCallback;
     private boolean incoming;
+    private boolean threadAlive;
 
     public SocketNode(String IP,Socket endpoint, SocketIncomingHandling callback, boolean incoming) {
         this.endpoint = endpoint;
         this.nodeIP = IP;
         this.socketCommCallback = callback;
         this.incoming = incoming;
+        this.threadAlive = true;
 
         try {
             out = new ObjectOutputStream(endpoint.getOutputStream());
@@ -54,7 +56,7 @@ public class SocketNode {
     public void close() {
         try {
             endpoint.close();
-            socketThread.interrupt();
+            threadAlive = false;
         } catch (IOException e) {
             System.err.println("Unable to close socket " + nodeIP +"...");
             e.printStackTrace();
@@ -88,15 +90,15 @@ public class SocketNode {
 
                 Object message = null;
                 try {
-                    while (true) {
+                    while (threadAlive) {
                         message = readSocket();
                         System.out.println("Read message " + message.toString() + "[id: " + ((Message) message).getId() + "]" + " from " + endpoint.getInetAddress().toString());
                         socketCommCallback.handleNewMessage((Message) message, getThis());
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    threadAlive = false;
                     socketCommCallback.handleUnexpectedClosure(nodeIP);
-                    System.out.println("Error in reading from socket, probably closed");
                     System.out.println("Closing socket " + nodeIP);
                 }
         }
