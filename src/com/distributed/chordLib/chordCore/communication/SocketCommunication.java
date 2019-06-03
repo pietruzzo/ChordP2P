@@ -104,13 +104,13 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
 
         //If nodes is empty, close all
         if (nodes == null || nodes.length == 0) {
+            for (SocketNode sn: socketNodes.values()) {
+                sn.close();
+            }
             try {
                 serverSocket.close(); //it will throw SocketException on accept that will stop the thread
             } catch (IOException e) {
                 System.out.println("Closing socketserver");
-            }
-            for (SocketNode sn: socketNodes.values()) {
-                sn.close();
             }
             socketNodes = new HashMap<>();
         }
@@ -158,7 +158,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         }
         //Contact successor
         if (successor != null && !successor.equals(me)) {
-            SocketNode successorSocket = getSocketNode(predecessor.getIP());
+            SocketNode successorSocket = getSocketNode(successor.getIP());
             successorSocket.writeSocket(message);
         }
 
