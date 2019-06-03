@@ -322,13 +322,15 @@ public class ChordEngine extends ChordClient {
                     closeNetwork();
                 }
             } catch (CommunicationFailureException e){
-                Node failed = new Node(e.getN(), hash.getSHA1(e.getN()));
-                //Consider as failed node
-                System.out.println("Routine actions failed, removing not responding node");
-                try {
-                    fingerTable.removeFailedNode(failed);
-                } catch (NoSuccessorsExceptions e1){
-                    closeNetwork();
+                if(e.getN()!= null) {
+                    Node failed = new Node(e.getN(), hash.getSHA1(e.getN()));
+                    //Consider as failed node
+                    System.out.println("Routine actions failed, removing not responding node");
+                    try {
+                        fingerTable.removeFailedNode(failed);
+                    } catch (NoSuccessorsExceptions e1) {
+                        closeNetwork();
+                    }
                 }
             }
             catch (NoSuccessorsExceptions e) {
