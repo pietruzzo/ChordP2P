@@ -48,7 +48,7 @@ public class ClientController {
      */
     public ResponseMessage sendRequest(RequestMessage requestMessage) throws SocketManagerException {
 
-        SocketManager server = new SocketManager(this.settings.getReferenceServerIP(), this.settings.getReferenceServerPort(), 5000, 5);
+        SocketManager server = new SocketManager(this.settings.getReferenceServerIP(), this.settings.getReferenceServerPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, true);
 
         server.connect();
         ResponseMessage response = null;

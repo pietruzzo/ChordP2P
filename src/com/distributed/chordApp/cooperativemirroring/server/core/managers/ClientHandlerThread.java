@@ -39,7 +39,7 @@ public class ClientHandlerThread implements Runnable
     /*Setter methods*/
     private void setHostSettings(HostSettings hostSettings){this.hostSettings = hostSettings; }
     private void setClient(Socket client) throws SocketManagerException {
-        this.client = new SocketManager(client, SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES);
+        this.client = new SocketManager(client, SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
 
         this.client.connect();
     }
@@ -240,7 +240,7 @@ public class ClientHandlerThread implements Runnable
 
                 this.hostSettings.verboseInfoLog("trying to open a channel with host: " + nextHostAddress + " ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-                SocketManager nextHost = new SocketManager(nextHostAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES);
+                SocketManager nextHost = new SocketManager(nextHostAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
                 nextHost.connect();
 
                 this.hostSettings.verboseInfoLog("opened a connection with the host: " + nextHostAddress , HostSettings.CLIENT_HANDLER_CALLER,false);

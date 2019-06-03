@@ -257,7 +257,7 @@ public class ChordEngine extends ChordClient {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        synchronized (new Object()) {
+                        synchronized (this) {
                             try {
                                 wait(Chord.ROUTINE_PERIOD);
                             } catch (InterruptedException e) {

@@ -15,7 +15,7 @@ import java.net.Socket;
  */
 public class SocketManager {
 
-    public static final Integer DEFAULT_CONNECTION_TIMEOUT_MS = 5000;
+    public static final Integer DEFAULT_CONNECTION_TIMEOUT_MS = 7000;
     public static final Integer DEFAULT_CONNECTION_RETRIES = 5;
 
     private String destinationIP = null;
@@ -27,24 +27,32 @@ public class SocketManager {
     private ObjectOutputStream outStream = null;
     private ObjectInputStream inStream = null;
 
+    private boolean enableTimeout = false;
+
     public SocketManager(String destinationIP,
                          Integer destinationPort,
                          Integer connectionTimeout_ms,
-                         Integer connectionRetries)
+                         Integer connectionRetries,
+                         boolean enableTimeout)
     {
         this.setDestinationIP(destinationIP);
         this.setDestinationPort(destinationPort);
         this.setConnectionTimeout_ms(connectionTimeout_ms);
         this.setConnectionRetries(connectionRetries);
+
+        this.enableTimeout = enableTimeout;
     }
 
     public SocketManager(Socket destinationSocket,
                          Integer connectionTimeout_ms,
-                         Integer connectionRetries)
+                         Integer connectionRetries,
+                         boolean enableTimeout)
     {
         this.setDestinationSocket(destinationSocket);
         this.setConnectionTimeout_ms(connectionTimeout_ms);
         this.setConnectionRetries(connectionRetries);
+
+        this.enableTimeout = enableTimeout;
     }
 
     //Setters
@@ -65,30 +73,25 @@ public class SocketManager {
      */
     private void openConnection() throws SocketManagerException {
         Socket socket = new Socket();
-        String exceptionMessage = null;
-        boolean connectionEstablished = true;
 
         if(this.destinationSocket != null) {
             throw new SocketManagerException(SocketManagerExceptionCode.CONNECTION_ALREADY_ESTABLISHED.getCode());
         }
 
         try {
-            //socket.setSoTimeout(this.connectionTimeout_ms);
-            socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));
-            connectionEstablished = true;
+            
+            if(enableTimeout){
+                socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort),  this.connectionTimeout_ms);
+            }else{
+                socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));
+            }
+
 
         } catch (IOException e) {
-            exceptionMessage = e.getMessage();
-            connectionEstablished = false;
+            throw new SocketManagerException(e.getMessage());
         }
 
-        if(!connectionEstablished) {
-
-            throw new SocketManagerException(exceptionMessage);
-        }
-        else {
-            this.setDestinationSocket(socket);
-        }
+        this.setDestinationSocket(socket);
     }
 
     /**

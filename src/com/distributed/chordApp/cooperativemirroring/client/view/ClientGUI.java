@@ -117,7 +117,7 @@ public class ClientGUI extends JFrame {
         this.menuPanel.setLayout(new GridLayout(1, 2));
 
         this.depositButton = new JButton("Deposit Resource");
-        this.depositButton.addActionListener(new ActionListener() {
+        this.depositButton.addActionListener(new ActionListener(){
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
 

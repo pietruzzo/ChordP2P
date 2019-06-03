@@ -98,7 +98,8 @@ public class Host implements Runnable, ChordCallback
         destinationHostSocket = new SocketManager(this.hostSettings.getShallopHostIP(),
                 this.hostSettings.getShallopHostPort(),
                 SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS,
-                SocketManager.DEFAULT_CONNECTION_RETRIES);
+                SocketManager.DEFAULT_CONNECTION_RETRIES,
+                false);
 
         destinationHostSocket.connect();
 
@@ -286,7 +287,7 @@ public class Host implements Runnable, ChordCallback
                 this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_CALLER,false);
 
                 try {
-                    SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES);
+                    SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
                     destinationSocket.connect();
 
                     this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_CALLER,false);
