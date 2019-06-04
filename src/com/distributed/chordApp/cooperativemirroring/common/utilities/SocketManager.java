@@ -79,8 +79,9 @@ public class SocketManager {
         }
 
         try {
-            
+
             if(enableTimeout){
+                socket.setSoTimeout(this.connectionTimeout_ms);
                 socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort),  this.connectionTimeout_ms);
             }else{
                 socket.connect(new InetSocketAddress(this.destinationIP, this.destinationPort));

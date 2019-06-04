@@ -8,6 +8,7 @@ import com.distributed.chordApp.cooperativemirroring.server.utilities.ChordSetti
 import com.distributed.chordApp.cooperativemirroring.common.utilities.SystemUtilities;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.Serializable;
 
 /**
@@ -120,12 +121,27 @@ public class HostSettings implements Serializable
             throw new HostSettingException(HostSettingsExceptionCode.INVALID_SHALLOP_HOST_IP.getCode());
         }
 
-        if(newShallopHostPort <= 0) {
+        if(!SystemUtilities.isValidPort(newShallopHostPort)) {
             throw new HostSettingException(HostSettingsExceptionCode.INVALID_SHALLOP_HOST_PORT.getCode());
         }
 
-        this.setShallopHostIP(shallopHostIP);
-        this.setShallopHostPort(shallopHostPort);
+        this.setShallopHostIP(newShallopHostIP);
+        this.setShallopHostPort(newShallopHostPort);
+    }
+
+    /**
+     * Method used to decide if the passed host is the current host
+     * @param ip
+     * @return
+     */
+    public boolean isThisHost(String ip){
+        boolean result = false ;
+
+        if((ip.equals(this.hostIP)) || (ip.equals("127.0.0.1")) || (ip.equals("127.0.1.1"))){
+            result = true;
+        }
+
+        return result;
     }
 
     /**
@@ -135,10 +151,10 @@ public class HostSettings implements Serializable
      * @return
      */
     public Boolean hasShallopHost() {
-        boolean result = false ;
+        boolean result = true ;
 
-        if(!this.hostIP.equals(this.shallopHostIP)) {
-            result = true;
+        if(this.isThisHost(this.shallopHostIP)){
+            result = false;
         }
 
 

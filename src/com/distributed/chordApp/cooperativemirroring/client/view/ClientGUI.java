@@ -1,8 +1,8 @@
 package com.distributed.chordApp.cooperativemirroring.client.view;
 
 import com.distributed.chordApp.cooperativemirroring.client.controller.ClientController;
+import com.distributed.chordApp.cooperativemirroring.client.utilities.ClientException;
 import com.distributed.chordApp.cooperativemirroring.client.utilities.ClientSettings;
-import com.distributed.chordApp.cooperativemirroring.common.Resource;
 import com.distributed.chordApp.cooperativemirroring.common.messages.RequestMessage;
 import com.distributed.chordApp.cooperativemirroring.common.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.common.utilities.SystemUtilities;
@@ -10,8 +10,6 @@ import com.distributed.chordApp.cooperativemirroring.common.utilities.exceptions
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * Class used for representing a terminal of the client side of the application
@@ -33,6 +31,7 @@ public class ClientGUI extends JFrame {
     private JPanel menuPanel = null;
     private JButton depositButton = null;
     private JButton retriveButton = null;
+    private JButton changeServerButton = null;
 
     //Notification panel
     private JPanel notificationPanel = null;
@@ -114,98 +113,110 @@ public class ClientGUI extends JFrame {
         }
 
         this.menuPanel = new JPanel();
-        this.menuPanel.setLayout(new GridLayout(1, 2));
+        this.menuPanel.setLayout(new GridLayout(1, 3));
 
         this.depositButton = new JButton("Deposit Resource");
-        this.depositButton.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
+        this.depositButton.addActionListener(actionEvent -> {
 
-                String resource = JOptionPane.showInputDialog(null, "Insert the new resource value: ", "Deposit Resource", JOptionPane.INFORMATION_MESSAGE);
+            String resource = JOptionPane.showInputDialog(null, "Insert the new resource value: ", "Deposit Resource", JOptionPane.INFORMATION_MESSAGE);
 
-                if(resource == null)
-                    return;
+            if(resource == null)
+                return;
 
-                if(!SystemUtilities.isValidResourceID(resource)){
-                    updateLog(settings.clientInfoString("invalid resource"));
-                    updateNotification("invalid resource", true);
-                    return;
-                }
-
-                updateLog(settings.clientInfoString("building a new request ..."));
-                RequestMessage requestMessage = controller.buildRequest(resource, true);
-                updateLog(settings.clientInfoString("request built: " + requestMessage.conciseToString()));
-                updateNotification("request send", false);
-                updateLog(settings.clientInfoString("new request created, trying to send the request to server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort()));
-                requestArea.setText(requestMessage.toString());
-
-                ResponseMessage responseMessage = null;
-                try {
-                    responseMessage = controller.sendRequest(requestMessage);
-                } catch (SocketManagerException e) {
-                    updateNotification("Unable to send request " + e.getMessage(), true);
-                }
-
-                if(responseMessage != null){
-                    responseArea.setBackground(Color.WHITE);
-                    updateLog(settings.clientInfoString("response arrived from server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort() + " > " + responseMessage.conciseToString()));
-                    updateNotification("response arrived", false);
-
-                    responseArea.setText(responseMessage.toString());
-                }else{
-                    responseArea.setBackground(Color.RED);
-                    responseArea.setText("NO RESPONSE");
-                }
-
+            if(!SystemUtilities.isValidResourceID(resource)){
+                updateLog(settings.clientInfoString("invalid resource"));
+                updateNotification("invalid resource", true);
+                return;
             }
+
+            updateLog(settings.clientInfoString("building a new request ..."));
+            RequestMessage requestMessage = controller.buildRequest(resource, true);
+            updateLog(settings.clientInfoString("request built: " + requestMessage.conciseToString()));
+            updateNotification("request send", false);
+            updateLog(settings.clientInfoString("new request created, trying to send the request to server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort()));
+            requestArea.setText(requestMessage.toString());
+
+            ResponseMessage responseMessage = null;
+            try {
+                responseMessage = controller.sendRequest(requestMessage);
+            } catch (SocketManagerException e) {
+                updateNotification("Unable to send request " + e.getMessage(), true);
+            }
+
+            if(responseMessage != null){
+                responseArea.setBackground(Color.WHITE);
+                updateLog(settings.clientInfoString("response arrived from server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort() + " > " + responseMessage.conciseToString()));
+                updateNotification("response arrived", false);
+
+                responseArea.setText(responseMessage.toString());
+            }else{
+                responseArea.setBackground(Color.RED);
+                responseArea.setText("NO RESPONSE");
+            }
+
         });
 
         this.retriveButton = new JButton("Retrive Resource");
-        this.retriveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                String resource = JOptionPane.showInputDialog(null, "Insert resource ID: ", "Retrieve Resource", JOptionPane.INFORMATION_MESSAGE);
+        this.retriveButton.addActionListener(actionEvent -> {
+            String resource = JOptionPane.showInputDialog(null, "Insert resource ID: ", "Retrieve Resource", JOptionPane.INFORMATION_MESSAGE);
 
-                if(resource == null) {
-                    return;
-                }
-
-                if(!SystemUtilities.isValidResourceID(resource)){
-                    updateLog(settings.clientInfoString("invalid resource ID"));
-                    updateNotification("invalid resource id", true);
-                    return ;
-                }
-
-
-                updateLog(settings.clientInfoString("building a new request ..."));
-                RequestMessage requestMessage = controller.buildRequest(resource, false);
-                updateLog(settings.clientInfoString("request built: " + requestMessage.conciseToString()));
-                updateNotification("request send", false);
-                updateLog(settings.clientInfoString("new request created, trying to send the request to server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort()));
-                requestArea.setText(requestMessage.toString());
-
-                ResponseMessage responseMessage = null;
-                try {
-                    responseMessage = controller.sendRequest(requestMessage);
-                } catch (SocketManagerException e) {
-                    updateNotification("Unable to send the request " + e.getMessage(), true);
-                }
-
-                if(responseMessage != null){
-                    updateLog(settings.clientInfoString("response arrived from server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort() + " > " + responseMessage.conciseToString()));
-                    updateNotification("response arrived", false);
-
-                    responseArea.setBackground(Color.WHITE);
-                    responseArea.setText(responseMessage.toString());
-                }else {
-                    responseArea.setBackground(Color.RED);
-                    responseArea.setText("NO RESPONSE");
-                }
+            if(resource == null) {
+                return;
             }
+
+            if(!SystemUtilities.isValidResourceID(resource)){
+                updateLog(settings.clientInfoString("invalid resource ID"));
+                updateNotification("invalid resource id", true);
+                return ;
+            }
+
+
+            updateLog(settings.clientInfoString("building a new request ..."));
+            RequestMessage requestMessage = controller.buildRequest(resource, false);
+            updateLog(settings.clientInfoString("request built: " + requestMessage.conciseToString()));
+            updateNotification("request send", false);
+            updateLog(settings.clientInfoString("new request created, trying to send the request to server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort()));
+            requestArea.setText(requestMessage.toString());
+
+            ResponseMessage responseMessage = null;
+            try {
+                responseMessage = controller.sendRequest(requestMessage);
+            } catch (SocketManagerException e) {
+                updateNotification("Unable to send the request " + e.getMessage(), true);
+            }
+
+            if(responseMessage != null){
+                updateLog(settings.clientInfoString("response arrived from server: " + settings.getReferenceServerIP() + ":" + settings.getReferenceServerPort() + " > " + responseMessage.conciseToString()));
+                updateNotification("response arrived", false);
+
+                responseArea.setBackground(Color.WHITE);
+                responseArea.setText(responseMessage.toString());
+            }else {
+                responseArea.setBackground(Color.RED);
+                responseArea.setText("NO RESPONSE");
+            }
+        });
+
+        this.changeServerButton = new JButton("Change destination server");
+        this.changeServerButton.addActionListener(actionEvent -> {
+            String newServerIP = JOptionPane.showInputDialog(null, "old server IP : " + settings.getReferenceServerIP() + "\nInsert the new one", "Change destination server IP", JOptionPane.WARNING_MESSAGE);
+
+            if(newServerIP == null){
+                return;
+            }
+
+            try {
+                settings.changeDestinatonServer(newServerIP, settings.getReferenceServerPort());
+                updateNotification("Destination server changed", false);
+            } catch (ClientException e) {
+                updateNotification(e.getMessage(), true);
+            }
+
         });
 
         this.menuPanel.add(this.depositButton);
         this.menuPanel.add(this.retriveButton);
+        this.menuPanel.add(this.changeServerButton);
     }
 
     /**
@@ -224,12 +235,9 @@ public class ClientGUI extends JFrame {
         this.notificationTextField.setBackground(Color.LIGHT_GRAY);
 
         this.tacitButton = new JButton("Tacit");
-        this.tacitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                notificationTextField.setText(" ");
-                notificationTextField.setBackground(Color.LIGHT_GRAY);
-            }
+        this.tacitButton.addActionListener(actionEvent -> {
+            notificationTextField.setText(" ");
+            notificationTextField.setBackground(Color.LIGHT_GRAY);
         });
 
         this.notificationPanel.add(this.notificationTextField, BorderLayout.CENTER);

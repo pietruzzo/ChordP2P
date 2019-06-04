@@ -69,7 +69,7 @@ public class SystemUtilities {
      * @return
      */
     public static synchronized boolean isValidPort(Integer port){
-        if(port < 1){
+        if((port == null) || (port < 1)){
             return  false;
         }
 
@@ -83,8 +83,11 @@ public class SystemUtilities {
      */
     public static synchronized Boolean isValidIP(String ip)
     {
+        if((ip == null) || (ip.isEmpty())){
+            return false;
+        }
 
-        Pattern pt = Pattern.compile("192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}");
+        Pattern pt = Pattern.compile("^192\\.168\\.[0-9]{1,3}\\.[0-9]{1,3}$");
         Matcher mt = pt.matcher(ip);
         Boolean found = mt.find();
 

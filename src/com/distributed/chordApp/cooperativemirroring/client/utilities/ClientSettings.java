@@ -1,6 +1,8 @@
 package com.distributed.chordApp.cooperativemirroring.client.utilities;
 
 import com.distributed.chordApp.cooperativemirroring.common.utilities.SystemUtilities;
+import com.distributed.chordApp.cooperativemirroring.server.core.settings.exceptions.HostSettingException;
+import com.distributed.chordApp.cooperativemirroring.server.core.settings.exceptions.HostSettingsExceptionCode;
 
 /**
  * Class that contains several utilities for the current Client
@@ -60,6 +62,19 @@ public class ClientSettings {
         else {
             System.out.println(infoString);
         }
+    }
+
+    public void changeDestinatonServer(String serverIP,Integer serverPort) throws ClientException {
+        if(!SystemUtilities.isValidIP(serverIP)){
+            throw new ClientException(ClientExceptionCode.INVALID_SERVER_IP.getCode());
+        }
+
+        if(!SystemUtilities.isValidPort(serverPort)){
+            throw new ClientException(ClientExceptionCode.INVALID_SERVER_PORT.getCode());
+        }
+
+        this.serverIP = serverIP;
+        this.serverPort = serverPort;
     }
 
     /*Getters*/

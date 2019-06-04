@@ -13,6 +13,7 @@ import com.distributed.chordLib.Chord;
 import com.distributed.chordLib.ChordBuilder;
 
 import com.distributed.chordLib.ChordCallback;
+import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -106,8 +107,7 @@ public class Host implements Runnable, ChordCallback
         this.hostSettings.verboseInfoLog("channel opened with the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
 
 
-        for(Resource resource : this.resourcesManager.getResources())
-        {
+        for(Resource resource : this.resourcesManager.getResources()) {
             RequestMessage request = new RequestMessage(this.hostSettings.getHostIP(), this.hostSettings.getHostPort(), resource);
 
             this.hostSettings.verboseInfoLog("created the exchanging request message for the resource: " + resource.getResourceID() + " to be send to the shallop host: " + shallopHostString , HostSettings.HOST_CALLER,false);
@@ -160,8 +160,7 @@ public class Host implements Runnable, ChordCallback
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         ThreadPoolExecutor executor = null;
 
         try {
@@ -250,6 +249,7 @@ public class Host implements Runnable, ChordCallback
     @Override
     public void notifyResponsabilityChange() {
         Boolean thisHost = false ;
+        boolean lookupFailure = false;
 
         this.hostSettings.verboseInfoLog("notified of responsability changes: verify the current host resources's ownership" , HostSettings.HOST_CALLER,false);
 
@@ -260,61 +260,75 @@ public class Host implements Runnable, ChordCallback
         for(Resource resource : this.resourcesManager.getResources()) {
             String destinationAddress = null;
             thisHost = false ;
+            lookupFailure = false;
 
             this.hostSettings.verboseInfoLog("verifying ownership of resource: " + resource.getResourceID() +" ..." , HostSettings.HOST_CALLER,false);
 
-            if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) {
-                destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
-            }
-            else{
-                destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
-            }
+            try{
 
-            if(destinationAddress.equals(this.getHostSettings().getHostIP()) || destinationAddress.equals("127.0.0.1") || destinationAddress.equals("127.0.1.1")) {
-                thisHost = true;
-            }
-
-            if(!thisHost) {
-                this.hostSettings.verboseInfoLog("need to exchange the resource: " + resource.getResourceID() +" with host: " + destinationAddress , HostSettings.HOST_CALLER,false);
-
-                RequestMessage request = new RequestMessage(
-                        this.getHostSettings().getHostIP(),
-                        this.getHostSettings().getHostPort(),
-                        resource);
-                request.setHostDepositRequest(true);
-
-                this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_CALLER,false);
-                this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_CALLER,false);
-
-                try {
-                    SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
-                    destinationSocket.connect();
-
-                    this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_CALLER,false);
-
-                    destinationSocket.post(request);
-
-                    this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress + " waiting for response ...", HostSettings.HOST_CALLER,false);
-
-                    ResponseMessage responseMessage = (ResponseMessage) destinationSocket.get();
-
-                    this.hostSettings.verboseInfoLog("response for resource: " + resource.getResourceID() + " arrived from host: " + destinationAddress  ,HostSettings.HOST_CALLER, false);
-                    this.hostSettings.verboseInfoLog("response: " + responseMessage.conciseToString(), HostSettings.HOST_CALLER, false);
-                    this.hostSettings.verboseInfoLog("disconnecting from destination host ...", HostSettings.HOST_CALLER,false);
-
-                    destinationSocket.disconnect();
-
-                    this.hostSettings.verboseInfoLog("disconnected from host: " + destinationAddress, HostSettings.HOST_CALLER,false);
-
-                    this.resourcesManager.removeResource(resource.getResourceID());
-
-                }catch (SocketManagerException e) {
-                    this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() + "\n keeping the resource on this host" , HostSettings.HOST_CALLER,true);
+                if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()) {
+                    destinationAddress = this.chordEntryPoint.lookupKeyBasic(resource.getResourceID());
                 }
+                else{
+                    destinationAddress = this.chordEntryPoint.lookupKey(resource.getResourceID());
+                }
+
+            }catch(Exception exception ){
+                this.hostSettings.verboseInfoLog("unable to perform lookup" , HostSettings.HOST_CALLER,true);
+                lookupFailure = true;
+
             }
-            else
-            {
-                this.hostSettings.verboseInfoLog("the resource: " + resource.getResourceID() +" remains on this host" , HostSettings.HOST_CALLER,false);
+
+            if(!lookupFailure){
+                if(this.hostSettings.isThisHost(destinationAddress)) {
+                    thisHost = true;
+                }
+
+                if(!thisHost) {
+                    this.hostSettings.verboseInfoLog("need to exchange the resource: " + resource.getResourceID() +" with host: " + destinationAddress , HostSettings.HOST_CALLER,false);
+
+                    RequestMessage request = new RequestMessage(
+                            this.getHostSettings().getHostIP(),
+                            this.getHostSettings().getHostPort(),
+                            resource);
+                    request.setHostDepositRequest(true);
+
+                    this.hostSettings.verboseInfoLog("sending request for resource: " + resource.getResourceID() +" to host: " + destinationAddress +" ..." , HostSettings.HOST_CALLER,false);
+                    this.hostSettings.verboseInfoLog("opening a communication channel with host: " + destinationAddress + " ...", HostSettings.HOST_CALLER,false);
+
+                    try {
+                        SocketManager destinationSocket = new SocketManager(destinationAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
+                        destinationSocket.connect();
+
+                        this.hostSettings.verboseInfoLog("communication channel with host: " + destinationAddress + " opened sending the resource: " + resource.getResourceID() + " ..." , HostSettings.HOST_CALLER,false);
+
+                        destinationSocket.post(request);
+
+                        this.hostSettings.verboseInfoLog("request send for resource: " + resource.getResourceID() + " to host: " + destinationAddress + " waiting for response ...", HostSettings.HOST_CALLER,false);
+
+                        ResponseMessage responseMessage = (ResponseMessage) destinationSocket.get();
+
+                        this.hostSettings.verboseInfoLog("response for resource: " + resource.getResourceID() + " arrived from host: " + destinationAddress  ,HostSettings.HOST_CALLER, false);
+                        this.hostSettings.verboseInfoLog("response: " + responseMessage.conciseToString(), HostSettings.HOST_CALLER, false);
+                        this.hostSettings.verboseInfoLog("disconnecting from destination host ...", HostSettings.HOST_CALLER,false);
+
+                        destinationSocket.disconnect();
+
+                        this.hostSettings.verboseInfoLog("disconnected from host: " + destinationAddress, HostSettings.HOST_CALLER,false);
+
+                        this.resourcesManager.removeResource(resource.getResourceID());
+
+                    }catch (SocketManagerException e) {
+                        this.hostSettings.verboseInfoLog("Exception rised for resource: " + resource.getResourceID() +" \n" + e.getMessage() + "\n keeping the resource on this host" , HostSettings.HOST_CALLER,true);
+                    }
+                }
+                else
+                {
+                    this.hostSettings.verboseInfoLog("the resource: " + resource.getResourceID() +" remains on this host" , HostSettings.HOST_CALLER,false);
+                }
+            }else {
+                this.hostSettings.verboseInfoLog("lookup failure, cannot exchange resource: " + resource.getResourceID() +" ,it remains on this host" , HostSettings.HOST_CALLER,false);
+
             }
         }
 

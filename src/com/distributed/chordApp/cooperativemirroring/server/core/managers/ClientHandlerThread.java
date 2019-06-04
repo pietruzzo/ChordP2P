@@ -7,6 +7,7 @@ import com.distributed.chordApp.cooperativemirroring.common.messages.RequestMess
 import com.distributed.chordApp.cooperativemirroring.common.messages.ResponseMessage;
 import com.distributed.chordApp.cooperativemirroring.server.core.settings.HostSettings;
 import com.distributed.chordLib.Chord;
+import com.distributed.chordLib.exceptions.NoSuccessorsExceptions;
 
 import java.net.Socket;
 
@@ -100,18 +101,24 @@ public class ClientHandlerThread implements Runnable
      * @param resourceID
      * @return
      */
-    private String resourceLookup(String resourceID){
+    private String resourceLookup(String resourceID) throws Exception {
         String resourceManagerAddress = null;
+
 
         this.hostSettings.verboseInfoLog("performing the lookup for the resource: " + resourceID + "...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-        if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups())
+        if(this.getHostSettings().getChordNetworkSettings().getPerformBasicLookups()){
             resourceManagerAddress = this.chordEntryPoint.lookupKeyBasic(resourceID);
-        else resourceManagerAddress = this.chordEntryPoint.lookupKey(resourceID);
+        }
+        else{
+            resourceManagerAddress = this.chordEntryPoint.lookupKey(resourceID);
+        }
 
         this.hostSettings.verboseInfoLog("IP of the resource: " + resourceID + " owner: " + resourceManagerAddress, HostSettings.CLIENT_HANDLER_CALLER,false);
 
         return resourceManagerAddress;
+
+
     }
 
     /**
@@ -119,21 +126,18 @@ public class ClientHandlerThread implements Runnable
      * @param originalRequest
      * @return
      */
-    private RequestMessage buildForewardRequestMessage(RequestMessage originalRequest)
-    {
+    private RequestMessage buildForewardRequestMessage(RequestMessage originalRequest) {
         RequestMessage newRequest = null;
 
         this.hostSettings.verboseInfoLog("building a forward request message ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-        if(originalRequest.getDepositResource())
-        {
+        if(originalRequest.getDepositResource()) {
             newRequest = new RequestMessage(originalRequest.getOriginalSenderIP(),
                                             originalRequest.getOriginalSenderPort(),
                                             originalRequest.getResource()
                                             );
         }
-        else
-        {
+        else {
             newRequest = new RequestMessage(originalRequest.getOriginalSenderIP(),
                                             originalRequest.getOriginalSenderPort(),
                                             originalRequest.getResourceID()
@@ -151,28 +155,34 @@ public class ClientHandlerThread implements Runnable
      * @param requestMessage
      * @return
      */
-     private ResponseMessage buildResponseMessage(RequestMessage requestMessage)
-     {
+     private ResponseMessage buildResponseMessage(RequestMessage requestMessage,boolean lookupFailure) {
          ResponseMessage responseMessage = null;
          Resource requestedResource = null;
          Boolean result = null;
 
          this.hostSettings.verboseInfoLog("building a response message ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-         if(requestMessage.getDepositResource()) {
-             result = this.depositResourceLocally(requestMessage.getResource());
-         }
-         else
-         {
-             requestedResource = this.retrieveResourceLocally(requestMessage.getResourceID());
+         if(!lookupFailure){
+             if(requestMessage.getDepositResource()) {
+                 result = this.depositResourceLocally(requestMessage.getResource());
+             }
+             else {
+                 requestedResource = this.retrieveResourceLocally(requestMessage.getResourceID());
 
-             if(requestedResource == null) {
-                 result = false;
-             }
-             else{
-                 result = true;
+                 if(requestedResource == null) {
+                     result = false;
+                 }
+                 else{
+                     result = true;
+                 }
              }
          }
+         else{
+             result = false;
+             requestedResource = new Resource("hello");
+         }
+
+
 
          responseMessage = new ResponseMessage( this.getHostSettings().getHostIP(),
                                                 this.getHostSettings().getHostPort(),
@@ -189,14 +199,17 @@ public class ClientHandlerThread implements Runnable
 
     @Override
     //Gestisco le richieste di un client
-    public void run()
-    {
+    public void run()   {
+
+
         //Request message that the client send to us.
         RequestMessage requestMessage = null;
 
         //Nel caso in cui io debba inoltrare la richiesta
         RequestMessage forewardedRequestMessage = null;
         ResponseMessage responseMessage = null;
+
+        boolean lookupFailure = false;
 
         Boolean thisHost = false;
 
@@ -217,41 +230,55 @@ public class ClientHandlerThread implements Runnable
             }
             //In case we have to perfrom the canonical lookup
             else {
-                resourceKeeperIP = this.resourceLookup(requestMessage.getResourceID());
+                try{
+                    resourceKeeperIP = this.resourceLookup(requestMessage.getResourceID());
+                }catch(Exception e){
+                    lookupFailure = true;
+                }
+
+
             }
 
-            //Cheking for ip address associated to the current host
-            if((resourceKeeperIP.equals("127.0.0.1")) || (resourceKeeperIP.equals("127.0.1.1")) || (resourceKeeperIP.equals(this.getHostSettings().getHostIP()))) {
-                thisHost = true;
+            //Case of lookup failure, the current host will notify the client of the request failure
+            if(!lookupFailure){
+                //Cheking for ip address associated to the current host
+                if(this.hostSettings.isThisHost(resourceKeeperIP)) {
+                    thisHost = true;
+                }
             }
 
-            if (thisHost) {
-                this.hostSettings.verboseInfoLog("the request is directed to this host ...", HostSettings.CLIENT_HANDLER_CALLER,false);
-                responseMessage = this.buildResponseMessage(requestMessage);
+
+            if ((thisHost) || (lookupFailure)) {
+                if(!lookupFailure){
+                    this.hostSettings.verboseInfoLog("the request is directed to this host ...", HostSettings.CLIENT_HANDLER_CALLER,false);
+                }else {
+                    this.hostSettings.verboseInfoLog("unable to perform the lookup, cannot manage the request", HostSettings.CLIENT_HANDLER_CALLER,true);
+                }
+
+                responseMessage = this.buildResponseMessage(requestMessage, lookupFailure);
             }
             else {
                 this.hostSettings.verboseInfoLog("the request is directed to another host: " + resourceKeeperIP + " , forwarding the request", HostSettings.CLIENT_HANDLER_CALLER,false);
                 forewardedRequestMessage = this.buildForewardRequestMessage(requestMessage);
             }
 
-            if (!thisHost) {
+            if ((!thisHost) && (!lookupFailure)) {
 
-                String nextHostAddress = this.resourceLookup(requestMessage.getResourceID());
 
-                this.hostSettings.verboseInfoLog("trying to open a channel with host: " + nextHostAddress + " ...", HostSettings.CLIENT_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("trying to open a channel with host: " + resourceKeeperIP + " ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
-                SocketManager nextHost = new SocketManager(nextHostAddress, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
+                SocketManager nextHost = new SocketManager(resourceKeeperIP, this.hostSettings.getHostPort(), SocketManager.DEFAULT_CONNECTION_TIMEOUT_MS, SocketManager.DEFAULT_CONNECTION_RETRIES, false);
                 nextHost.connect();
 
-                this.hostSettings.verboseInfoLog("opened a connection with the host: " + nextHostAddress , HostSettings.CLIENT_HANDLER_CALLER,false);
-                this.hostSettings.verboseInfoLog("forwarding the request to: " + nextHostAddress, HostSettings.CLIENT_HANDLER_CALLER,false);
-                this.hostSettings.verboseInfoLog("waiting for the response from host: " + nextHostAddress + "...", HostSettings.CLIENT_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("opened a connection with the host: " + resourceKeeperIP , HostSettings.CLIENT_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("forwarding the request to: " + resourceKeeperIP, HostSettings.CLIENT_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("waiting for the response from host: " + resourceKeeperIP + "...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
                nextHost.post(forewardedRequestMessage);
 
                responseMessage = (ResponseMessage) nextHost.get();
 
-                this.hostSettings.verboseInfoLog("response arrived from host: " + nextHostAddress + "sending back it to the client ...", HostSettings.CLIENT_HANDLER_CALLER,false);
+                this.hostSettings.verboseInfoLog("response arrived from host: " + resourceKeeperIP + "sending back it to the client ...", HostSettings.CLIENT_HANDLER_CALLER,false);
 
             }
 
@@ -267,6 +294,7 @@ public class ClientHandlerThread implements Runnable
         } catch (SocketManagerException e) {
             this.hostSettings.verboseInfoLog("exception rise: " + e.getMessage(), HostSettings.CLIENT_HANDLER_CALLER,false);
         }
+
     }
 
         /*Getter methods*/

@@ -1,7 +1,8 @@
 package com.distributed.chordApp.cooperativemirroring.server.view;
 
-import com.distributed.chordApp.cooperativemirroring.common.utilities.exceptions.SocketManagerException;
 import com.distributed.chordApp.cooperativemirroring.server.core.Host;
+import com.distributed.chordApp.cooperativemirroring.server.core.settings.HostSettings;
+import com.distributed.chordApp.cooperativemirroring.server.core.settings.exceptions.HostSettingException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,6 +21,7 @@ public class ServerView extends JFrame {
     private JPanel consolePanel = null;
     //Button used for shutting down the server
     private JButton shutDowsServerButton = null;
+    private JButton chnageShallopHostButton = null;
 
     /********** LOG PART OF THE SHELL **********/
     private JPanel logPanel = null;
@@ -79,12 +81,9 @@ public class ServerView extends JFrame {
 
         //tacit part
         this.tacitMessageButton = new JButton("Tacit");
-        this.tacitMessageButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                messageTextField.setBackground(Color.LIGHT_GRAY);
-                messageTextField.setText("");
-            }
+        this.tacitMessageButton.addActionListener(actionEvent -> {
+            messageTextField.setBackground(Color.LIGHT_GRAY);
+            messageTextField.setText("");
         });
 
         this.messagePanel.add(this.tacitMessageButton, BorderLayout.EAST);
@@ -102,26 +101,40 @@ public class ServerView extends JFrame {
         this.consolePanel = new JPanel();
         this.consolePanel.setLayout(new GridLayout(1, 1));
 
+        this.chnageShallopHostButton = new JButton("Change Shallop Host");
+        this.chnageShallopHostButton.addActionListener(actionEvent -> {
+            String newShallopHostIP = JOptionPane.showInputDialog(null, "old shallop host IP : " + host.getHostSettings().getShallopHostIP() + "\nInsert the new one", "Change Shallop Host", JOptionPane.WARNING_MESSAGE);
+
+            if(newShallopHostIP == null){
+                return;
+            }
+
+            try {
+                host.getHostSettings().changeShallopHost(newShallopHostIP, host.getHostSettings().getShallopHostPort());
+                updateMessage("Shallop host changed", false);
+            } catch (HostSettingException e) {
+                updateMessage(e.getMessage(), true);
+            }
+        });
+
         //Shutdown server command
         this.shutDowsServerButton = new JButton("Shut Down Server");
         this.shutDowsServerButton.setForeground(Color.RED);
-        this.shutDowsServerButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                int choice = JOptionPane.showConfirmDialog(null, "Are you sure to shutdown the server? ", "Shut Down server command", JOptionPane.WARNING_MESSAGE);
+        this.shutDowsServerButton.addActionListener(actionEvent -> {
+            int choice = JOptionPane.showConfirmDialog(null, "Are you sure to shutdown the server? ", "Shut Down server command", JOptionPane.WARNING_MESSAGE);
 
-                if(choice == 0){
-                    try {
-                        host.shutdownHost();
-                    } catch (IOException e) {
-                        updateText(e.getMessage());
-                        updateMessage("Unable to shut-down host : " + e.getMessage(), true);
-                    }
+            if(choice == 0){
+                try {
+                    host.shutdownHost();
+                } catch (IOException e) {
+                    updateText(e.getMessage());
+                    updateMessage("Unable to shut-down host : " + e.getMessage(), true);
                 }
             }
         });
-        JPanel shutDownServerPanel = new JPanel(new BorderLayout());
-        shutDownServerPanel.add(this.shutDowsServerButton, BorderLayout.NORTH);
+        JPanel shutDownServerPanel = new JPanel(new GridLayout(1, 2));
+        shutDownServerPanel.add(this.chnageShallopHostButton);
+        shutDownServerPanel.add(this.shutDowsServerButton);
 
         this.consolePanel.add(shutDownServerPanel);
     }

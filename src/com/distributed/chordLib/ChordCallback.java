@@ -1,5 +1,7 @@
 package com.distributed.chordLib;
 
+import java.io.IOException;
+
 /**
  * Interface that can optionally be implemented by application using ChordLIB that contains callback methods
  * Asynchronous
