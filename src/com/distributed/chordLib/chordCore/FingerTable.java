@@ -99,6 +99,7 @@ public class FingerTable {
             }
         }
         successors = successors.subList(0, Math.min(numSuccessors, successors.size()));
+        printFingerTable();
 
     }
 

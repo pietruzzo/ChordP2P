@@ -109,9 +109,7 @@ public class ChordEngine extends ChordClient {
         List<Node> successors = fingerTable.getAllSuccessors();
         for (int j = 0; j < successors.size(); j++) {
             if (!successors.get(j).equals(myN) && !comLayer.isAlive(successors.get(j))){
-                synchronized (this) {
                     fingerTable.removeFailedNode(successors.get(j));
-                }
             }
         }
 
@@ -314,6 +312,7 @@ public class ChordEngine extends ChordClient {
 
     private void handleNoMoreSuccessors(){
 
+        doRoutines = true;
         //Evita che un notify incoming intervenga a metà
         synchronized (this) {
             try {
@@ -336,15 +335,16 @@ public class ChordEngine extends ChordClient {
 
         while(doRoutines) {
             try {
-                System.out.println("Stabilize:---");
-                stabilize();
-                System.out.println("Fix Fingers:---");
-                fixFingers();
-                System.out.println("Check predecessor:---");
-                checkPredecessor();
-                System.out.println("End Routine:---");
-                fingerTable.printFingerTable();
-
+                synchronized (this) {
+                    System.out.println("Stabilize:---");
+                    stabilize();
+                    System.out.println("Fix Fingers:---");
+                    fixFingers();
+                    System.out.println("Check predecessor:---");
+                    checkPredecessor();
+                    System.out.println("End Routine:---");
+                    fingerTable.printFingerTable();
+                }
                 if (doRoutines) {
                     synchronized (this) {
                         this.wait(ROUTINE_PERIOD);
@@ -368,6 +368,7 @@ public class ChordEngine extends ChordClient {
                     } catch (NoSuccessorsExceptions e1) {
                         handleNoMoreSuccessors();
                     }
+                    handleNoMoreSuccessors();
                 }
             }
             catch (NoSuccessorsExceptions e) {
