@@ -169,11 +169,12 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
      * Close all remaining connections and communication threads
      */
     @Override
-    public void closeCommLayer(){
-        closeChannel(null);
+    public synchronized void closeCommLayer(){
+
         closeServerSocket = true;
         try {
             serverSocket.close();
+            closeChannel(null);
         } catch (IOException e) {
             System.out.println("forcing serversocket closing");
         }
@@ -297,7 +298,7 @@ public class SocketCommunication implements CommCallInterface, SocketIncomingHan
         node.writeSocket(resMessage);
     }
 
-    private void handlePredecessorMessage(PredecessorRequestMessage reqMessage, SocketNode questioner){
+    private synchronized void handlePredecessorMessage(PredecessorRequestMessage reqMessage, SocketNode questioner){
         Node predecessor = callback.handlePredecessorRequest();
         PredecessorResponseMessage resMessage = new PredecessorResponseMessage(reqMessage.getId(), predecessor);
         questioner.writeSocket(resMessage);
